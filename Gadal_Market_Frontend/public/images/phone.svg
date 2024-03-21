@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="70.183" height="71.24" viewBox="0 0 70.183 71.24">
+  <defs>
+    <filter id="icons8_phone_1" x="0" y="1.058" width="70.183" height="70.183" filterUnits="userSpaceOnUse">
+      <feOffset dy="3" input="SourceAlpha"/>
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feFlood flood-opacity="0.161"/>
+      <feComposite operator="in" in2="blur"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+  </defs>
+  <g id="Group_369" data-name="Group 369" transform="translate(2.659 0.48)">
+    <ellipse id="Ellipse_68" data-name="Ellipse 68" cx="32.5" cy="33" rx="32.5" ry="33" transform="translate(0.469 -0.48)" fill="#fa0"/>
+    <g transform="matrix(1, 0, 0, 1, -2.66, -0.48)" filter="url(#icons8_phone_1)">
+      <path id="icons8_phone_1-2" data-name="icons8_phone_1" d="M33.332,28.811a2.486,2.486,0,0,0-2.533.014L26.84,31.184a2.479,2.479,0,0,1-2.806-.168A64.42,64.42,0,0,1,18.4,26.1a64.42,64.42,0,0,1-4.911-5.635,2.479,2.479,0,0,1-.168-2.806L15.678,13.7a2.5,2.5,0,0,0,.01-2.541L9.879,1.24A2.5,2.5,0,0,0,7.115.073,8.209,8.209,0,0,0,3.27,2.384c-4.478,4.478-6.856,12.031,9.983,28.87s24.39,14.463,28.87,9.983a8.242,8.242,0,0,0,2.312-3.853,2.493,2.493,0,0,0-1.161-2.752C40.883,33.233,35.724,30.212,33.332,28.811Z" transform="translate(17.49 7.06) rotate(11)" fill="#fff"/>
+    </g>
+  </g>
+</svg>

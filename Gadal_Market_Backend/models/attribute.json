@@ -1,0 +1,33 @@
+[
+    {
+   
+    "name": "Type",
+    "isInsertion": false,
+    "category": "653f65c21d20d3dface43488",
+    "values": ["Villa", "G+4"],
+    "remark": "Example Remark",
+    "recordStatus": 1,
+    "__v": 0
+  },
+  {
+   
+    "name": "Bedroom",
+    "isInsertion": false,
+    "category": "653f65c21d20d3dface43488",
+    "values": ["1", "2","3","4","5"],
+    "remark": "Example Remark",
+    "recordStatus": 1,
+    "__v": 0
+  },
+  {
+   
+    "name": "Example Name",
+    "isInsertion": false,
+    "category": "653f65c21d20d3dface43488",
+    "values": ["Value1", "Value2"],
+    "remark": "Example Remark",
+    "recordStatus": 1,
+    "__v": 0
+  }
+]
+  

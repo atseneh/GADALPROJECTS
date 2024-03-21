@@ -1,0 +1,27 @@
+[
+    {
+        "message":"hello There",
+        "sent":true,
+        "id":1
+    },
+    {
+        "message":"Wassaup",
+        "sent":false
+    },
+    {
+        "message":"how much is the final price",
+        "sent":true,
+        "id":2
+    },
+    {
+        "message":"45M",
+        "sent":false,
+        "id":3
+    },
+    {
+        "message":"Million ? ",
+        "sent":false,
+        "id":4
+    }
+
+]
