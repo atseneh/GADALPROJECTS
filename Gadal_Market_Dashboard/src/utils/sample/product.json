@@ -1,0 +1,59 @@
+[
+    {
+        "title":"Product Name will be here and more",
+        "Price":3000000,
+        "location":"Addis Ababba",
+        "status":"Pending",
+        "image":"/sampleProduct.jpg",
+        "id":0
+    },
+    {
+        "title":"Product Name will be here and more",
+        "Price":3000000,
+        "location":"Addis Ababba",
+        "status":"Pending",
+        "image":"/sampleProduct.jpg",
+        "id":1
+    },
+    {
+        "title":"Product Name will be here and more",
+        "Price":3000000,
+        "location":"Addis Ababba",
+        "status":"Pending",
+        "image":"/sampleProduct.jpg",
+        "id":2
+    },
+    {
+        "title":"Product Name will be here and more",
+        "Price":3000000,
+        "location":"Addis Ababba",
+        "status":"Pending",
+        "image":"/sampleProduct.jpg",
+        "id":3
+    },
+    {
+        "title":"Product Name will be here and more",
+        "Price":3000000,
+        "location":"Addis Ababba",
+        "status":"Pending",
+        "image":"/sampleProduct.jpg",
+        "id":4
+    },
+    {
+        "title":"Product Name will be here and more",
+        "Price":3000000,
+        "location":"Addis Ababba",
+        "status":"Pending",
+        "image":"/sampleProduct.jpg",
+        "id":5
+    },
+    {
+        "title":"Product Name will be here and more",
+        "Price":3000000,
+        "location":"Addis Ababba",
+        "status":"Pending",
+        "image":"/sampleProduct.jpg",
+        "id":6
+    }
+
+]

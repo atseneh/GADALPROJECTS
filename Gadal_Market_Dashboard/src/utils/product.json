@@ -1,0 +1,111 @@
+ {
+        "_id": "657ab897c2a6f5c5d71bdff7",
+        "title": "new home for rent",
+        "description": "new home for rent new home for rent new home for rent new home for rent",
+        "productType": 2,
+        "previousPrice": 22000000,
+        "currentPrice": 22000000,
+        "category": {
+            "_id": "653f65c21d20d3dface43488",
+            "name": "House",
+            "serviceId": 2,
+            "icon": "/images/icons8_house.svg",
+            "remark": "",
+            "recordStatus": 1,
+            "__v": 0
+        },
+        "state": 3,
+        "postType": 1,
+        "derivedState": 1,
+        "productImages": [
+            "1702541463870-h2.webp",
+            "1702541463870-h1.webp"
+        ],
+        "isFixed": false,
+        "consignee": {
+            "_id": "653f2561c250b545217d192b",
+            "firstName": "Atse",
+            "lastName": "Dave",
+            "phoneNumber": "123-456-7890",
+            "email": "gadal@example.com",
+            "subCity": "653f1f5e7777ec958cfc41f6",
+            "wereda": "653f216c6aba4eae54a6bbe6",
+            "password": "hashedPassword",
+            "isAdmin": false,
+            "followers": [],
+            "following": [],
+            "adminAcessLevel": 1,
+            "status": 1,
+            "proflePic": "profile.jpg",
+            "isVerified": false,
+            "favourites": [
+                "657ab897c2a6f5c5d71bdff7",
+                "6578a2f3876217c84a83862d",
+                "6577e74d5e8cba70b97ebd1b",
+                "65785cf45173d50539898d4e",
+                "657c635bb754e8c5792752ac",
+                "6549e3e50ab5bb59700672db",
+                "6549e3c20ab5bb59700672d7",
+                "6577d76ae36842dc6d65b3c4",
+                "657c6584b754e8c5792753cd",
+                "657c65d0b754e8c5792753fb",
+                "6550b714acf6f139ffd01f87",
+                "656e92d8c3f7a3be1fc15d51",
+                "6550b714acf6f139ffd01f82",
+                "65774f8f6ee737b5631d9aed",
+                "6592d6250c41e1a7659f687a"
+            ],
+            "remark": "This is a sample user.",
+            "sign": "Sample Sign",
+            "recordStatus": 1,
+            "__v": 0
+        },
+        "viewCount": 40,
+        "attributes": [
+            {
+                "name": "Type",
+                "value": "Villa",
+                "_id": "657ab897c2a6f5c5d71bdff8"
+            },
+            {
+                "name": "Bedroom",
+                "value": "3",
+                "_id": "657ab897c2a6f5c5d71bdff9"
+            },
+            {
+                "name": "Insertion test",
+                "value": "classy home",
+                "_id": "657ab897c2a6f5c5d71bdffa"
+            }
+        ],
+        "location": {
+            "_id": "653f1e127777ec958cfc41f3",
+            "descripton": "Addis Ababa",
+            "remark": "test location",
+            "recordStatus": 1,
+            "__v": 0
+        },
+        "subCity": {
+            "_id": "653f1f5e7777ec958cfc41f6",
+            "descripton": "Arada",
+            "remark": "test subcity 1",
+            "location": "653f1e127777ec958cfc41f3",
+            "recordStatus": 1,
+            "__v": 0
+        },
+        "wereda": {
+            "_id": "653f216c6aba4eae54a6bbe6",
+            "descripton": "Woreda 01",
+            "remark": "test woreda 1",
+            "subCity": "653f1f5e7777ec958cfc41f6",
+            "recordStatus": 1,
+            "__v": 0
+        },
+        "transactionType": 1,
+        "youtubeLink": "",
+        "date": "2023-12-14T08:11:03.888Z",
+        "__v": 0,
+        "likedBy": [
+            "653f2561c250b545217d192b"
+        ]
+    }

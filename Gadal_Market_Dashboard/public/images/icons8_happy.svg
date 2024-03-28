@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="60.713" height="60.713" viewBox="0 0 60.713 60.713">
+  <defs>
+    <linearGradient id="linear-gradient" x1="-13.349" y1="2.699" x2="-12.647" y2="1.997" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#fede00"/>
+      <stop offset="0.519" stop-color="#fecc00"/>
+      <stop offset="1" stop-color="#ffb700"/>
+    </linearGradient>
+  </defs>
+  <g id="icons8_happy" transform="translate(-0.001)">
+    <path id="Path_3598" data-name="Path 3598" d="M34.356,64.713A30.356,30.356,0,1,0,4,34.356,30.358,30.358,0,0,0,34.356,64.713Z" transform="translate(-3.999 -4)" fill="url(#linear-gradient)"/>
+    <ellipse id="Ellipse_143" data-name="Ellipse 143" cx="6.218" cy="6.909" rx="6.218" ry="6.909" transform="translate(12.239 20.781)" fill="#fff"/>
+    <ellipse id="Ellipse_144" data-name="Ellipse 144" cx="5.527" cy="6.909" rx="5.527" ry="6.909" transform="translate(37.112 20.781)" fill="#fff"/>
+    <ellipse id="Ellipse_145" data-name="Ellipse 145" cx="3.455" cy="2.073" rx="3.455" ry="2.073" transform="translate(15.003 24.926)" fill="#343434"/>
+    <ellipse id="Ellipse_146" data-name="Ellipse 146" cx="2.764" cy="2.073" rx="2.764" ry="2.073" transform="translate(39.876 24.926)" fill="#343434"/>
+    <path id="Path_3599" data-name="Path 3599" d="M39.907,31.86A1.517,1.517,0,0,1,39.77,34a17.553,17.553,0,0,1-23.255,0,1.517,1.517,0,1,1,2.005-2.278,14.521,14.521,0,0,0,19.244,0,1.515,1.515,0,0,1,2.142.137Z" transform="translate(2.215 10.159)" fill="#343434"/>
+  </g>
+</svg>

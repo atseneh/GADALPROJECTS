@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="83.364" height="78.072" viewBox="0 0 83.364 78.072">
+  <defs>
+    <radialGradient id="radial-gradient" cx="0.5" cy="0.5" r="0.517" gradientTransform="translate(0.032) scale(0.937 1)" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#afeeff"/>
+      <stop offset="0.193" stop-color="#bbf1ff"/>
+      <stop offset="0.703" stop-color="#d7f8ff"/>
+      <stop offset="1" stop-color="#e1faff"/>
+    </radialGradient>
+    <linearGradient id="linear-gradient" x1="0.5" y1="0.083" x2="0.5" y2="1.083" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#42d778"/>
+      <stop offset="0.996" stop-color="#34b171"/>
+      <stop offset="1" stop-color="#34b171"/>
+    </linearGradient>
+  </defs>
+  <g id="icons8_view_more" transform="translate(-1 -2)">
+    <path id="Path_3315" data-name="Path 3315" d="M77.749,25.819h1.985A4.644,4.644,0,0,0,84.262,20.2a4.734,4.734,0,0,0-4.68-3.648H69.809a2.647,2.647,0,1,1,0-5.293h4.479a4.735,4.735,0,0,0,4.68-3.648A4.644,4.644,0,0,0,74.44,2H10.924a4.631,4.631,0,1,0,0,9.263h1.985a2.647,2.647,0,1,1,0,5.293H5.783A4.735,4.735,0,0,0,1.1,20.2a4.644,4.644,0,0,0,4.528,5.615H23.5V41.7H5.783A4.735,4.735,0,0,0,1.1,45.346,4.644,4.644,0,0,0,5.631,50.96h.662a2.647,2.647,0,0,1,0,5.293H5.631A4.644,4.644,0,0,0,1.1,61.868a4.735,4.735,0,0,0,4.68,3.648h7.126a2.647,2.647,0,1,1,0,5.293H11.076A4.735,4.735,0,0,0,6.4,74.457a4.644,4.644,0,0,0,4.528,5.615H73.117a4.631,4.631,0,1,0,0-9.263h-.662a2.647,2.647,0,0,1,0-5.293h5.8a4.735,4.735,0,0,0,4.68-3.648,4.644,4.644,0,0,0-4.528-5.615H61.87V40.374H78.258a4.735,4.735,0,0,0,4.68-3.648,4.644,4.644,0,0,0-4.528-5.615h-.662a2.647,2.647,0,0,1,0-5.293Z" transform="translate(0)" fill="url(#radial-gradient)"/>
+    <path id="Path_3316" data-name="Path 3316" d="M73.163,39.081A33.081,33.081,0,1,1,40.081,6,33.085,33.085,0,0,1,73.163,39.081Z" transform="translate(1.939 1.293)" fill="url(#linear-gradient)"/>
+    <path id="Path_3317" data-name="Path 3317" d="M32.2,32.293A5.293,5.293,0,1,1,37.5,37.586,5.295,5.295,0,0,1,32.2,32.293Zm22.5,5.293A5.293,5.293,0,1,0,49.4,32.293,5.295,5.295,0,0,0,54.7,37.586Zm-34.4,0A5.293,5.293,0,1,0,15,32.293,5.295,5.295,0,0,0,20.293,37.586Z" transform="translate(4.525 8.081)" fill="#fff"/>
+  </g>
+</svg>

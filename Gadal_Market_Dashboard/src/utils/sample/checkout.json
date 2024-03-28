@@ -1,0 +1,73 @@
+[
+    {
+        "title":"Product Name will be here",
+        "Price":3000000,
+        "location":"Addis Ababba",
+        "user":"dave atse",
+        "phone":"0927784322",
+        "email":"daveatse@gmail.com",
+        "image":"/sampleProduct.jpg",
+        "id":0
+    },
+    {
+        "title":"Product Name will be here",
+        "Price":3000000,
+        "location":"Addis Ababba",
+        "user":"dave atse",
+        "phone":"0927784322",
+        "email":"daveatse@gmail.com",
+        "image":"/sampleProduct.jpg",
+        "id":1
+    },
+    {
+        "title":"Product Name will be here",
+        "Price":3000000,
+        "location":"Addis Ababba",
+        "user":"dave atse",
+        "phone":"0927784322",
+        "email":"daveatse@gmail.com",
+        "image":"/sampleProduct.jpg",
+        "id":2
+    },
+    {
+        "title":"Product Name will be here",
+        "Price":3000000,
+        "location":"Addis Ababba",
+        "user":"dave atse",
+        "phone":"0927784322",
+        "email":"daveatse@gmail.com",
+        "image":"/sampleProduct.jpg",
+        "id":3
+    },
+    {
+        "title":"Product Name will be here",
+        "Price":3000000,
+        "location":"Addis Ababba",
+        "user":"dave atse",
+        "phone":"0927784322",
+        "email":"daveatse@gmail.com",
+        "image":"/sampleProduct.jpg",
+        "id":4
+    },
+    {
+        "title":"Product Name will be here",
+        "Price":3000000,
+        "location":"Addis Ababba",
+        "user":"dave atse",
+        "phone":"0927784322",
+        "email":"daveatse@gmail.com",
+        "image":"/sampleProduct.jpg",
+        "id":5
+    },
+    {
+        "title":"Product Name will be here",
+        "Price":3000000,
+        "location":"Addis Ababba",
+        "user":"dave atse",
+        "phone":"0927784322",
+        "email":"daveatse@gmail.com",
+        "image":"/sampleProduct.jpg",
+        "id":6
+    }
+
+]
