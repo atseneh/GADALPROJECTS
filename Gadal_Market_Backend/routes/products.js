@@ -226,6 +226,23 @@ router.get('/products/:productId', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+router.get('/searchProducts',async (req,res)=>{
+  const {searchTerm} = req.query
+  try {
+  const products = await Product.find(
+    {
+    $text: {$search: searchTerm},
+  },
+  { score : { $meta: "textScore"}}
+  ).sort( 
+    {  score: { $meta : 'textScore' } }
+).populate('category consignee currency brand model location subCity wereda switch')
+  res.status(200).json(products)
+  }
+   catch (error) {
+    res.status(500).json({error})
+  }
+})
 router.get('/products/:userId', async (req, res) => {
   const { userId } = req.params;
   try {

@@ -95,7 +95,7 @@ router.get('/estimations', async (req, res) => {
 
 router.get('/estimations/:id', async (req, res) => {
   try {
-    const estimation = await Estimation.findById(req.params.id);
+    const estimation = await Estimation.findById(req.params.id).populate('category location subCity wereda');
     if (!estimation) {
       return res.status(404).json({ message: 'Estimation not found' });
     }

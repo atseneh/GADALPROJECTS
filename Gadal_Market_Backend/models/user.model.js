@@ -37,9 +37,13 @@ const userSchema = Schema({
     type: Boolean,
     default: false,
   },
-  followers: {
-    type: [Schema.Types.ObjectId],
-    ref: 'User',
+  isSuperAdmin:{
+    type:Boolean,
+    default:false
+  },
+  followers:{
+    type:[Schema.Types.ObjectId],
+    ref:'User'
   },
   following: {
     type: [Schema.Types.ObjectId],

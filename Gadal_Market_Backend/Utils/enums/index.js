@@ -7,7 +7,8 @@ const PrevilageEnums = Object.freeze({
     SUPER_ADMIN:0,
     PROPERTY_ADMIN:1,
     MACHINERY_ADMIN:2,
-    VEICHEL_ADMIN:3
+    VEICHEL_ADMIN:3,
+    OTHER_ADMIN:4,
 })
 const EstimationStateEnums = Object.freeze({
     REQUESTED:1,
@@ -36,6 +37,7 @@ const ProductStateEnums = Object.freeze({
     DRAFTED:2,
     PENDING:3,
     BLOCKED:4,
+    ARCHIVED:5
     
 })
 const ProductPostTypeEnums = Object.freeze({

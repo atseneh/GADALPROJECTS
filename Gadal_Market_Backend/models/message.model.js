@@ -1,16 +1,26 @@
 const mongoose = require('mongoose')
 const {Schema} = mongoose
-
+const conversationSchema = new Schema({
+  message:String, // could be text voice or image 
+  isFromInterestedParty:Boolean,
+  seen:Boolean,
+},{
+  timestamps:true
+})
 const messageSchema = Schema({
-    message: {
-      text: { type: String, required: true },
+    product:{
+      type:Schema.Types.ObjectId,
+      ref:'Product'
     },
-    users: Array,
-    sender: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
+    productOwner:{
+      type:Schema.Types.ObjectId,
+      ref:'User'
     },
+    interestedParty:{
+      type:Schema.Types.ObjectId,
+      ref:'User'
+    },
+  conversations:[conversationSchema],
   },
   {
     timestamps: true,

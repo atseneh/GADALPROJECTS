@@ -17,7 +17,7 @@ router.get('/packages', async (req, res) => {
     Object.keys(req.query).forEach((key) => {
       filter[key] = req.query[key];
     });
-    const packages = await Package.find(filter);
+    const packages = await Package.find(filter).populate('packageDefinition');
     res.status(200).json(packages);
   } catch (error) {
     res.status(500).json({ error: error.message });

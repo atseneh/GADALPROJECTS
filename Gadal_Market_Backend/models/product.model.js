@@ -12,7 +12,7 @@ title:{
 },
 description:{
     type:String,
-    required:true
+    required:true,
 },
 no_day_onTop_cat: {
   type: Number,
@@ -148,5 +148,17 @@ state:{
   },
 
 })
+productSchema.index(
+  {
+  title:'text',description:'text'
+  },
+  {
+    weights : 
+        { 
+          title : 5, 
+          description : 2
+        }
+ }
+)
 const Product = mongoose.model('Product',productSchema)
 module.exports = Product

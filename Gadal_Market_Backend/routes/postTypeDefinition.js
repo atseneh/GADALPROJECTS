@@ -12,6 +12,16 @@ router.get('/postTypeDefinitions', async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 });
+router.get('/postTypeDefinitions/:id', async (req, res) => {
+  const {id} = req.params
+  try {
+    const postType = await PostTypeDefinition.findById(id);
+    res.json(postType);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
 
 router.post('/postTypeDefinitions', async (req, res) => {
     try {
