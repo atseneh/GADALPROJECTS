@@ -4,11 +4,16 @@ import { Box, Typography } from "@mui/material";
 import Grid from '@mui/material/Grid'
 import Convos from "./convos";
 import { useState } from "react";
+import useSmallScreen from "../../utils/hooks/useSmallScreen";
 export default function Messages(){
 const [selectedChat,setSelectedChat] = useState()
 const handleChatSelection = (meseageDetail:any)=>{
     setSelectedChat(meseageDetail)
 }
+const handleGoBack = ()=>{
+    setSelectedChat(undefined);
+}
+const smallScreen = useSmallScreen();
     return (
      <Box
      sx={{
@@ -23,17 +28,35 @@ const handleChatSelection = (meseageDetail:any)=>{
             Chats
         </Typography>
         <Grid container>
-            <Grid item xs={12} sm={4}>
-            <UserList
-            selectedChat={selectedChat}
-            handleChatSelection={handleChatSelection}
-            />
+            {
+            //  (!(Boolean(selectedChat)) && smallScreen) || !smallScreen 
+            ((smallScreen && !selectedChat) || !smallScreen)
+             && (
+                <Grid 
+                    item 
+                    sm={12} 
+                    md={4}
+                    >
+                <UserList
+                selectedChat={selectedChat}
+                handleChatSelection={handleChatSelection}
+                />
+                </Grid>
+             )
+            }
+            {
+        
+        // (Boolean(selectedChat) && smallScreen) || !smallScreen 
+        ((smallScreen && selectedChat) || !smallScreen)
+        && (
+            <Grid item sm={12} md={8}>
+            <Convos
+            messageDetail={selectedChat}
+            onGoBack={handleGoBack}
+            />             
             </Grid>
-            <Grid item xs={12} sm={8}>
-                <Convos
-                messageDetail={selectedChat}
-                />             
-            </Grid>
+                )
+            }
         </Grid>
      </Box>
     )

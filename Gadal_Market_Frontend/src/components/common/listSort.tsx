@@ -5,19 +5,39 @@ import MultipleStopIcon from '@mui/icons-material/MultipleStop';
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import React from 'react';
+import { useSearchParams } from 'react-router-dom';
+import useReactRouterQuery from '../../utils/hooks/useQuery';
+const sortCriterion = [
+  {
+    label:'Latest',
+    value:'latest'
+  },
+  {
+    label:'Lowest Prie',
+    value:'lowPrice'
+  },
+  {
+    label:'Highest Price',
+    value:'highPrice'
+  }
+]
 export default function ListSort(){
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
+    const [searchParams,setSearchParams] = useSearchParams();
+    const params = new URLSearchParams(searchParams.toString());
+    let query = useReactRouterQuery()
+    const sortCriteria = sortCriterion?.find((c)=>c.value === query.get('sortCriteria'))?.label
+    const addSearchParam = (criteria:string) => {
+      params.set('sortCriteria', criteria);
+      setSearchParams(params);
+    };
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
       setAnchorEl(event.currentTarget);
     };
     const handleClose = () => {
       setAnchorEl(null);
     };
-    const [sortCriteria,setSortCriteria] = React.useState('latest')
-    const handleSortSelection = (sortCriterion:string)=>{
-     setSortCriteria(sortCriterion)
-    }
  return (
  <div>
       <Button
@@ -56,38 +76,20 @@ export default function ListSort(){
      'aria-labelledby': 'basic-button',
    }}
  >
-   <MenuItem onClick={()=>{
-    handleSortSelection('latest')
-    handleClose()
-   }}>
-   <Typography variant='caption'>
-        Latest
-    </Typography>
-   </MenuItem>
-   <MenuItem onClick={()=>{
-    handleSortSelection('highestPrice')
-    handleClose()
-   }}>
-    <Typography variant='caption'>
-        Highest Price
-    </Typography>
-   </MenuItem>
-   <MenuItem onClick={()=>{
-    handleSortSelection('lowestPrice')
-    handleClose()
-   }}>
-    <Typography variant='caption'>
-        Lowest Price
-    </Typography>
-   </MenuItem>
-   <MenuItem onClick={()=>{
-    handleSortSelection('highly rated')
-    handleClose()
-   }}>
-   <Typography variant='caption'>
-        Highly Rated
-    </Typography>
-   </MenuItem>
+   {
+    sortCriterion.map((criteria)=>(
+      <MenuItem onClick={()=>{
+        addSearchParam(criteria.value)
+        handleClose()
+       }}>
+       <Typography variant='caption'>
+            {
+              criteria.label
+            }
+        </Typography>
+       </MenuItem>
+    ))
+   }
  </Menu>
  </div>
  )

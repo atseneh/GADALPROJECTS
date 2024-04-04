@@ -7,13 +7,13 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import useSmallScreen from "../../utils/hooks/useSmallScreen";
 import Collapse from '@mui/material/Collapse';
-import React from "react";
+import React, { useEffect, useState } from "react";
 import IconButton from "@mui/material/IconButton";
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import PeopleIcon from '@mui/icons-material/People';
 import CampaignIcon from '@mui/icons-material/Campaign';
-import {useTheme} from '@mui/material'
+import {Grid, Skeleton, useTheme} from '@mui/material'
 import Favourites from "./favourites";
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
@@ -23,52 +23,117 @@ import useReactRouterQuery from "../../utils/hooks/useQuery";
 import { useLocation, useNavigate } from "react-router-dom";
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import Packages from "./packages";
+import { QueryClient, useMutation, useQuery } from "@tanstack/react-query";
+import getUserProfileDetail from "../../api/user/getUserProfileDetail";
+import updateUser from "../../api/user/updateUser";
+import CustomAlert from "../../components/common/customAlert";
 export default function Profile(){
 const smallScreen = useSmallScreen()
-const location = useLocation()
 const navigate = useNavigate()
-console.log(location)
 let query = useReactRouterQuery()
 const selectedTab = query.get('selected')
-const [open,setOpen] = React.useState(true)
-const [activeTab,setActiveTab] = React.useState(1)
-const handleTabSelection = (tab:number)=>{
-    setActiveTab(tab)
-}
-const handleExpand = ()=>{
-    setOpen(!open)
-}
+const [firstName,setFristName] = useState('')
+const [lastName,setLastName] = useState('')
+const [email,setEmail] = useState('')
+const [phoneNumber,setPhoneNumber] = useState('')
+const [city,setCity] = useState('')
+const [subCity,setSubCity] = useState('')
+const [region,setRegion] = useState('')
 const variant = smallScreen?'caption':'body1'
 const theme = useTheme()
+const queryClient = new QueryClient();
+const [notificationSnackbarOpen,setNotificationSnackbarOpen] = React.useState(false)
+const [notificationSeverity,setNotificationSeverity] = useState<'success'|'error'>()
+    const handleNotificationSnackbarClose = ()=>{
+      setNotificationSnackbarOpen(false)
+    }
+const {data:profileDetail,isLoading} = useQuery({
+    queryKey:['profile_detail'],
+    queryFn:getUserProfileDetail,
+})
+const userMutation = useMutation({
+    mutationKey:['update_user'],
+    mutationFn:updateUser,
+    onSuccess:()=>{
+    setNotificationSeverity('success')
+    queryClient.invalidateQueries({queryKey:['profile_detail']})
+    },
+    onError:(error)=>{
+        setNotificationSeverity('error')
+    },
+    onSettled:()=>{
+        setNotificationSnackbarOpen(true)
+    }
+})
+const handleProfileUpdate = ()=> {
+    const payload = {
+        firstName,
+        lastName,
+        phoneNumber,
+        email,
+        region,
+        city,
+        subCity,
+    }
+  userMutation.mutate(payload)
+}
+useEffect(()=>{
+if(profileDetail) {
+ setFristName(profileDetail?.firstName||'')
+ setLastName(profileDetail?.lastName||'')
+ setPhoneNumber(profileDetail?.phoneNumber||'')
+ setEmail(profileDetail?.email||'')
+ setRegion(profileDetail?.region||'')
+ setSubCity(profileDetail?.subCity||'')
+ setCity(profileDetail?.city||'')
+}
+},[profileDetail])
     return (    
     <>
     <Card
     sx={{borderRadius:'20px',mt:3}}
     >
     <CardContent>
-        <Box sx={{
-            display:'flex',
-            alignItems:'center',
-            gap:smallScreen?3:16,
-            flexDirection:smallScreen?'column':'row'
-
-        }}>
-           <Box sx={{display:'flex',gap:smallScreen?1:3,flexDirection:smallScreen?'column':'row',justifyContent:smallScreen?"center":'flex-start'}}>
+        <Grid
+        container
+        spacing={2}
+        >
+        <Grid
+        item
+        sm={12}
+        md={4.5}
+        >
+        <Box 
+            sx={{
+                display:'flex',
+                gap:smallScreen?1:3,
+                flexDirection:smallScreen?'column':'row',
+                justifyContent:smallScreen?"center":'flex-start'
+                }}>
             <img style={{marginLeft:smallScreen?'25%':0,}} width={100} src="/images/maleUser.svg"/>
             <Stack>
             <Typography variant="h6" fontWeight={"bold"} sx={{marginLeft:smallScreen?'20%':0,}}>
-                Account Name
+                {
+                    isLoading?<Skeleton/>:
+                    `${profileDetail?.firstName} ${profileDetail?.lastName}`
+                }
             </Typography>
              <Box sx={{display:'flex',alignItems:'center',gap:1}}>
              <img  src="/images/icons8_phone_1.svg"/>
              <Typography variant="body2" fontWeight={'bold'}>
-                    Phone: 0927784322
+                    {
+                        isLoading?<Skeleton/>:
+                        `Phone: ${profileDetail?.phoneNumber}`
+                    }
                 </Typography>
              </Box>
              <Box sx={{display:'flex',alignItems:'center',gap:1}}>
              <img  src="/images/icons8_paper_plane.svg"/>
              <Typography variant="body2" fontWeight={'bold'}>
-                    Email: Dawitfissha1@gmail.com
+                    {
+                        isLoading?<Skeleton/>:
+                        `Email: ${profileDetail?.email}`
+                    }
                 </Typography>
              </Box>
              <Box sx={{display:'flex',alignItems:'center',gap:1}}>
@@ -88,39 +153,171 @@ const theme = useTheme()
              <img width={15}  src="/images/Icon ionic-ios-share-alt.svg" style={{marginRight:'4px'}}/>
                 Share
                 </Button>
-             <Button sx={{background:'white',fontWeight:'bolder'}} size="small" variant="contained" color="inherit">Logout</Button>
+             <Button 
+               sx={{background:'white',fontWeight:'bolder'}} 
+               size="small" 
+               variant="contained" 
+               color="inherit"
+               onClick={()=>{
+                localStorage.clear();
+                navigate('/')
+               }}
+               >
+                Logout
+                </Button>
              </Box>
             </Stack>
             </Box> 
-            {
-                !smallScreen&&(
-                    <Box sx={{display:'flex',flexDirection:'column',gap:1}}>
-                    <Box sx={{display:'flex',gap:2,flexDirection:smallScreen?'column':'row'}}>
-                        <TextField sx={{background:'white'}} fullWidth  label="First Name" variant="standard" />
-                        <TextField  sx={{background:'white'}} fullWidth  label="Email Or Phone Number" variant="standard" />
+        </Grid>
+        <Grid
+          item
+          sm={12}
+          md={7.5}
+        >
+        <Stack
+        spacing={2}
+        component={'form'}
+        onSubmit={(e)=>{
+            e.preventDefault();
+            handleProfileUpdate();
+        }}
+        >
+              <Grid
+        container
+        spacing={2}
+        >
+             <Grid
+            item
+            xs={12}
+            md={4}
+            >
+            <TextField 
+            sx={{background:'white'}} 
+            fullWidth  
+            label="First Name" 
+            variant="standard"
+            name="firstName" 
+            value={firstName}
+            onChange={(e)=>setFristName(e.target.value)}
+            required
+            />
+            </Grid>
+            <Grid
+            item
+            xs={12}
+            md={4}
+            >
+            <TextField 
+            sx={{background:'white'}} 
+            fullWidth  
+            label="Last Name" 
+            variant="standard" 
+            value={lastName}
+            onChange={(e)=>setLastName(e.target.value)}
+            required
+            />
+            </Grid>
+            <Grid
+             item
+             xs={12}
+             md={4}
+            >
+            <TextField 
+                        autoComplete="off" 
+                        sx={{background:'white'}}  
+                        label="Phone Number" 
+                        variant="standard"
+                        value={phoneNumber}
+                        onChange={(e)=>setPhoneNumber(e.target.value)}
+                        fullWidth
+                        required
+                         />
+            </Grid>
+            <Grid
+             item
+             xs={12}
+             md={4}
+            >
+            <TextField 
+                        autoComplete="off" 
+                        sx={{background:'white'}}  
+                        label="Email" 
+                        variant="standard"
+                        value={email}
+                        type="email"
+                        onChange={(e)=>setEmail(e.target.value)}
+                        fullWidth
                         
-                        </Box>
-                        <Box sx={{display:'flex',gap:2,flexDirection:smallScreen?'column':'row'}}>
-                        
-                        <TextField autoComplete="off" sx={{background:'white'}}  label="Last Name" variant="standard" />
-                        <TextField sx={{background:'white'}}  label="City" variant="standard" />
-                        <TextField sx={{background:'white'}}  label="Sub City" variant="standard" />
-                        </Box>
-                        <Box sx={{display:'flex',gap:2,flexDirection:smallScreen?'column':'row'}}>
-                        <TextField sx={{background:'white'}}  label="Password" variant="standard" type="password" />
-                        <TextField sx={{background:'white'}}  label="Region" variant="standard" />
-                        <TextField sx={{background:'white'}}  label="Woreda" variant="standard" />
-                        </Box>
-                        <Button sx={{alignSelf:smallScreen?'center':'flex-end',color:'white',mt:smallScreen?1:0}} size="small" variant="contained">
-                            Save Changes
-                        </Button>
-                    </Box>
-                )
-            }
-        </Box>
+                         />
+            </Grid>
+            <Grid
+            item
+            xs={12}
+            md={4}
+            >
+                 <TextField 
+                        sx={{background:'white'}}  
+                        label="Region" 
+                        variant="standard"
+                        value={region}
+                        onChange={(e)=>setRegion(e.target.value)}
+                        fullWidth
+                        />
+                       
+            </Grid>
+            <Grid
+            item
+            xs={12}
+            md={4}
+            >
+                 <TextField 
+                        sx={{background:'white'}}  
+                        label="City" 
+                        variant="standard"
+                        value={city}
+                        onChange={(e)=>setCity(e.target.value)}
+                        fullWidth
+                        />
+                       
+            </Grid>
+            <Grid
+            item
+            xs={12}
+            md={4}
+            >
+                 <TextField 
+                        sx={{background:'white'}}  
+                        label="Sub City" 
+                        variant="standard" 
+                        value={subCity}
+                        onChange={(e)=>setSubCity(e.target.value)}
+                        fullWidth
+                        />
+
+            </Grid>
+        </Grid>
+        <Button 
+            sx={{
+                alignSelf:smallScreen?'center':'flex-end',
+                color:'white',mt:smallScreen?1:0
+                }} 
+                size="small" 
+                variant="contained"
+                disabled={userMutation.isPending}
+                type="submit"
+                >
+         Save Changes
+        </Button>
+        </Stack>
+      
+            
+        </Grid>
+            
+        </Grid>
+     
     </CardContent>
     </Card>
-   {
+   {/* {
     smallScreen&&(
         <Card
         sx={{borderRadius:'20px',mt:1,border:'1px solid black',}}
@@ -141,20 +338,63 @@ const theme = useTheme()
                     <Box sx={{display:'flex',flexDirection:'column',gap:1}}>
                    
             <Box sx={{display:'flex',gap:2,flexDirection:smallScreen?'column':'row'}}>
-                <TextField sx={{background:'white'}} fullWidth  label="First Name" variant="standard" />
-                <TextField  sx={{background:'white'}} fullWidth  label="Email Or Phone Number" variant="standard" />
+                <TextField 
+                sx={{background:'white'}} 
+                fullWidth  
+                label="First Name" 
+                variant="standard" 
+                defaultValue={profileDetail?.firstName}
+                />
+                <TextField  
+                sx={{background:'white'}}
+                fullWidth  
+                label="Email Or Phone Number" 
+                variant="standard" 
+                defaultValue={profileDetail?.phoneNumber?profileDetail?.phoneNumber:profileDetail?.email}
+                />
                 
                 </Box>
                 <Box sx={{display:'flex',gap:2,flexDirection:smallScreen?'column':'row'}}>
                 
-                <TextField autoComplete="off" sx={{background:'white'}}  label="Last Name" variant="standard" />
-                <TextField sx={{background:'white'}}  label="City" variant="standard" />
-                <TextField sx={{background:'white'}}  label="Sub City" variant="standard" />
+                <TextField 
+                autoComplete="off" 
+                sx={{background:'white'}}  
+                label="Last Name"
+                variant="standard" 
+                defaultValue={profileDetail?.lastName}
+                />
+                <TextField 
+                sx={{background:'white'}}  
+                label="City" 
+                variant="standard" 
+                defaultValue={profileDetail?.city}
+                />
+                <TextField 
+                sx={{background:'white'}}  
+                label="Sub City" 
+                variant="standard" 
+                defaultValue={profileDetail?.subCity}
+                />
                 </Box>
                 <Box sx={{display:'flex',gap:2,flexDirection:smallScreen?'column':'row'}}>
-                <TextField sx={{background:'white'}}  label="Password" variant="standard" type="password" />
-                <TextField sx={{background:'white'}}  label="Region" variant="standard" />
-                <TextField sx={{background:'white'}}  label="Woreda" variant="standard" />
+                <TextField 
+                sx={{background:'white'}}  
+                label="Password" 
+                variant="standard" 
+                type="password" 
+                />
+                <TextField 
+                sx={{background:'white'}}
+                label="Region" 
+                variant="standard" 
+                defaultValue={profileDetail?.region}
+                />
+                <TextField 
+                sx={{background:'white'}}  
+                label="Wereda" 
+                variant="standard" 
+                defaultValue={profileDetail?.wereda}
+                />
                 </Box>
                 <Button sx={{alignSelf:smallScreen?'center':'flex-end',color:'white',mt:smallScreen?1:0}} size="small" variant="contained">
                     Save Changes
@@ -164,7 +404,7 @@ const theme = useTheme()
         </CardContent>
     </Card>
     )
-   }
+   } */}
    <Box sx={{display:'flex',alignItems:'center',gap:smallScreen?1:3,m:smallScreen?0:2,mt:smallScreen?2:5}}>
     <Box 
     onClick={
@@ -271,6 +511,17 @@ const theme = useTheme()
             <Packages/>
             )
         }
+        {
+           notificationSnackbarOpen&&(
+            <CustomAlert
+            open={notificationSnackbarOpen}
+            handleSnackBarClose = {handleNotificationSnackbarClose}
+            severity={'success'}
+            successMessage="Profile Successfully updated"
+            errorMessage={userMutation.error?.message}
+            />
+           )
+          }
     </>
     )
 }

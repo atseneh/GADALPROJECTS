@@ -1,9 +1,15 @@
 import axios from 'axios'
 import BASE_URL from '../apiConfig'
-async function getUsersPackage(userId:string){
+async function getUsersPackage(){
+const token = localStorage.getItem('token')
 try {
     const {data} = await axios.get(
-        `${BASE_URL}packages?user=${userId}`
+        `${BASE_URL}usersPackage`,
+        {
+            headers:{
+                Authorization:`Bearer ${token}`
+            }
+         }
     )
     return data
 } catch (error:any) {

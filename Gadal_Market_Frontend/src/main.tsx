@@ -33,6 +33,9 @@ import YourFav from './routes/yourFavorites.tsx';
 import Categories from './routes/categories.tsx';
 import Messages from './routes/messages/index.tsx';
 import PackageSubscription from './routes/packageSubscription.tsx';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+import SocketContext from './components/context/socketContext.tsx';
 TimeAgo.addDefaultLocale(en)
 const queryClient = new QueryClient()
 const router = createBrowserRouter([
@@ -120,7 +123,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
      <CartContext>
      <ThemeProvider theme={theme}>
     <QueryClientProvider client={queryClient}>
-    <RouterProvider router={router}/>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+     <SocketContext>
+     <RouterProvider router={router}/>
+     </SocketContext>
+    </LocalizationProvider>
     </QueryClientProvider>
   </ThemeProvider>
      </CartContext>

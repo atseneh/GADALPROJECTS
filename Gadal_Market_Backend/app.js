@@ -40,6 +40,7 @@ const packageRouter = require('./routes/package');
 const packageDefinitionRouter = require('./routes/packageDefinition');
 const otpRouter = require('./routes/otp');
 const postTypeDefintionRouter = require('./routes/postTypeDefinition');
+const authRouter = require('./routes/auth')
 mongoose.connect(
     process.env.DATABASE_URL,
     {useNewUrlParser:true,dbName:'Gadal_Market'},
@@ -74,8 +75,9 @@ app.use('/api', packageRouter);
 app.use('/api', packageDefinitionRouter);
 app.use('/api', otpRouter);
 app.use('/api', postTypeDefintionRouter);
-
+app.use('/api',authRouter)
 var server = app.listen(process.env.PORT,async()=>{
     console.log(`Server started on port ${process.env.PORT}`)
 })
-socketController.initSocket(server);
+const io = socketController.initSocket(server);
+module.exports = io;

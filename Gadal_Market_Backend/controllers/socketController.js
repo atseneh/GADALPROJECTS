@@ -9,35 +9,35 @@ const initSocket = (server) => {
       credentials: true,
     },
   });
-
-  global.onlineUsers = new Map();
-
+  io.use((socket, next) => {
+    const userId = socket.handshake.auth.userId;
+    socket.userId = userId;
+    next();
+  });
   io.on("connection", (socket) => {
-    global.chatSocket = socket;
-
-    // Notify other users that this user is online
-    io.emit("user-online", socket.id);
-
-    socket.on("add-user", (userId) => {
-      onlineUsers.set(userId, socket.id);
+    console.log(`user connected with user id ${socket.userId}`)
+    socket.emit("session", {
+      userId: socket.userId,
     });
-
-    socket.on("send-msg", (data) => {
-      const sendUserSocket = onlineUsers.get(data.to);
-      if (sendUserSocket) {
-        socket.to(sendUserSocket).emit("msg-receive", data.msg);
-      }
+    socket.join(socket.userId)
+    let users = [];
+    for (let [id, socket] of io.of("/").sockets) {
+      users.push(socket.userId);
+    }
+    io.of('/').emit("users", users);
+    //  socket.on('join', (username) => {
+    //  socket.username = username;
+    //  console.log(`${username} joined the chat`);
+    //  io.emit('message', { user: 'admin', text: `${username} has joined the chat` });
+    // });
+    socket.on('sendMessage', (message) => {
+      console.log(`Message received: ${message} from ${socket.id}`);
+      io.emit('message', { user: socket.username, text: message });
     });
-
     socket.on("disconnect", () => {
-      // Remove the user from the online users list when they disconnect
-      onlineUsers.forEach((value, key) => {
-        if (value === socket.id) {
-          onlineUsers.delete(key);
-          // Notify other users that this user is offline
-          io.emit("user-offline", socket.id);
-        }
-      });
+      console.log(`User disconnected ${socket.userId}`);
+      io.of('/').emit('users',users.filter(user=>user !== socket.userId))
+    // io.emit('message', { user: 'admin', text: `${socket.username} has left the chat` });
     });
   });
 };

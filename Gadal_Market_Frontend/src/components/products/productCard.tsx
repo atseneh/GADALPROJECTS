@@ -11,6 +11,7 @@ export default function ProductCard(props:{data:any}){
 const {data} = props 
 const smallScreen = useSmallScreen()
 const queryClient = useQueryClient()
+const loggedInUserId = localStorage.getItem('userId')
 const favMutation = useMutation({
     mutationFn:addProductToFav,
     mutationKey:['addToFav'],
@@ -54,7 +55,7 @@ const favMutation = useMutation({
                 <IconButton
                 onClick={(e)=>{
                     e.preventDefault()
-                    if(favMutation.isPending || data?.likedBy?.includes('653f2561c250b545217d192b')){
+                    if(favMutation.isPending || data?.likedBy?.includes(loggedInUserId)){
                         return;
                     }
 
@@ -72,8 +73,8 @@ const favMutation = useMutation({
                     border: '2px solid white',
                     borderRadius: '50%',
                     padding: '5px',
-                    background:data?.likedBy?.includes('653f2561c250b545217d192b')?'rgb(255 170 1)':'white',
-                    color:data?.likedBy?.includes('653f2561c250b545217d192b')?'white':"black"
+                    background:data?.likedBy?.includes(loggedInUserId)?'rgb(255 170 1)':'white',
+                    color:data?.likedBy?.includes(loggedInUserId)?'white':"black"
                 }}
                 fontSize='small'/>
                 </IconButton>

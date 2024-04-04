@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const User = require("../models/user.model");
-const Product = require("../models/product.model")
+const Product = require("../models/product.model");
+const verifyToken = require('../verifyToken');
 router.post('/users', async (req, res) => {
     try {
       const newUser = new User(req.body);
@@ -11,11 +12,12 @@ router.post('/users', async (req, res) => {
       res.status(400).json({ error: error.message });
     }
   });
-router.put('/users/addToFav/:userId/:productId',async (req,res)=>{
+router.put('/users/addToFav/:productId',verifyToken,async (req,res)=>{
   try {
-  const {userId,productId} = req.params
-  const updatedUser = await User.findByIdAndUpdate(userId,{$push:{favourites:productId}},{new:true})
-  const updatedProduct = await Product.findByIdAndUpdate(productId,{$push:{likedBy:userId}},{new:true})
+  const {productId} = req.params;
+  const {_id} = req.user;
+  const updatedUser = await User.findByIdAndUpdate(_id,{$push:{favourites:productId}},{new:true})
+  const updatedProduct = await Product.findByIdAndUpdate(productId,{$push:{likedBy:_id}},{new:true})
   if(updatedUser && updatedProduct){
     res.status(200).send('Successefully Added to Fav')
   }
@@ -36,7 +38,7 @@ router.get('/users', async (req, res) => {
 
     // Pagination
     const page = parseInt(req.query.pageNum) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 4;  
+    const pageSize = parseInt(req.query.pageSize) || 10;  
     const skip = (page - 1) * pageSize;
 
     const users = await User.find(filter)
@@ -49,31 +51,37 @@ router.get('/users', async (req, res) => {
   }
 });
 
-router.get('/users/favorites/:userId',async (req,res)=>{
+router.get('/users/favorites',verifyToken,async (req,res)=>{
   try {
-    const {userId} = req.params
-    const favorites = await User.findById(userId,{recordStatus:1}).select('favourites').populate('favourites')
+    const {_id} = req.user
+    const favorites = await User.findById(_id,{recordStatus:1}).select('favourites').populate('favourites')
     res.json(favorites)
   } catch (error) {
     console.log(error)
     res.status(500).json({ error: 'Internal server error' });
   }
 })
-  router.get('/users/:id', async (req, res) => {
+  router.get('/userProfileDetail',verifyToken, async (req, res) => {
+    const {_id} = req.user
+    const productsPosted = await Product.find({
+      consignee:_id
+    })
     try {
-      const user = await User.findById(req.params.id);
+      let user = await User.findById(_id);
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
+      user.noOfAds = 33
       res.json(user);
     } catch (error) {
       res.status(500).json({ error: 'Internal server error' });
     }
   });
   
-  router.put('/users/:id', async (req, res) => {
+  router.put('/users',verifyToken, async (req, res) => {
+    const {_id} = req.user
     try {
-      const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {
+      const updatedUser = await User.findByIdAndUpdate(_id, req.body, {
         new: true,
       });
       if (!updatedUser) {

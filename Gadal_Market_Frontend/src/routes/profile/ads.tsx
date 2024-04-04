@@ -17,11 +17,7 @@ const [pageNumber, setPageNumber] = useState(1);
 const [pageSize, setPageSize] = useState(5);
 const {data:yourAds,isLoading} = useQuery({
     queryKey:['products',pageSize,pageNumber],
-    queryFn:()=>getProducts({
-       consignee:localStorage.getItem('userId') as string,
-       pageSize,
-       pageNumber,
-    })
+    queryFn:()=>getUsersAds(localStorage.getItem('userId') as string)
    })
 const [activeTab,setActiveTab] = useState(0)
 const handleTabSelection = (tab:number)=>{
@@ -89,6 +85,7 @@ const handlePaginationChange = (event: React.ChangeEvent<unknown>, value: number
                     count={Math.ceil(yourAds?.metadata?.totalProducts/pageSize)}
                     page={pageNumber}
                     onChange={handlePaginationChange}
+                    sx={{mt:4,}}
                   />
                   )
                 }

@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Product = require("../models/product.model");
 const multer = require('multer');
-
+const sharp = require('sharp')
+const path = require('path');
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'images/'); 
@@ -12,11 +13,13 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storage })
-
+const upload = multer({dest:'/images'})
 router.post('/products', upload.array('images', 10), async (req, res) => {
   try {
+   
     // Extract all fields from req.body
+    const watermarkPath = path.join(__dirname,'..','images', 'watermark.svg');
+    // '/images/watermark.svg'
     const {
       title,
       description,
@@ -37,14 +40,39 @@ router.post('/products', upload.array('images', 10), async (req, res) => {
       youtubeLink,
     } = req.body;
 
-    let uploadedImages;
+    let uploadedImages = [];
     let productAttributes = []
     if (req.files) {
-      uploadedImages = req.files.map(file => file.filename);
+     
+      // webpBuffers = req.files.map(async (file) =>{
+      //   await sharp(file.path).webp().toBuffer();
+      // });
+     // uploadedImages = req.files.map(file=> `images/${file.filename}-${Date.now()}.webp`)
+      for (const file of req.files) {
+        // Use Sharp to convert the uploaded image to WebP format
+        const webpBuffer = await sharp(file.path).webp().toBuffer();
+        // Save the converted image to disk
+        const imagePath = `images/${file.filename}-${Date.now()}.webp`;
+        try {
+          await sharp(webpBuffer)
+              .composite([{
+                  input: watermarkPath,
+                  gravity: 'southeast',
+                  blend: 'over',
+              }])
+              .toFile(imagePath);
+              uploadedImages.push(imagePath)
+      } catch (err) {
+          console.error("Error processing image:", err);
+          uploadedImages = req.files.map(file=> `images/${file.filename}-${Date.now()}.webp`)
+      }      
+    }
+
     } 
     if(req.body.attributes){
       productAttributes = JSON.parse(req.body.attributes)
     }
+    console.log(uploadedImages)
     const newProduct = new Product({
       title,
       description,
@@ -61,15 +89,18 @@ router.post('/products', upload.array('images', 10), async (req, res) => {
       brand,
       model,
       location,
-      subCity,
-      wereda,
+      subCity:  "653f1f5e7777ec958cfc41f6",
+      wereda : "653f216c6aba4eae54a6bbe6",
       transactionType:parseInt(transactionType),
       youtubeLink,
       viewCount:0
     });
-
+  
+      
     const savedProduct = await newProduct.save();
     res.status(201).json(savedProduct);
+
+    
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -165,6 +196,7 @@ router.get('/products', async (req, res) => {
         sortQuery = { [sortCriteria]: -1 };
         break;
     }
+    
 
     const productsQuery = filterQuery && Object.keys(filterQuery).length > 0
       ? Product.find(filterQuery).populate('category consignee currency brand model location subCity wereda switch')

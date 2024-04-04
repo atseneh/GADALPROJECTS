@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Package = require('../models/package.model'); 
+const verifyToken = require('../verifyToken');
 
 router.post('/package', async (req, res) => {
   try {
@@ -23,7 +24,15 @@ router.get('/packages', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
+router.get('/usersPackage', verifyToken, async (req, res) => {
+  const {_id} = req.user
+  try {
+    const packages = await Package.find({user:_id}).populate('packageDefinition');
+    res.status(200).json(packages);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 router.get('/packages/:id', async (req, res) => {
   try {
     const pack = await Package.findById(req.params.id);

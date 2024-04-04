@@ -9,12 +9,14 @@ import Link from '@mui/material/Link';
 import { useNavigate } from 'react-router-dom';
 import AccountMenu from '../common/accountMenu';
 import CartMenu from '../common/cartMenu';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
+import { SocketCon } from '../context/socketContext';
 export default function TopNavDesktop(){
-    const loggedIn = true
+    const loggedIn = localStorage.getItem('token')
     const theme =  useTheme()
     const navigate = useNavigate()
     const [searchTerm,setSearchTerm] = useState('')
+    const {unreadCount} = useContext(SocketCon)
     return (
       <Card sx={{p:2}}>
           <Box
@@ -67,22 +69,60 @@ export default function TopNavDesktop(){
          <Box 
           sx={{display:'flex',gap:1,alignItems:'center'}}
          >
-            <IconButton >
+             {
+              loggedIn ? (
+                <>
+                 <IconButton >
                 <Badge badgeContent={4} color='primary'>
                 <NotificationsNoneOutlinedIcon fontSize='large'/>
                 </Badge>
             </IconButton>
+            <Badge
+            badgeContent={unreadCount}
+            color='primary'
+            >
             <IconButton 
             onClick={()=>navigate('/messages')}
             >
                 <ChatBubbleOutlineOutlinedIcon fontSize='large'/>
             </IconButton>
+            </Badge>
             <IconButton 
             onClick={()=>navigate('/yourFavs')}
             >
                 <FavoriteBorderOutlinedIcon fontSize='large'/>
             </IconButton>
            <CartMenu/>
+                </>
+              ):
+              (
+                <Stack
+                direction={'row'}
+                alignItems={'center'}
+                // spacing={1}
+                >
+                  <Button
+                  size='large'
+                  onClick={()=>{
+                    navigate('/login')
+                  }}
+                  >
+                    Login
+                  </Button>
+                   <Typography>
+                    |
+                   </Typography>
+                  <Button
+                  size='large'
+                  onClick={()=>{
+                    navigate('/register')
+                  }}
+                  >
+                    Registration
+                  </Button>
+                </Stack>
+              )
+             }
                 <Button
                 variant='contained'
                 sx={{
@@ -92,7 +132,13 @@ export default function TopNavDesktop(){
                     width:100,
                     borderRadius:'8px'
                 }}
-                onClick={()=>navigate('/post')}
+                onClick={()=>{
+                  if(loggedIn) {
+                    navigate('/post')
+                    return;
+                  }
+                  navigate('/login')
+                }}
                 >
                     <AddIcon/>
                     <Typography>Post</Typography>
@@ -102,7 +148,7 @@ export default function TopNavDesktop(){
                   <AccountMenu/>
                 ):
                 (
-                    <Button onClick={()=>navigate('/login')}  variant='text'>Sign in</Button>
+                  null
                 )
             }
          </Box>

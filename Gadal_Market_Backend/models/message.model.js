@@ -2,8 +2,16 @@ const mongoose = require('mongoose')
 const {Schema} = mongoose
 const conversationSchema = new Schema({
   message:String, // could be text voice or image 
-  isFromInterestedParty:Boolean,
+  // isFromInterestedParty:Boolean,
   seen:Boolean,
+  sender:{
+    type:Schema.Types.ObjectId,
+    ref:'User'
+  },
+  receiver:{
+    type:Schema.Types.ObjectId,
+    ref:'User'
+  }
 },{
   timestamps:true
 })

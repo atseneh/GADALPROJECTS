@@ -1,4 +1,4 @@
-import { Button, Divider, Grid, Rating, Skeleton, Stack, Typography } from "@mui/material";
+import { Button, Divider, Grid, Rating, Skeleton, Stack, TextField, Typography } from "@mui/material";
 import  Box  from "@mui/material/Box";
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import theme from "../../theme";
@@ -15,17 +15,52 @@ import formatNumbers from "../../utils/helpers/formatNumbers";
 import ReactTimeAgo from "react-time-ago";
 import getServiceTypeDescription from "../../utils/helpers/getServiceTypeDescription";
 import ProductInfoSkeleton from "./productInfoSkeleton";
-import { NavLink } from "react-router-dom";
-import React, { useContext, useEffect } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import React, { useContext, useEffect, useState } from "react";
 import { useMutation,QueryClient} from "@tanstack/react-query";
 import addProductToFav from "../../api/products/addProductToFav";
 import { context } from "./cartContext";
 import CustomAlert from "./customAlert";
 import getTransactionTypeDescription from "../../utils/helpers/getTransactionTypeDescription";
+import createMessage from "../../api/messages/startChat";
 export default function ProductInfo(props:{data:any,loading:boolean}){
     const smallScreen = useSmallScreen()
     const {data,loading} = props
+    const navigate = useNavigate();
+    const isMyProduct = localStorage.getItem('userId') === data?.consignee?._id
     const [showPhone,setShowPhone] = React.useState(false)
+    const [startChat,setStartChat] = useState(false)
+    const [message,setMessage] = useState('')
+    const token = localStorage.getItem('token')
+    const [messageNotification,setMessageNotification] = React.useState(false)
+    const messageMuation = useMutation({
+        mutationFn:createMessage,
+        mutationKey:['create_message'],
+        onSuccess:()=>{
+        setMessageNotification(true)
+        setStartChat(false)
+        }
+    })
+    const handleChatStart = ()=>{
+         if(!token){
+            navigate('/login')
+            return;
+         }
+         setStartChat(true)
+    }
+    const handleMessageSent = (mes:string)=>{
+        if(!mes || messageMuation.isPending){
+            return;
+        }
+        const payload = {
+            product:data?._id,
+            owner:data?.consignee?._id,
+            buyer:localStorage.getItem('userId') as string,
+            message
+        }
+        messageMuation.mutate(payload)
+        setMessage('')
+    }
     const {addToCart} = useContext(context)
     const favMutation = useMutation({
         mutationFn:addProductToFav,
@@ -36,7 +71,7 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
     })
     const [notificationSnackbarOpen,setNotificationSnackbarOpen] = React.useState(false)
     const handleNotificationSnackbarClose = ()=>{
-      setNotificationSnackbarOpen(false)
+        setNotificationSnackbarOpen(false)
     }
     return (
        <>
@@ -157,97 +192,155 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                     }
                 </Typography>
                  </Box>
-                 <Button
-                 size="small" 
-                 sx={{color:'black',background:'rgb(254 222 161)'}}
-                 variant="outlined"
-                 >
-                <AddIcon sx={{fontSize:'1rem'}} fontSize="small"/>
-                Follow</Button>
-                </Box>
-                <Stack spacing={2} direction={smallScreen?'column':'row'} sx={{ml:smallScreen?4:0,mr:smallScreen?4:0}}>
-                <Button
-                 onClick={()=>{
-                    addToCart({...data,engagmentFee:500})
-                    setNotificationSnackbarOpen(true)
-                 }}
-                  sx={{
-                    color:'white',fontSize:'0.75rem',
-                    fontWeight:'',
-                   
-                }}
-                 variant="contained"
-                 >
-                <ShoppingCartOutlinedIcon sx={{fontSize:'1rem',mr:.5}} fontSize="small"/>
-                Add to Cart</Button>
-                <Button
-                color="inherit"  
-                onClick={(e)=>{
-                    e.preventDefault()
-                    if(favMutation.isPending || data?.likedBy?.includes('653f2561c250b545217d192b')){
-                        return;
-                    }
-
-                    favMutation.mutate(data?._id)
-                }}      
-                sx={{
-                    color:'black',fontSize:'0.75rem',
-                    background:'white',border:'1px solid #EFEFEF',
-                    ':hover':{
-                        background:'white'
-                    }
-                }}
-                 variant="contained"
-                 >
-                <FavoriteBorderOutlinedIcon  sx={{
-                    fontSize:'1rem',mr:.5,
-                    color:data?.likedBy?.includes('653f2561c250b545217d192b')?'green':'black',
-                    
-                    // background:data?.likedBy?.includes('653f2561c250b545217d192b')?'white':'black'
-                    }} fontSize="small"/>
-                Add to Favorite</Button>
-                <Button
-                color="inherit"  
-                sx={{
-                    color:'black',fontSize:'0.75rem',
-                    background:'white',border:'1px solid #EFEFEF',
-                    ':hover':{
-                        background:'white'
-                    }
-                }}
-                 variant="contained"
-                 >
-                <ChatIcon 
-                sx={{
-                    fontSize:'1rem',
-                    mr:.5,
-                    
-                }} 
-                fontSize="small"
-                />
-                Chat With Seller</Button>
-                {
-                    showPhone
-                    ?
-                    (
-                        <Typography sx={{color:theme.palette.primary.main,alignSelf:'center'}}>
-                            {
-                                data?.consignee?.phoneNumber
-                            }
-                        </Typography>
-                    ):
-                    (
+                    {
+                    !isMyProduct && (
                         <Button
-                        onClick={()=>setShowPhone(true)}
-                        sx={{color:'white',fontSize:'0.75rem',fontWeight:''}}
-                       variant="contained"
-                       >
-                      <PhoneIcon sx={{fontSize:'1rem',mr:.5}} fontSize="small"/>
-                      Show Phone</Button>
+                        size="small" 
+                        sx={{color:'black',background:'rgb(254 222 161)'}}
+                        variant="outlined"
+                        >
+                       <AddIcon sx={{fontSize:'1rem'}} fontSize="small"/>
+                       Follow
+                       </Button>
                     )
-                }
-                
-                </Stack>
+                    }
+                </Box>
+                  {
+                    !isMyProduct && (
+                        <Stack spacing={2} direction={smallScreen?'column':'row'} sx={{ml:smallScreen?4:0,mr:smallScreen?4:0}}>
+                        <Button
+                         onClick={()=>{
+                            addToCart({...data,engagmentFee:500})
+                            setNotificationSnackbarOpen(true)
+                         }}
+                          sx={{
+                            color:'white',fontSize:'0.75rem',
+                            fontWeight:'',
+                           
+                        }}
+                         variant="contained"
+                         >
+                        <ShoppingCartOutlinedIcon sx={{fontSize:'1rem',mr:.5}} fontSize="small"/>
+                        Add to Cart</Button>
+                        <Button
+                        color="inherit"  
+                        onClick={(e)=>{
+                            e.preventDefault()
+                            if(favMutation.isPending || data?.likedBy?.includes('653f2561c250b545217d192b')){
+                                return;
+                            }
+        
+                            favMutation.mutate(data?._id)
+                        }}      
+                        sx={{
+                            color:'black',fontSize:'0.75rem',
+                            background:'white',border:'1px solid #EFEFEF',
+                            ':hover':{
+                                background:'white'
+                            }
+                        }}
+                         variant="contained"
+                         >
+                        <FavoriteBorderOutlinedIcon  sx={{
+                            fontSize:'1rem',mr:.5,
+                            color:data?.likedBy?.includes('653f2561c250b545217d192b')?'green':'black',
+                            
+                            // background:data?.likedBy?.includes('653f2561c250b545217d192b')?'white':'black'
+                            }} fontSize="small"/>
+                        Add to Favorite
+                        </Button>
+                                <Button
+                                onClick={()=>{
+                                    if(!showPhone) {
+                                        setShowPhone(true)
+                                        return;
+                                    }
+                                    window.location.href = `tel:${data?.consignee?.phoneNumber}`
+                                }}
+                                sx={{color:'white',fontSize:'0.75rem',fontWeight:''}}
+                               variant="contained"
+                               >
+                              <PhoneIcon sx={{fontSize:'1rem',mr:.5}} fontSize="small"/>
+                                {
+                                    showPhone ? data?.consignee?.phoneNumber : 'Show Phone'
+                                }
+                              </Button>
+                              <Button
+                        color="inherit"  
+                        sx={{
+                            color:'black',fontSize:'0.75rem',
+                            background:'white',border:'1px solid #EFEFEF',
+                            ':hover':{
+                                background:'white'
+                            }
+                        }}
+                         variant="contained"
+                         onClick={handleChatStart}
+                         >
+                        <ChatIcon 
+                        sx={{
+                            fontSize:'1rem',
+                            mr:.5,
+                            
+                        }} 
+                        fontSize="small"
+                        />
+                        Chat With Seller
+                        </Button>
+                        </Stack>
+                    )
+                  }
+                  {
+                    startChat && (
+                   <Box
+                   sx={{
+                    p:1,
+                    display:'flex',
+                    flexDirection:'column',
+                    gap:1
+                   }}
+                   component={'form'}
+                   onSubmit={(e)=>{
+                    e.preventDefault();
+                    handleMessageSent(message)
+                   }}
+                   >
+                    <TextField
+                    label="Type a message"
+                    sx={{
+                        background:'white'
+                    }}
+                    value={message}
+                    onChange={(e)=>setMessage(e.target.value)}
+                    />
+                    <Stack
+                    direction={'row'}
+                    spacing={1}
+                    alignItems={'center'}
+                    >
+                    <Button
+                    type="submit"
+                    size="small"
+                    variant="contained"
+                    sx={{
+                        color:'white'
+                    }}
+                    disabled={messageMuation.isPending}
+                    >
+                     Send
+                    </Button> 
+                    <Button
+                    color="inherit"
+                    onClick={()=>{
+                        setStartChat(false)
+                    }}
+                    >
+                        Cancel
+                    </Button>
+                    </Stack>
+                    </Box>
+                    )
+                  }
                 <Box sx={{mt:1,display:'flex',alignItems:'center',gap:2}}>
                     <Typography fontSize={smallScreen?'0.7rem':'1.1rem'} sx={{color:'#3A3A3A'}} fontWeight={'bold'}>
                        {
@@ -287,7 +380,16 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
             handleSnackBarClose = {handleNotificationSnackbarClose}
             severity={'success'}
             successMessage="Item Successfully Added To Cart"
-            // errorMessage={postMutation.error as string}
+            />
+           )
+          }
+           {
+           messageNotification&&(
+            <CustomAlert
+            open={messageNotification}
+            handleSnackBarClose = {()=>setMessageNotification(false)}
+            severity={'success'}
+            successMessage="Message Successfully Sent"
             />
            )
           }

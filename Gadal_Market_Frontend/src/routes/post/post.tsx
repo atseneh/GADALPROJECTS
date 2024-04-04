@@ -155,7 +155,7 @@ export default function Post(){
       formData.append('previousPrice',price)
       formData.append('category',category?._id)
       formData.append('isFixed',`${fixed}`)
-      formData.append('consignee','653f2561c250b545217d192b')
+      formData.append('consignee',localStorage.getItem('userId') as string)
       formData.append('location',location?._id)
       formData.append('subCity',subCity?._id)
       formData.append('wereda',wereda?._id)
@@ -236,7 +236,8 @@ export default function Post(){
                 <form
                 onSubmit={(e)=>{
                   e.preventDefault()
-                  handleClickOpen()
+                  // handleClickOpen()
+                  handlePost(3)
                 }}
                 >
                 <Stack spacing={1} sx={{mt:1}}>

@@ -11,11 +11,10 @@ function packageIsExpired(endDateString: string): boolean {
     return date < today;
 }
 export default function Packages(){
-    const userId = localStorage.getItem('userId')
     const theme = useTheme()
     const {data:userPackages,isLoading} = useQuery({
-        queryKey:['users_package',userId],
-        queryFn:()=>getUsersPackage(userId!)
+        queryKey:['users_package'],
+        queryFn:()=>getUsersPackage()
     })
     return(
       <Card>

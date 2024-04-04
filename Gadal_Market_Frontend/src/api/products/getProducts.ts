@@ -10,6 +10,7 @@ interface QueryData {
     pageSize?:number,
     pageNumber?:number,
     consignee?:string,
+    sortCriteria?:string,
 }
 async function getProducts(queryData:QueryData){
 const {
@@ -21,7 +22,8 @@ const {
     attributes,
     pageNumber,
     pageSize,
-    consignee
+    consignee,
+    sortCriteria
 } = queryData
 let url = `products?recordStatus=1`
 if(category){
@@ -32,6 +34,9 @@ if(transactionType){
 }
 if(productType){
     url = `${url}&productType=${productType}`
+}
+if(sortCriteria){
+    url = `${url}&sortCriteria=${sortCriteria}`
 }
 if(minPrice&&maxPrice){
     url = `${url}&minPrice=${minPrice}&maxPrice=${maxPrice}`

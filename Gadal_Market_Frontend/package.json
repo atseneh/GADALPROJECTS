@@ -2,7 +2,6 @@
   "name": "gadalmarketfrontend",
   "private": true,
   "version": "0.0.0",
-  "homepage": ".",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -16,9 +15,11 @@
     "@fontsource/roboto": "^5.0.8",
     "@mui/icons-material": "^5.14.13",
     "@mui/material": "^5.14.13",
+    "@mui/x-date-pickers": "^7.0.0",
     "@szhsin/react-menu": "^4.1.0",
     "@tanstack/react-query": "^5.8.2",
     "axios": "^1.6.1",
+    "dayjs": "^1.11.10",
     "emoji-picker-react": "^4.7.17",
     "javascript-time-ago": "^2.5.9",
     "react": "^18.2.0",
@@ -27,6 +28,7 @@
     "react-router-dom": "^6.17.0",
     "react-time-ago": "^7.2.1",
     "react-to-print": "^2.15.1",
+    "socket.io-client": "^4.7.5",
     "yet-another-react-lightbox": "^3.14.0"
   },
   "devDependencies": {

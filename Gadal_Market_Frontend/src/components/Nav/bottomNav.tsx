@@ -13,7 +13,7 @@ function BottomNav() {
     const location = useLocation()
     const {pathname} = location
     // const theme = useTheme()
-    const [active,setActive] = useState('/')
+    const loggedIn = localStorage.getItem('token')
   return (
     <>
     
@@ -72,13 +72,20 @@ function BottomNav() {
               
             }}
             onClick = {()=>{
+              if(loggedIn){
               navigate('/post')
+              return;
+              }
+              navigate('/login')
             }}
           >
             <AddCircleOutlineOutlinedIcon color="primary"/>
             <small style={{ fontWeight: "bold" }}>Post</small>
           </Button>
-          <Button
+            {
+              loggedIn ? (
+                <>
+                <Button
             sx={{
               display: "flex",
               flexDirection: "column",
@@ -93,7 +100,6 @@ function BottomNav() {
             <FavoriteBorderOutlinedIcon  />
             <small style={{ fontWeight: "bold" }}>Favourites</small>
           </Button>
-          
           <Button
           sx={{
             display: "flex",
@@ -102,11 +108,17 @@ function BottomNav() {
             cursor:'pointer',
             color:pathname==='/messages'?'primary':'inherit'
           }}
-          // onClick = {()=>handleNavigationItemClick(5)}
+          onClick = {()=>navigate('/messages')}
         >
           <ChatBubbleOutlineOutlinedIcon  />
           <small style={{ fontWeight: "bold" }}>Messages</small>
         </Button>
+                </>
+              ):
+              (
+                null
+                )
+            }
         </Box>
       </Card>
         )

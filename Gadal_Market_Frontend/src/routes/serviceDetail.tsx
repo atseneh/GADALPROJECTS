@@ -66,6 +66,7 @@ export default function ServiceDetail(){
   const minPrice = query.get('minPrice')
   const maxPrice = query.get('maxPrice')
   const transaction = query.get('transaction')
+  const sortCriteria =  query.get('sortCriteria')
   const smallScreen = useSmallScreen()
   const {category,service} = useParams()
   const [searchParams] = useSearchParams();
@@ -88,7 +89,7 @@ export default function ServiceDetail(){
   })
   const [localTransactionType,setLocalTransactionType] = useState<'rent'|'sale'>(transaction as 'sale'|'rent')
   const {data:products,isLoading:productsLoading} = useQuery({
-    queryKey:['products',service,localTransactionType,categoryId,maxPrice,minPrice,selcetedAttributes,pageSize,pageNumber],
+    queryKey:['products',service,localTransactionType,categoryId,maxPrice,minPrice,selcetedAttributes,pageSize,pageNumber,sortCriteria],
     queryFn:()=>getProducts({
        transactionType:transactionTypeEnums[localTransactionType],
        productType:ServiceEnums[capitalizeFirstLetter(service as string)],
@@ -98,6 +99,7 @@ export default function ServiceDetail(){
        attributes:selcetedAttributes,
        pageSize,
        pageNumber,
+       sortCriteria:sortCriteria as string,
     })
    })
   const {data:priceRange} = useQuery({

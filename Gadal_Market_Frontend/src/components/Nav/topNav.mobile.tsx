@@ -1,19 +1,21 @@
-import {Box,IconButton,Badge,Card} from '@mui/material'
+import {Box,IconButton,Badge,Card, Stack, Button, Typography} from '@mui/material'
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
-import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import SearchIcon from '@mui/icons-material/Search'
 import TextField from '@mui/material/TextField';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import Link from '@mui/material/Link';
 import AccountMenu from '../common/accountMenu';
 import CartMenu from '../common/cartMenu';
+import { useNavigate } from 'react-router-dom';
+
 export default function TopNavMobile(){
     const [showSearch,setShowSearch] = useState(false)
+    const navigate = useNavigate();
+    const loggedIn = localStorage.getItem('token')
     const handleSearchClick = ()=>{
         setShowSearch(!showSearch)
     }
     let deferredPrompt: any;
-
     useEffect(()=>{    
         const handleBeforeInstallPrompt = (event: any) => {
           event.preventDefault();
@@ -55,26 +57,57 @@ export default function TopNavMobile(){
             )
          }
          </Box>
-         <Box 
-          sx={{display:'flex',gap:.5,alignItems:'center'}}
-         >
-             <IconButton
-             onClick={handleSearchClick}
-             >
-                <SearchIcon fontSize='large'/>
-            </IconButton>
-            <IconButton
-            onClick={handleClick}
-            >
-                <Badge badgeContent={4} color='primary'>
-                <NotificationsNoneOutlinedIcon fontSize='large'/>
-                </Badge>
-            </IconButton>
-           <CartMenu/>
-            <IconButton >
-                <AccountMenu/>
-            </IconButton>
-         </Box>
+         {
+          loggedIn ? (
+            <Box 
+            sx={{display:'flex',gap:.5,alignItems:'center'}}
+           >
+               <IconButton
+               onClick={handleSearchClick}
+               >
+                  <SearchIcon fontSize='large'/>
+              </IconButton>
+              <IconButton
+              onClick={handleClick}
+              >
+                  <Badge badgeContent={4} color='primary'>
+                  <NotificationsNoneOutlinedIcon fontSize='large'/>
+                  </Badge>
+              </IconButton>
+             <CartMenu/>
+              <IconButton >
+                  <AccountMenu/>
+              </IconButton>
+           </Box>
+          ):
+          (
+            <Stack
+                direction={'row'}
+                alignItems={'center'}
+                // spacing={1}
+                >
+                  <Button
+                  size='large'
+                  onClick={()=>{
+                    navigate('/login')
+                  }}
+                  >
+                    Login
+                  </Button>
+                   <Typography>
+                    |
+                   </Typography>
+                  <Button
+                  size='large'
+                  onClick={()=>{
+                    navigate('/register')
+                  }}
+                  >
+                    Registration
+                  </Button>
+                </Stack>
+          )
+         }
         </Box>
       </Card>
     )

@@ -1,12 +1,13 @@
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import IconButton from '@mui/material/IconButton';
-import React from 'react';
+import React, { useContext } from 'react';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import { useNavigate } from 'react-router-dom';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import { socket } from '../../api/socket';
 export default function AccountMenu(){
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
@@ -17,6 +18,11 @@ export default function AccountMenu(){
       const handleClose = () => {
         setAnchorEl(null);
       };
+    const handleLogout = ()=>{
+      localStorage.clear();
+      socket.disconnect();
+      navigate('/')
+    }
     return(
         <>
         <IconButton
@@ -79,6 +85,7 @@ export default function AccountMenu(){
    </MenuItem>
    <MenuItem onClick={()=>{
     handleClose()
+    handleLogout();
    }}>
    <Box sx={{display:'flex',alignItems:'center',gap:1}}>
     <img width={20} src='/images/login.svg'/>

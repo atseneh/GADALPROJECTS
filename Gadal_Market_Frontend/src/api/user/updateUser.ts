@@ -1,12 +1,11 @@
 import axios from 'axios'
 import BASE_URL from '../apiConfig'
 
-async function addProductToFav(productId:string){
+async function updateUser(userData:any){
 const token = localStorage.getItem('token')
 try {
     const {data} = await axios.put(
-        `${BASE_URL}users/addToFav/${productId}`,
-        null,
+        `${BASE_URL}users`,userData,
         {
             headers:{
                 Authorization:`Bearer ${token}`
@@ -19,4 +18,4 @@ try {
     throw new Error(error?.response.data.error)
 }
 }
-export default addProductToFav  
+export default updateUser  

@@ -13,9 +13,26 @@ const userSchema = Schema({
   },
   phoneNumber: {
     type: String,
+    required:true
+    // validate:[
+    //   {
+    //     validator:function(value){
+    //       return (value || this.email)
+    //     },
+    //     message:'Either emial or phone number is required'
+    //   }
+    // ]
   },
   email: {
     type: String,
+    // validate:[
+    //   {
+    //     validator:function(value){
+    //       return (value || this.phoneNumber)
+    //     },
+    //     message:'Either email or phone number is requried'
+    //   }
+    // ]
   },
   city: {
     type: String,
@@ -32,6 +49,9 @@ const userSchema = Schema({
   password: {
     type: String,
     required: true,
+  },
+  birthDate:{
+    type:String
   },
   isAdmin: {
     type: Boolean,
@@ -87,9 +107,6 @@ const userSchema = Schema({
       },
       message: 'Invalid Status value',
     },
-  },
-  birthDate: {
-    type: Date,
   },
 });
 
