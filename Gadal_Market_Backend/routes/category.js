@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Category = require('../models/category.modle');
 
-router.post('/categories', async (req, res) => {
+router.post('/category', async (req, res) => {
   try {
     const newCategory = await Category.create(req.body);
     res.status(201).json(newCategory);
@@ -10,7 +10,15 @@ router.post('/categories', async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
-
+router.post('/categories', async (req, res) => {
+  try {
+    const categories = req.body; // Assuming req.body is an array of category objects
+    const newCategories = await Category.create(categories);
+    res.status(201).json(newCategories);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 router.get('/categories', async (req, res) => {
   try {
     const { name, serviceId,remark, recordStatus } = req.query;

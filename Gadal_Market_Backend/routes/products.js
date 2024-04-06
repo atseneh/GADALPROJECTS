@@ -89,14 +89,12 @@ router.post('/products', upload.array('images', 10), async (req, res) => {
       brand,
       model,
       location,
-      subCity:  "653f1f5e7777ec958cfc41f6",
-      wereda : "653f216c6aba4eae54a6bbe6",
+      subCity,
+      wereda ,
       transactionType:parseInt(transactionType),
       youtubeLink,
       viewCount:0
     });
-  
-      
     const savedProduct = await newProduct.save();
     res.status(201).json(savedProduct);
 
@@ -315,5 +313,23 @@ router.delete('/products/:productId', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+router.get('/productsOnTopOfHome', async (req, res) => {
+  try {
+      let query = {
+          no_day_onTop_home: { $gt: 0 } // Filtering products with no_day_onTop_home greater than zero
+      };
 
+      let sort = {
+          no_day_onTop_home: -1, // Sorting by no_day_onTop_home in descending order
+          date: -1 // Sorting by date in descending order (latest first) if no_day_onTop_home values are equal
+      };
+
+      const products = await Product.find(query).sort(sort);
+
+      res.json(products);
+  } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Server Error" });
+  }
+});
 module.exports = router;

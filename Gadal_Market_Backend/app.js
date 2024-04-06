@@ -43,7 +43,7 @@ const postTypeDefintionRouter = require('./routes/postTypeDefinition');
 const authRouter = require('./routes/auth')
 mongoose.connect(
     process.env.DATABASE_URL,
-    {useNewUrlParser:true,dbName:'Gadal_Market'},
+    {useNewUrlParser:true,dbName:'Gadal_Market2'},
     console.log('conneted to db')
 )
 // serve images 
