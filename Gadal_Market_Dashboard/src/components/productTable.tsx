@@ -159,7 +159,7 @@ export default function ProductTable(props:ProductTableProps){
          )
          :
          (
-            
+            Array.isArray(products) && products.length > 0 ? (
             products?.map((product:any,index:number)=>(
                 <React.Fragment key={index}>
                 <Grid container spacing={1} alignItems={'center'}>
@@ -234,6 +234,9 @@ export default function ProductTable(props:ProductTableProps){
                 <Divider/>
                 </React.Fragment>
             ))
+            ) : (
+                <Typography variant="caption">No products found.</Typography>
+              )
          )
          }
         </Paper>
