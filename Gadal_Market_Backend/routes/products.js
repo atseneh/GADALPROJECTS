@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Product = require("../models/product.model");
+const Package = require('../models/package.model');
+const PostTypeDefinition = require('../models/postTypeDefnition.model');
 const multer = require('multer');
 const sharp = require('sharp')
 const path = require('path');
@@ -13,41 +15,58 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({dest:'/images'})
-router.post('/products', upload.array('images', 10), async (req, res) => {
+const checkPackage = async (req, res, next) => {
   try {
-   
-    // Extract all fields from req.body
+      //if validation add here
+    next();
+  } catch (error) {
+    // If any error occurs, return an error response
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+const upload = multer({dest:'/images'})
+router.post('/products', checkPackage, upload.array('images', 10), async (req, res) => {
+  try {
     const watermarkPath = path.join(__dirname,'..','images', 'watermark.svg');
     // '/images/watermark.svg'
-    const {
-      title,
-      description,
-      productType,
-      previousPrice,
-      currentPrice,
-      category,
-      postType,
-      isFixed,
-      consignee,
-      currency,
-      brand,
-      model,
-      location,
-      subCity,
-      wereda,
-      transactionType,
-      youtubeLink,
-    } = req.body;
-
+    const { title, description, productType, previousPrice, currentPrice, category, postType, isFixed, consignee, currency, brand, model, location, subCity, wereda, transactionType, youtubeLink,isPayed } = req.body;
     let uploadedImages = [];
     let productAttributes = []
+    const postTypeDefinition = await PostTypeDefinition.findById("65c8d2fc3458b4f8df0d9fae");
+    const { name, no_day_onTop_cat, no_day_onTop_home, no_day_on_Gadal } = postTypeDefinition;
+    let remainingPostsField;
+    switch (name) {
+      case "Basic":
+        remainingPostsField = 'remainingBasicPosts';
+        break;
+      case "Gold":
+        remainingPostsField = 'remainingGoldPosts';
+        break;
+      case "Premium":
+        remainingPostsField = 'remainingPremiumPosts'; 
+        break;
+      default:
+        return res.status(400).json({ error: 'Invalid product post type' });
+    }
+  
+    const activePackage = await Package.findOne({
+      user: consignee,
+      [remainingPostsField]: { $gt: 0 },
+      recordStatus: 1
+    });
+
+    if (!activePackage) {
+      req.body.isPayed = false;
+    }
+    req.body.no_day_onTop_cat = no_day_onTop_cat;
+    req.body.no_day_onTop_home = no_day_onTop_home;
+    req.body.no_day_on_Gadal = no_day_on_Gadal;
+ 
     if (req.files) {
-     
       // webpBuffers = req.files.map(async (file) =>{
       //   await sharp(file.path).webp().toBuffer();
       // });
-     // uploadedImages = req.files.map(file=> `images/${file.filename}-${Date.now()}.webp`)
+      // uploadedImages = req.files.map(file=> `images/${file.filename}-${Date.now()}.webp`)
       for (const file of req.files) {
         // Use Sharp to convert the uploaded image to WebP format
         const webpBuffer = await sharp(file.path).webp().toBuffer();
@@ -55,53 +74,52 @@ router.post('/products', upload.array('images', 10), async (req, res) => {
         const imagePath = `images/${file.filename}-${Date.now()}.webp`;
         try {
           await sharp(webpBuffer)
-              .composite([{
-                  input: watermarkPath,
-                  gravity: 'southeast',
-                  blend: 'over',
-              }])
-              .toFile(imagePath);
-              uploadedImages.push(imagePath)
-      } catch (err) {
-          console.error("Error processing image:", err);
-          uploadedImages = req.files.map(file=> `images/${file.filename}-${Date.now()}.webp`)
-      }      
+          .composite([{
+             input: watermarkPath, 
+             gravity: 'southeast', 
+             blend: 'over',
+            }])
+          .toFile(imagePath);
+          
+        } catch (error) {
+          
+        }
+        uploadedImages.push(imagePath);
+      }
+    } else {
+      const defaultImage = "images/1eedaa36ff2986a8031be9544a8af4e6-1711896958928.webp";
+      uploadedImages.push(defaultImage);
     }
+    console.log(req.body.attributes)
+    // productAttributes = req.body.attributes ? JSON.parse(req.body.attributes) : [];
+    console.log(productAttributes)
+    const newProduct = new Product({ title, description, productType: parseInt(productType), previousPrice: Number(previousPrice), currentPrice: Number(currentPrice), category, postType: "65c8d2fc3458b4f8df0d9fae", productImages: uploadedImages, attributes: productAttributes, isFixed: isFixed === 'true' ? true : false, consignee, currency, brand, model, location, subCity, wereda, transactionType: parseInt(transactionType), youtubeLink, viewCount: 0 ,no_day_onTop_cat,no_day_onTop_home,no_day_on_Gadal,isPayed});
 
-    } 
-    if(req.body.attributes){
-      productAttributes = JSON.parse(req.body.attributes)
-    }
-    console.log(uploadedImages)
-    const newProduct = new Product({
-      title,
-      description,
-      productType:parseInt(productType),
-      previousPrice:Number(previousPrice),
-      currentPrice:Number(currentPrice),
-      category,
-      postType:parseInt(postType),
-      productImages: uploadedImages, 
-      attributes:productAttributes,
-      isFixed:isFixed==='true'?true:false,
-      consignee,
-      currency,
-      brand,
-      model,
-      location,
-      subCity,
-      wereda ,
-      transactionType:parseInt(transactionType),
-      youtubeLink,
-      viewCount:0
-    });
     const savedProduct = await newProduct.save();
-    res.status(201).json(savedProduct);
-
-    
+      // Update remaining posts count in the package
+      console.log(savedProduct)
+    if (!savedProduct.isPayed) {
+      return res.status(200).json({ productId: savedProduct._id });
+    }
+    else {
+      console.log("has package")
+        const postTypeDefinition = await PostTypeDefinition.findById("65c8d2fc3458b4f8df0d9fae");
+        if (!postTypeDefinition) {
+          return res.status(400).json({ error: 'Invalid post type id' });
+        }
+        // Update remaining posts count in the package
+        await Package.updateOne(
+          { user: consignee },
+          { $inc: { [remainingPostsField]: -1 } }
+        );
+        // Return success message
+        console.log("savedandpayed")
+        return res.status(201).json({ message: "savedandpayed" });
+    }    
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
+
 });
 
 router.get('/products', async (req, res) => {
@@ -159,7 +177,16 @@ router.get('/products', async (req, res) => {
         }
       }
     }
-
+    
+    // // Exclude products where no_day_on_Gadal is 0
+    //  filterQuery.no_day_on_Gadal = { $gt: 0 };
+    //   // Add condition to filter where no_day_on_Gadal, no_day_onTop_cat, or no_day_onTop_home is not greater than 0
+    // filterQuery.$or = [
+    //   { no_day_on_Gadal: { $gt: 0 } },
+    //   { no_day_onTop_cat: { $gt: 0 } },
+    //   { no_day_onTop_home: { $gt: 0 } }
+    // ];
+    
     // Count the total number of documents matching the filter criteria
     const totalProductsQuery = filterQuery && Object.keys(filterQuery).length > 0
       ? Product.countDocuments(filterQuery)
@@ -194,7 +221,6 @@ router.get('/products', async (req, res) => {
         sortQuery = { [sortCriteria]: -1 };
         break;
     }
-    
 
     const productsQuery = filterQuery && Object.keys(filterQuery).length > 0
       ? Product.find(filterQuery).populate('category consignee currency brand model location subCity wereda switch')
@@ -288,10 +314,14 @@ router.get('/products/:userId', async (req, res) => {
 
 router.put('/products/:productId', async (req, res) => {
   const { productId } = req.params;
+  console.log(productId)
+
   try {
+    console.log(req.body)
     const updatedProduct = await Product.findByIdAndUpdate(productId, req.body, {
       new: true,
     });
+    console.log(updatedProduct)
     if (!updatedProduct) {
       return res.status(404).json({ error: 'Product not found' });
     }
@@ -313,23 +343,19 @@ router.delete('/products/:productId', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-router.get('/productsOnTopOfHome', async (req, res) => {
+
+router.get('/productsOnHomePage', async (req, res) => {
   try {
-      let query = {
-          no_day_onTop_home: { $gt: 0 } // Filtering products with no_day_onTop_home greater than zero
-      };
+    const products = await Product.find({ no_day_onTop_home: { $gt: 0 } })
+      .sort({ no_day_onTop_home: -1, date: -1 }); 
 
-      let sort = {
-          no_day_onTop_home: -1, // Sorting by no_day_onTop_home in descending order
-          date: -1 // Sorting by date in descending order (latest first) if no_day_onTop_home values are equal
-      };
+    const count = await Product.countDocuments({ no_day_onTop_home: { $gt: 0 } });
 
-      const products = await Product.find(query).sort(sort);
-
-      res.json(products);
-  } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: "Server Error" });
+    res.json({ products, count });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
   }
 });
+
 module.exports = router;

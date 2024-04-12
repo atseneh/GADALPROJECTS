@@ -38,7 +38,7 @@ router.get('/users', async (req, res) => {
 
     // Pagination
     const page = parseInt(req.query.pageNum) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 10;  
+    const pageSize = parseInt(req.query.pageSize) || 100;  
     const skip = (page - 1) * pageSize;
 
     const users = await User.find(filter)

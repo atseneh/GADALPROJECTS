@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ProductBrand = require('../models/productBrand.model');
+const Product = require('../models/product.model');
 
 router.post('/productBrands', async (req, res) => {
   try {
@@ -13,6 +14,7 @@ router.post('/productBrands', async (req, res) => {
 
 router.get('/productBrands', async (req, res) => {
   try {
+    console.log("product by category")
     let filter = {};
     Object.keys(req.query).forEach((key) => {
       filter[key] = req.query[key];
@@ -33,6 +35,26 @@ router.get('/productBrands/:id', async (req, res) => {
     res.status(200).json(productBrand);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/getProductBrandsByCategory/:category', async (req, res) => {
+  try {
+
+      const categoryId = req.params.category; 
+      console.log(categoryId)
+      const productBrands = await ProductBrand.find({ category: categoryId }).populate('category');
+      const productBrandsWithCount = await Promise.all(productBrands.map(async (brand) => {
+          const productCount = await Product.countDocuments({ brand: brand._id });
+          return {
+              brand: brand,
+              productCount: productCount
+          };
+      }));
+      res.json(productBrandsWithCount);
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
@@ -63,6 +85,5 @@ router.delete('/productBrands/:id', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
 
 module.exports = router;
