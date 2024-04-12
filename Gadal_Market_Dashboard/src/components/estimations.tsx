@@ -41,6 +41,7 @@ export default function Estimations(props:EstimationProps){
               (
               <>
               {
+                Array.isArray(estimations) && estimations.length > 0 ? (
                 estimations?.map((estimation:any)=>(
                     <Paper
                     sx={{p:1,display:'flex',flexDirection:'column',gap:1,pl:2}}
@@ -241,6 +242,9 @@ export default function Estimations(props:EstimationProps){
                    }
                     </Paper>
                 ))
+                ) : (
+                    <Typography variant="caption">No Estimation Found.</Typography>
+                  )
               }
               </>
               )
