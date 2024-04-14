@@ -5,6 +5,7 @@ const PostTypeDefinition = require('../models/postTypeDefnition.model');
 
 router.get('/postTypeDefinitions', async (req, res) => {
   try {
+    console.log("xx")
     const postTypeDefinitions = await PostTypeDefinition.find();
     res.json(postTypeDefinitions);
   } catch (error) {
@@ -59,6 +60,18 @@ router.put('/postPriceUpdate/:id', async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 });
+  
+router.post('/postPriceUpdate2', async (req, res) => {
+  const { body } = req;
+  try {
+    const createdPostTypeDefinitions = await PostTypeDefinition.create(body);
+    res.json(createdPostTypeDefinitions);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
 
 router.delete('/postTypeDefinitions/:id', async (req, res) => {
   const { id } = req.params;

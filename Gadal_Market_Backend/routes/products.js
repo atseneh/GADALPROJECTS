@@ -50,12 +50,13 @@ const applyWatermarkAndConvert = async (inputPath, outputPath, watermarkPath, ap
 const upload = multer({dest:'/images'})
 router.post('/products', checkPackage, upload.array('images', 10), async (req, res) => {
   try {
+   
     const watermarkPath = path.join(__dirname,'..','images', 'watermark.svg');
     // '/images/watermark.svg'
     const { title, description, productType, previousPrice, currentPrice, category, postType, isFixed, consignee, currency, brand, model, location, subCity, wereda, transactionType, youtubeLink,isPayed } = req.body;
     let uploadedImages = [];
     let productAttributes = []
-    const postTypeDefinition = await PostTypeDefinition.findById("65c8d2fc3458b4f8df0d9fae");
+    const postTypeDefinition = await PostTypeDefinition.findById("661bc0d4b6116f918ab00b58");
     const { name, no_day_onTop_cat, no_day_onTop_home, no_day_on_Gadal } = postTypeDefinition;
     let remainingPostsField;
     switch (name) {
@@ -71,6 +72,8 @@ router.post('/products', checkPackage, upload.array('images', 10), async (req, r
       default:
         return res.status(400).json({ error: 'Invalid product post type' });
     }
+  
+  
     const activePackage = await Package.findOne({
       user: consignee,
       [remainingPostsField]: { $gt: 0 },
