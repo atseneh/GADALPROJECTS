@@ -231,11 +231,22 @@ router.get('/products', async (req, res) => {
     // ];
     
     // Count the total number of documents matching the filter criteria
-    const totalProductsQuery = filterQuery && Object.keys(filterQuery).length > 0
-      ? Product.countDocuments(filterQuery)
-      : Product.countDocuments();
+    // const totalProductsQuery = filterQuery && Object.keys(filterQuery).length > 0
+    //   ? Product.countDocuments(filterQuery)
+    //   : Product.countDocuments();
 
-    const totalProducts = await totalProductsQuery;
+    // const totalProducts = await totalProductsQuery;
+
+    const totalProductsQuery = filterQuery && Object.keys(filterQuery).length > 0
+    ? Product.aggregate([
+        { $match: filterQuery },
+        { $group: { _id: null, count: { $sum: 1 } } }
+      ])
+    : Product.aggregate([
+        { $group: { _id: null, count: { $sum: 1 } } }
+      ]);
+      const result = await totalProductsQuery;
+      const totalProducts = result.length > 0 ? result[0].count : 0;
 
     // Pagination
     const page = parseInt(filters.pageNum) || 1; 
