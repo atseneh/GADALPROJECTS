@@ -11,6 +11,7 @@ interface QueryData {
     pageNumber?:number,
     consignee?:string,
     sortCriteria?:string,
+    brand?:string|null,
 }
 async function getProducts(queryData:QueryData){
 const {
@@ -23,7 +24,8 @@ const {
     pageNumber,
     pageSize,
     consignee,
-    sortCriteria
+    sortCriteria,
+    brand,
 } = queryData
 let url = `products?recordStatus=1`
 if(category){
@@ -51,6 +53,9 @@ if(consignee) {
 }
 if(pageSize && pageNumber) {
     url = `${url}&pageSize=${pageSize}&pageNum=${pageNumber}`
+}
+if(brand){
+url = `${url}&brand=${brand}`
 }
 try {
     const {data} = await axios.get(

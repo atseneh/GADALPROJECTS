@@ -23,7 +23,7 @@ router.get('/priceRange', async (req, res) => {
         if (isNaN(currentPrice)) {
           currentPrice = 0;
         }
-        console.log(currentPrice)
+      
         if (currentPrice < minPrice) {
           minPrice = currentPrice;
         }

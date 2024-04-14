@@ -1,10 +1,11 @@
 import {Stack, Box, InputBase, Avatar, Badge, Typography, Chip } from "@mui/material";
 import Search from "@mui/icons-material/Search";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import getMessagesOfUser from "../../api/messages/getMessagesOfUser";
 import useSmallScreen from "../../utils/hooks/useSmallScreen";
 import { SocketCon } from "../../components/context/socketContext";
 import { useContext } from "react";
+import updateSeen from "../../api/messages/updateSeen";
 interface UserListProps {
    selectedChat:any,
    handleChatSelection:(messageDetail:any)=>void
@@ -21,13 +22,20 @@ export function getBadgeVariant(buyer:string,owner:string,connectedUsers:string[
 export default function UserList(props:UserListProps){
     const {selectedChat,handleChatSelection} = props
     const {connectedUsers} = useContext(SocketCon)
+    const queryClient = useQueryClient();
     const {data:messages,isLoading} = useQuery({
       queryKey:['get_messages'],
       queryFn:()=>getMessagesOfUser(localStorage.getItem('userId') as string)
     })
+    const {mutate} = useMutation({
+      mutationKey:['update_seen',],
+      mutationFn:updateSeen,
+      onSuccess:()=>{
+        queryClient.invalidateQueries({queryKey:['get_messages']})
+        queryClient.invalidateQueries({queryKey:['get_unread_Messages_count']})
+      }
+    })
     const smallScreen = useSmallScreen()
-    // add an online badge if users are online
-   
     return (
         <Stack
         spacing={1.5}
@@ -79,7 +87,13 @@ export default function UserList(props:UserListProps){
         key={message?._id}
         direction={'row'}
         alignItems={'center'}
-        onClick={()=>handleChatSelection(message)}
+        onClick={()=>{
+          handleChatSelection(message);
+          mutate({
+            messageId:message?._id,
+            userId:localStorage.getItem('userId') as string
+          })
+        }}
         sx={{
             cursor:'pointer',
             background:selectedChat?._id === message?._id ? '#FFDFA1':'',
@@ -87,7 +101,6 @@ export default function UserList(props:UserListProps){
            '&:hover':{
             background:'#FFDFA1',
             // width:smallScreen ? '80%' :'auto'
-
            }
         }}
         >
@@ -128,18 +141,25 @@ export default function UserList(props:UserListProps){
           </Box>
             <Stack
             spacing={.5}
+            sx={{
+              mr:smallScreen ? 3 : 0
+            }}
             >
                <Typography variant="caption">
                 {
                  new Date(message?.lastConversation?.updatedAt).toDateString()
                 }
             </Typography>
-            <Chip 
-              color="primary" 
-              label={message?.unreadCount}
-              size="small"
-              sx={{alignSelf:'flex-end',color:'white'}}
-              />
+            {
+              message?.unreadCount > 0 && (
+                <Chip 
+                color="primary" 
+                label={message?.unreadCount}
+                size="small"
+                sx={{alignSelf:'flex-end',color:'white'}}
+                />
+              )
+            }
             </Stack>
         </Stack>
         ))

@@ -7,23 +7,27 @@ import getPercentOff from '../../utils/helpers/getPercentOff';
 import { IMAGE_URL } from '../../api/apiConfig';
 import { useMutation,useQueryClient } from '@tanstack/react-query';
 import addProductToFav from '../../api/products/addProductToFav';
+import removeProductFromFav from '../../api/products/removeProductFromFav';
 export default function ProductCard(props:{data:any}){
 const {data} = props 
 const smallScreen = useSmallScreen()
 const queryClient = useQueryClient()
 const loggedInUserId = localStorage.getItem('userId')
-const favMutation = useMutation({
+const {mutate:addFav,isPending:addPending} = useMutation({
     mutationFn:addProductToFav,
     mutationKey:['addToFav'],
     onSuccess:()=>{
         queryClient.invalidateQueries({queryKey:['newProducts']})
         queryClient.invalidateQueries({queryKey:['products']})
     }
-    // onMutate:async (productId)=>{
-    // await queryClient.cancelQueries({queryKey:['newProducts','products','favouritesProducts']})
-    // const previousProducts = queryClient.getQueriesData({queryKey:['newProducts','products','favouritesProducts']})
-
-    // }
+})
+const {mutate:removeFav,isPending:removePending} = useMutation({
+    mutationFn:removeProductFromFav,
+    mutationKey:['removeFromFav'],
+    onSuccess:()=>{
+        queryClient.invalidateQueries({queryKey:['newProducts']})
+        queryClient.invalidateQueries({queryKey:['products']})
+    }
 })
     return(
        <>
@@ -50,16 +54,21 @@ const favMutation = useMutation({
              backgroundSize:'contain',                   
              backgroundRepeat:'no-repeat',
              backgroundPosition: 'center center',
+             border:'1px solid #EBEDEF'
+
             }}
             >
                 <IconButton
                 onClick={(e)=>{
                     e.preventDefault()
-                    if(favMutation.isPending || data?.likedBy?.includes(loggedInUserId)){
+                    if(addPending || removePending){
                         return;
                     }
-
-                    favMutation.mutate(data?._id)
+                    if(data?.likedBy?.includes(loggedInUserId)){
+                        removeFav(data?._id)
+                        return;
+                    }
+                    addFav(data?._id)
                 }}
                 sx={{
                  position:'absolute',
@@ -138,7 +147,7 @@ const favMutation = useMutation({
                 {
                     data?.brand&&(
                         <Typography variant='caption'>
-                        {data?.brand?._id}
+                        {data?.brand?.description}
                     </Typography>
                     )
                 }

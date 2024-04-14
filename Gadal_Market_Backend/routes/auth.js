@@ -3,6 +3,44 @@ const User = require("../models/user.model");
 const bcrypt = require("bcryptjs");
 const multer = require("multer");
 const jwt = require("jsonwebtoken");
+const axios = require('axios')
+router.post('/auth/manuallyVerifyPhone',multer().none(),async(req,res)=>{
+  const {phoneNumber} = req.body
+  try {
+    const response = await  axios.get(`${process.env.AFRO_URL}?from=e80ad9d8-adf3-463f-80f4-7c4b39f7f164&to=${phoneNumber}&len=4`,{
+      headers:{
+        'Authorization': 'Bearer ' + process.env.AFRO_TOKEN
+      }
+    })
+    if(response?.data?.acknowledge === 'error'){
+      res.status(400).send(`Failed to send message to ${phoneNumber}`);
+    }
+    res.send({
+      verificationId:response?.data?.response?.verificationId,
+    })
+  } catch (error) {
+    res.status(400).send({error:'Error Occured'})
+  }
+})
+router.put('/auth/verifyPhone',multer().none(),async(req,res)=>{
+  const {verificationId,phoneNumber,code} = req.body
+  try {
+    const response =  await axios.get(`${process.env.AFRO_VERIFY_URL}?to=${phoneNumber}&vc=${verificationId}&code=${code}`,{
+      headers:{
+        'Authorization': 'Bearer ' + process.env.AFRO_TOKEN
+      }
+    })
+    // console.log(response?.data)
+    if(response?.data?.acknowledge === 'error'){
+      console.log('error occured')
+      res.status(400).send('Verification Failed Please Check your code again');
+    }
+    const updatedUser = await User.findOneAndUpdate({phoneNumber:phoneNumber},{isVerified:true},{new:true})
+    res.send(updatedUser);
+  } catch (error) {
+    res.send('Something went wrong')
+  }
+})
 router.post("/auth/signup", multer().none(), async (req, res) => {
   const {
     firstName,
@@ -44,14 +82,23 @@ router.post("/auth/signup", multer().none(), async (req, res) => {
   
     try {
       await user.save();
-      // send verification email or text
-    //   sendEmail({
-    //     email,
-    //     subject:"Email Verification",
-    //     userId:savedUser._id,
-    //     token:emailVerifyToken,
-    //   })
-      res.send({message:'user successfully created'});
+      axios.get(`${process.env.AFRO_URL}?from=e80ad9d8-adf3-463f-80f4-7c4b39f7f164&to=${phoneNumber}&len=4`,{
+        headers:{
+          'Authorization': 'Bearer ' + process.env.AFRO_TOKEN
+        }
+      })
+      .then(function (response) {
+        // handle success
+        res.send({
+          message:'user successfully created',
+          verificationId:response?.data?.response?.verificationId,
+          phoneNumber:response?.data?.response?.to
+        });
+      })
+      .catch(function (error) {
+        // handle error
+        console.log(error.message);
+      })
     } catch (err) {
       res.status(400).send(err);
     }
@@ -135,15 +182,9 @@ router.post("/auth/signin", multer().none(), async (req, res) => {
     ]
   });
   if (!user) return res.status(400).send({message:'User Not found'})
+  if (!user.isVerified) return res.status(400).send({message:'Your Phone Number is not verified',reason:'NotVerified'})
   const validPass = await bcrypt.compare(password, user.password);
   if (!validPass) return res.status(400).send({message:'Incorrect credentials'});
-
-  // check the verification
-//   if(!user.isVerifyed) return res.status(400).send({
-//     errorCode:'ENV',
-//     text:"You're not verifyed"
-//   });
-  //Create Token
   const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
   res.header("token", token).json({ token: token, id: user._id,email:user.email,phoneNumber:user.phoneNumber});
 });

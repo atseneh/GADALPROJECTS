@@ -30,7 +30,9 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
     const isMyProduct = localStorage.getItem('userId') === data?.consignee?._id
     const [showPhone,setShowPhone] = React.useState(false)
     const [startChat,setStartChat] = useState(false)
+    const [offerPirce,setOfferPirce] = useState(false)
     const [message,setMessage] = useState('')
+    const [priceToOffer,setPriceToOffer] = useState('')
     const token = localStorage.getItem('token')
     const [messageNotification,setMessageNotification] = React.useState(false)
     const messageMuation = useMutation({
@@ -39,6 +41,7 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
         onSuccess:()=>{
         setMessageNotification(true)
         setStartChat(false)
+        setOfferPirce(false)
         }
     })
     const handleChatStart = ()=>{
@@ -48,6 +51,13 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
          }
          setStartChat(true)
     }
+    const handlePriceOffering = ()=>{
+        if(!token){
+           navigate('/login')
+           return;
+        }
+        setOfferPirce(true)
+   }
     const handleMessageSent = (mes:string)=>{
         if(!mes || messageMuation.isPending){
             return;
@@ -56,10 +66,11 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
             product:data?._id,
             owner:data?.consignee?._id,
             buyer:localStorage.getItem('userId') as string,
-            message
+            message:mes
         }
         messageMuation.mutate(payload)
         setMessage('')
+        setPriceToOffer('')
     }
     const {addToCart} = useContext(context)
     const favMutation = useMutation({
@@ -101,7 +112,6 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                 {data?.title}
             </Typography>
              <Box sx={{display:'flex',gap:.5,alignItems:'center'}}>
-                
                 <Box sx={{display:'flex',alignItems:smallScreen?'flex-start':'center',gap:smallScreen?1:2,flexDirection:smallScreen?'column':"row"}}> 
                <Box sx={{display:'flex',alignItems:'center',gap:.5}}>
                <LocationOnIcon color="primary" fontSize="small"/>
@@ -161,7 +171,7 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                         ) 
                     }
                 {/* Price section */}
-                <Box sx={{display:'flex',alignItems:'center',justifyContent:'space-between',mt:1}}>
+                <Box sx={{display:'flex',alignItems:offerPirce?'flex-start':'center',justifyContent:'space-between',mt:1}}>
                      <Box sx={{display:'flex',gap:.5,color:theme.palette.primary.main,}}>
                         <Typography variant={smallScreen?'h6':"h4"} fontWeight={'bold'}>
                            
@@ -174,14 +184,108 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                             }
                         </Typography>
                      </Box>
+                      <Box>
+                      <Stack
+                     spacing={1}
+                     alignItems={'center'}
+                     direction={'row'}
+                     >
                      <Typography variant={smallScreen?'h6':"h5"}>
                       
-                            {
-                                data?.isFixed?'Fixed Price':'Negotiable'
+                      {
+                          data?.isFixed?'Fixed Price':'Negotiable'
+                      }
+                     
+               </Typography>
+                {
+                    !isMyProduct && !data?.isFixed && (
+                        <Button
+                        color="inherit"  
+                        sx={{
+                            display:'flex',
+                            alignItems:'center',
+                            gap:.5,
+                            color:'black',fontSize:'0.75rem',
+                            background:'white',border:'1px solid #EFEFEF',
+                            ':hover':{
+                                background:'white'
                             }
-                           
-                     </Typography>
+
+                        }}
+                         variant="contained"
+                         onClick={handlePriceOffering}
+                         size="small"
+                         >
+                        <img
+                        src="/images/icons8_sell_1.svg"
+                        width={'14px'}
+                        />
+                        Offer Price
+                            </Button>
+                    )
+                }
+                     </Stack>
+                     {
+                    offerPirce && (
+                   <Box
+                   sx={{
+                    p:1,
+                    display:'flex',
+                    flexDirection:'column',
+                    gap:1,
+                    alignSelf:'flex-end'
+                   }}
+                   component={'form'}
+                   onSubmit={(e)=>{
+                    e.preventDefault();
+                    handleMessageSent(`I'll offer you ${new Intl.NumberFormat().format(Number(priceToOffer))}`)
+                   }}
+                   >
+                    <TextField
+                    label="Offer a price"
+                    sx={{
+                        background:'white'
+                    }}
+                    value={priceToOffer}
+                    onChange={(e)=>setPriceToOffer(e.target.value)}
+                    size="small"
+                    type="number"
+                    inputProps={{
+                        min:1
+                    }}
+                    required
+                    />
+                    <Stack
+                    direction={'row'}
+                    spacing={1}
+                    alignItems={'center'}
+                    >
+                    <Button
+                    type="submit"
+                    size="small"
+                    variant="contained"
+                    sx={{
+                        color:'white'
+                    }}
+                    disabled={messageMuation.isPending}
+                    >
+                     Send
+                    </Button> 
+                    <Button
+                    color="inherit"
+                    onClick={()=>{
+                        setOfferPirce(false)
+                    }}
+                    >
+                        Cancel
+                    </Button>
+                    </Stack>
+                    </Box>
+                    )
+                  }
+                      </Box>
                 </Box>
+              
                 <Divider/>
                 <Box sx={{display:'flex',alignItems:'center',gap:2,justifyContent:smallScreen?'space-between':""}}>
                 <Box sx={{display:'flex',alignItems:'center',gap:1,}}>
@@ -286,7 +390,7 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                         fontSize="small"
                         />
                         Chat With Seller
-                        </Button>
+                            </Button>
                         </Stack>
                     )
                   }
@@ -389,7 +493,7 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
             open={messageNotification}
             handleSnackBarClose = {()=>setMessageNotification(false)}
             severity={'success'}
-            successMessage="Message Successfully Sent"
+            successMessage="Successfully Sent"
             />
            )
           }

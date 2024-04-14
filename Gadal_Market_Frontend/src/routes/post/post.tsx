@@ -20,6 +20,7 @@ import { TransitionProps } from '@mui/material/transitions';
 import Dialog from '@mui/material/Dialog';
 import PostOptions from "./postOptions";
 import { useNavigate } from "react-router-dom";
+import getBrandByCategory from "../../api/categories/getBrandbyCategory";
 const Transition = React.forwardRef(function Transition(
   props: TransitionProps & {
     children: React.ReactElement;
@@ -40,6 +41,8 @@ export default function Post(){
     const [selectedService,setSelectedService] = useState(2)
     const [category,setCategory] = useState<any>(null)
     const [categoryInputValue,setCategoryInputValue] = useState('')
+    const [brand,setBrand] = useState<any>(null)
+    const [brandInputValue,setBrandInputVale] = useState('')
     const [location,setLocation] = useState<any>(null)
     const [locationInputValue,setLocationInputValue] = useState('')
     const [subCity,setSubCity] = useState<any>(null)
@@ -52,6 +55,7 @@ export default function Post(){
     const smallScreen = useSmallScreen()
     const [selectedImages, setSelectedImages] = useState<any>([]);
     const [notificationSnackbarOpen,setNotificationSnackbarOpen] = React.useState(false)
+    const [imagesError,setImagesError] = useState(false)
     const [notificationSeverity,setNotficationSeverity] = React.useState<'error'|'success'|undefined>()
     const handleNotificationSnackbarClose = ()=>{
       setNotificationSnackbarOpen(false)
@@ -94,6 +98,13 @@ export default function Post(){
       queryFn:()=>getCategoryAttributes(category?._id),
       enabled:Boolean(category)
      })
+
+     const {data:brands,isLoading:brandsLoading} = useQuery({
+      queryKey:['brand_filters',category],
+      queryFn:()=>getBrandByCategory(category?._id),
+      enabled:Boolean(category)
+     })
+
      const {data:subCities,isLoading:subCitiesLoading} = useQuery({
       queryKey:['subCities',location],
       queryFn:()=>getSubcities(location?._id),
@@ -135,6 +146,10 @@ export default function Post(){
     // function to initialte api call when post button is clicked
     const handlePost = (postType:number)=>{
       setSelectedPostType(postType)
+      if(selectedImages?.length<2){
+        setImagesError(true);
+        return;
+      }
       let formData = new FormData()
       let productAttributes:any = []
       if(selectedImages?.length>0){
@@ -145,9 +160,12 @@ export default function Post(){
       if(attributeValues){
         productAttributes = Object.keys(attributeValues)?.map((key)=>({name:key,value:`${attributeValues[key]}`}))
       }
-      console.log(productAttributes)
+      // console.log(productAttributes)
       if(productAttributes?.length > 0){
         formData.append('attributes',JSON.stringify(productAttributes))  
+      }
+      if(brand){
+        formData.append('brand',brand?._id)
       }
       formData.append('title',title)
       formData.append('description',description)
@@ -189,6 +207,10 @@ export default function Post(){
   React.useEffect(()=>{
     setWereda(null)
   },[subCity])
+  React.useEffect(()=>{
+      setBrand(null)
+      setBrandInputVale('')
+  },[category])
     return (
         <>
         <Box sx={{display:'flex',flexDirection:'column',}}>
@@ -294,7 +316,7 @@ export default function Post(){
                 loading={categoriesLoding}
                 options={categories?categories:[]}
                 getOptionLabel={(option:any)=>option?.name}
-                renderInput={(params) => <TextField {...params} label="Category" size="medium" sx={{background:'white'}}/>}
+                renderInput={(params) => <TextField required {...params} label="Category" size="medium" sx={{background:'white'}}/>}
                 renderOption={(props, option) => (
                   <Box component="li" sx={{ '& > img': { mr: 2, flexShrink: 0 } }} {...props}>
                     <img
@@ -308,6 +330,33 @@ export default function Post(){
                 )}
                 />
                 </FormControl>
+                {
+                  Array.isArray(brands) && brands?.length>0 &&(
+                    <FormControl required fullWidth>
+                    <Autocomplete
+                    value={brand}
+                    inputValue={brandInputValue}
+                    onChange={(_,newValue:any)=>setBrand(newValue)}
+                    onInputChange={(_,newValue)=>setBrandInputVale(newValue)}
+                    loading={brandsLoading}
+                    options={brands?brands:[]}
+                    getOptionLabel={(option:any)=>option?.description}
+                    renderInput={(params) => <TextField {...params} label="Brand" size="medium" sx={{background:'white'}}/>}
+                    renderOption={(props, option) => (
+                      <Box component="li" sx={{ '& > img': { mr: 2, flexShrink: 0 } }} {...props}>
+                        <img
+                          loading="lazy"
+                          width="20"
+                          src={`${option?.icon}`}
+                          alt=""
+                        />
+                        {option?.description} 
+                      </Box>
+                    )}
+                    />
+                    </FormControl>
+                  )
+                }
                 {
                   categoryAttributes&&(
                     <>
@@ -360,7 +409,7 @@ export default function Post(){
                 loading={locationsLoading}
                 options={locations?locations:[]}
                 getOptionLabel={(option:any)=>option?.descripton}
-                renderInput={(params) => <TextField {...params} label="Location" size="medium" sx={{background:'white'}}/>}
+                renderInput={(params) => <TextField required {...params} label="Location" size="medium" sx={{background:'white'}}/>}
                 />
 
                 </FormControl>
@@ -375,7 +424,7 @@ export default function Post(){
                 loading={subCitiesLoading}
                 options={subCities?subCities:[]}
                 getOptionLabel={(option:any)=>option?.descripton}
-                renderInput={(params) => <TextField {...params} label="Sub City" size="medium" sx={{background:'white'}}/>}
+                renderInput={(params) => <TextField required {...params} label="Sub City" size="medium" sx={{background:'white'}}/>}
                 />
                 <Autocomplete
                 value={wereda}
@@ -386,7 +435,7 @@ export default function Post(){
                 loading={weredasLoading}
                 options={weredas?weredas:[]}
                 getOptionLabel={(option:any)=>option?.descripton}
-                renderInput={(params) => <TextField {...params} label="Wereda" size="medium" sx={{background:'white'}}/>}
+                renderInput={(params) => <TextField required {...params} label="Wereda" size="medium" sx={{background:'white'}}/>}
                 />
         </Box>
         <Box sx={{display:'flex',flexDirection:'column', gap:1, border:'1.5px solid #8F8F8F',p:2,borderRadius:'8px',cursor:'pointer'}}>
@@ -477,6 +526,16 @@ export default function Post(){
             handleSnackBarClose = {handleNotificationSnackbarClose}
             severity={notificationSeverity}
             // errorMessage={postMutation.error as string}
+            />
+           )
+          }
+          {
+           imagesError&&(
+            <CustomAlert
+            open={imagesError}
+            handleSnackBarClose = {()=>setImagesError(false)}
+            severity={'error'}
+            errorMessage={'At least 2 images are required'}
             />
            )
           }

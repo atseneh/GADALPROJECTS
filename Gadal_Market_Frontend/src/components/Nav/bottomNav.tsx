@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Box, Card,Button } from "@mui/material";
+import { Box, Card,Button} from "@mui/material";
 import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
@@ -7,6 +6,19 @@ import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutline
 import { useScrollDirection } from "../../utils/hooks/useScrollDirection";
 import HomeIcon from "@mui/icons-material/Home";
 import { useNavigate,useLocation} from "react-router-dom";
+import { styled } from '@mui/material/styles';
+import Badge, { BadgeProps } from '@mui/material/Badge';
+import { useContext } from "react";
+import { SocketCon } from "../context/socketContext";
+const StyledBadge = styled(Badge)<BadgeProps>(({ theme }) => ({
+  '& .MuiBadge-badge': {
+    right: -3,
+    top: 13,
+    border: `2px solid ${theme.palette.background.paper}`,
+    padding: '0 4px',
+    color:'white'
+  },
+}));
 function BottomNav() {
     const direction = useScrollDirection()
     const navigate = useNavigate()
@@ -14,6 +26,7 @@ function BottomNav() {
     const {pathname} = location
     // const theme = useTheme()
     const loggedIn = localStorage.getItem('token')
+    const {unreadCount} = useContext(SocketCon)
   return (
     <>
     
@@ -100,7 +113,7 @@ function BottomNav() {
             <FavoriteBorderOutlinedIcon  />
             <small style={{ fontWeight: "bold" }}>Favourites</small>
           </Button>
-          <Button
+            <Button
           sx={{
             display: "flex",
             flexDirection: "column",
@@ -110,7 +123,13 @@ function BottomNav() {
           }}
           onClick = {()=>navigate('/messages')}
         >
-          <ChatBubbleOutlineOutlinedIcon  />
+          <StyledBadge
+           color="primary"
+           badgeContent={unreadCount}
+           
+          >
+          <ChatBubbleOutlineOutlinedIcon/>
+          </StyledBadge>
           <small style={{ fontWeight: "bold" }}>Messages</small>
         </Button>
                 </>

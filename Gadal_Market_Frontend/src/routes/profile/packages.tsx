@@ -14,7 +14,7 @@ export default function Packages(){
     const theme = useTheme()
     const {data:userPackages,isLoading} = useQuery({
         queryKey:['users_package'],
-        queryFn:()=>getUsersPackage()
+        queryFn:()=>getUsersPackage(localStorage.getItem('userId') as string)
     })
     return(
       <Card>

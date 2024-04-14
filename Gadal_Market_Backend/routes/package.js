@@ -24,13 +24,18 @@ router.get('/packages', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-router.get('/usersPackage', verifyToken, async (req, res) => {
-  const {_id} = req.user
+router.get('/usersPackage', async (req, res) => {
+  const userId = req.query.userId; 
   try {
-    const packages = await Package.find({user:_id}).populate('packageDefinition');
+    const packages = await Package.find({ user: userId }).populate('packageDefinition');
+    if (packages.length === 0) {
+      return res.status(404).json({ message: 'No packages found for the user.' });
+    }
     res.status(200).json(packages);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    // Handle errors
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 router.get('/packages/:id', async (req, res) => {
@@ -61,9 +66,20 @@ router.put('/packages/:id', async (req, res) => {
   }
 });
 
-router.delete('/packages/:id', async (req, res) => {
+// router.delete('/packages/:id', async (req, res) => {
+//   try {
+//     const deletePackage = await Package.findByIdAndRemove(req.params.id);
+//     if (!deletePackage) {
+//       return res.status(404).json({ message: 'Package not found' });
+//     }
+//     res.status(204).end();
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// });
+router.delete('/packages/:user', async (req, res) => {
   try {
-    const deletePackage = await Package.findByIdAndRemove(req.params.id);
+    const deletePackage = await Package.findOneAndRemove({ user:"661b7cf0dcfea800b4bcbe4a" });
     if (!deletePackage) {
       return res.status(404).json({ message: 'Package not found' });
     }

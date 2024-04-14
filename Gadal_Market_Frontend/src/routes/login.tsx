@@ -8,6 +8,7 @@ import signIn from "../api/auth/signin";
 import { useState } from "react";
 import Alert from '@mui/material/Alert';
 import { socket } from "../api/socket";
+import getOtp from "../api/auth/getOtp";
 export function LoginWithButton(props:{type:string}){
   const {type} = props
   return (
@@ -36,6 +37,16 @@ export default function Login(){
     const [emailOrPhone,setEmailOrPhone] = useState('');
     const [password,setPassword] = useState('');
     const [signinError,setSigninError] = useState(false)
+    const getOtpMutation = useMutation({
+        mutationKey:['get_otp'],
+        mutationFn:getOtp,
+        onSuccess:(data)=>{
+        navigate('/verifyPhone',{state:{verificationDetail:{verificationId:data?.verificationId,phoneNumber:emailOrPhone}}})
+        },
+        onError:()=>{
+
+        }
+    })
     const signInMutation = useMutation({
         mutationKey:['signin'],
         mutationFn:signIn,
@@ -68,7 +79,7 @@ export default function Login(){
      }
      signInMutation.mutate(payload)
     }
-    
+    console.log(signInMutation.error)
     return (
         <>
        <Box
@@ -83,15 +94,33 @@ export default function Login(){
        <Paper sx={{borderRadius:0}}>
        {
         signinError&& (
-            <Alert sx={{m:1,}} severity="error">
+            <Alert sx={{m:1,alignItems:'center'}} severity="error">
                 {
-                    signInMutation.error?.message
+                    signInMutation.error?.response?.data?.message
+                }
+                {
+                    signInMutation.error?.response?.data?.reason==='NotVerified' && (
+                        <Button
+                        sx={{
+                          ml:2
+                        }}
+                        size="large"
+                        onClick={()=>{
+                            if(!emailOrPhone || getOtpMutation.isPending){
+                                return;
+                            }
+                            getOtpMutation.mutate(emailOrPhone)
+                        }}
+                      >
+                          Verify
+                          </Button>
+                    )
                 }
             </Alert>
         )
        }
        <Box
-        sx={{p:smallScreen?3:7.9,pt:2,}}
+        sx={{p:smallScreen?3:7.9,pt:2,height:'80vh'}}
         component={'form'}
         onSubmit={(e)=>{
             e.preventDefault();
@@ -124,7 +153,7 @@ export default function Login(){
             flex: 1,
             fontWeight:'bold'
         }}
-        placeholder="Email Or Phone Number"
+        placeholder="Phone Number"
         inputProps={{ 'aria-label': 'email or phone number' }}
         name="emailOrPhone"
         value={emailOrPhone}
@@ -185,15 +214,15 @@ export default function Login(){
                 >
                     <Typography>Sign in</Typography>
                 </Button>
-                <Typography variant="h6" sx={{mt:smallScreen?1:2,ml:8,color:'#535252',fontWeight:'bold'}}>
+                {/* <Typography variant="h6" sx={{mt:smallScreen?1:2,ml:8,color:'#535252',fontWeight:'bold'}}>
                     OR
-                </Typography>
+                </Typography> */}
                  
         </Box>
-        <Stack spacing={1} sx={{ml:smallScreen?2:11}}>
+        {/* <Stack spacing={1} sx={{ml:smallScreen?2:11}}>
             <LoginWithButton type="google"/>
             <LoginWithButton type="facebook"/>  
-        </Stack>
+        </Stack> */}
             </Box>
         </Box>
        </Paper>

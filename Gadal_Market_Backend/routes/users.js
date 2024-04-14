@@ -29,6 +29,23 @@ router.put('/users/addToFav/:productId',verifyToken,async (req,res)=>{
   
   }
 })
+router.put('/users/removeFromFav/:productId',verifyToken,async (req,res)=>{
+  try {
+  const {productId} = req.params;
+  const {_id} = req.user;
+  const updatedUser = await User.findByIdAndUpdate(_id,{$pull:{favourites:productId}},{new:true})
+  const updatedProduct = await Product.findByIdAndUpdate(productId,{$pull:{likedBy:_id}},{new:true})
+  if(updatedUser && updatedProduct){
+    res.status(200).send('Successefully removed from Fav')
+  }
+  else {
+    res.status(400).send('Something went Wrong')
+  }
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  
+  }
+})
 router.get('/users', async (req, res) => {
   try {
     let filter = {};
@@ -38,7 +55,7 @@ router.get('/users', async (req, res) => {
 
     // Pagination
     const page = parseInt(req.query.pageNum) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 10;  
+    const pageSize = parseInt(req.query.pageSize) || 100;  
     const skip = (page - 1) * pageSize;
 
     const users = await User.find(filter)

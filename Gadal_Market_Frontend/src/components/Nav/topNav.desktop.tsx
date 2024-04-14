@@ -73,13 +73,26 @@ export default function TopNavDesktop(){
               loggedIn ? (
                 <>
                  <IconButton >
-                <Badge badgeContent={4} color='primary'>
+                <Badge 
+                  badgeContent={4} 
+                  color='primary'
+                  sx={{
+                    '& .MuiBadge-badge':{
+                      color:'white'
+                    }
+                  }}
+                  >
                 <NotificationsNoneOutlinedIcon fontSize='large'/>
                 </Badge>
             </IconButton>
             <Badge
             badgeContent={unreadCount}
             color='primary'
+            sx={{
+              '& .MuiBadge-badge':{
+                color:'white'
+              }
+            }}
             >
             <IconButton 
             onClick={()=>navigate('/messages')}

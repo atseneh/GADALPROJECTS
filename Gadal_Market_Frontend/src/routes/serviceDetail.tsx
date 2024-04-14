@@ -31,17 +31,7 @@ import capitalizeFirstLetter from "../utils/helpers/capitalizeFirstLetter"
 import CardSkeleton from "../components/products/cardSkeleton"
 import getAttributesForFilter from "../api/products/getAttributesForFilter"
 import AttributeFilter from "../components/filters/attributeFilter"
-import Badge, { BadgeProps } from '@mui/material/Badge';
-import { styled } from '@mui/material/styles';
-const StyledBadge = styled(Badge)<BadgeProps>(({ theme }) => ({
-  '& .MuiBadge-badge': {
-    right: -3,
-    top: 1,
-    border: `2px solid ${theme.palette.background.paper}`,
-    padding: '0 4px',
-    color:'white'
-  },
-}));
+import BrandFilters from "../components/common/brandFilters"
 function PaginationNav(props:{direction:'prev'|'next'}){
     const {direction} = props
     return(
@@ -67,6 +57,7 @@ export default function ServiceDetail(){
   const maxPrice = query.get('maxPrice')
   const transaction = query.get('transaction')
   const sortCriteria =  query.get('sortCriteria')
+  const brand = query.get('brand')
   const smallScreen = useSmallScreen()
   const {category,service} = useParams()
   const [searchParams] = useSearchParams();
@@ -89,7 +80,7 @@ export default function ServiceDetail(){
   })
   const [localTransactionType,setLocalTransactionType] = useState<'rent'|'sale'>(transaction as 'sale'|'rent')
   const {data:products,isLoading:productsLoading} = useQuery({
-    queryKey:['products',service,localTransactionType,categoryId,maxPrice,minPrice,selcetedAttributes,pageSize,pageNumber,sortCriteria],
+    queryKey:['products',service,localTransactionType,categoryId,maxPrice,minPrice,selcetedAttributes,pageSize,pageNumber,sortCriteria,brand],
     queryFn:()=>getProducts({
        transactionType:transactionTypeEnums[localTransactionType],
        productType:ServiceEnums[capitalizeFirstLetter(service as string)],
@@ -100,6 +91,7 @@ export default function ServiceDetail(){
        pageSize,
        pageNumber,
        sortCriteria:sortCriteria as string,
+       brand
     })
    })
   const {data:priceRange} = useQuery({
@@ -177,7 +169,12 @@ export default function ServiceDetail(){
             {
                 !smallScreen&&(
                     <Grid item xs={12} sm={smallScreen?0:2.5} gap={1}>
-                <ServiceCategory localTransactionType={localTransactionType} setLocalTransactionType={setLocalTransactionType} serviceName={service as string} isLink={false}/>
+                <ServiceCategory 
+                  localTransactionType={localTransactionType}
+                  setLocalTransactionType={setLocalTransactionType} 
+                  serviceName={service as string} 
+                  isLink={false}
+                  />
                 {/* desktop filter pannerl */}
                 <Stack spacing={1} sx={{mt:3}}>
         <Box>
@@ -212,22 +209,11 @@ export default function ServiceDetail(){
             <Grid item xs={12} sm={smallScreen?12:9.5}>
                     <DetailBanner category={category as string}  service={service as string} transactionType={localTransactionType}/>
                    <BreadCrums breadcrumbs={breadcrumbs}/>
-                   <Stack
-                   sx={{m:2,}}
-                   direction={'row'}
-                   spacing={6}
-                   >
-                    <StyledBadge badgeContent={4} color="primary">
-                    <img width={70} style={{cursor:'pointer'}} src="/images/icons8_suzuki.svg"/>
-                    </StyledBadge>
-                    <StyledBadge badgeContent={2} color="primary">
-                    <img width={70} style={{cursor:'pointer'}} src="/images/icons8_toyota_1.svg"/>
-                    </StyledBadge>
-                    <StyledBadge badgeContent={2} color="primary">
-                    <img width={70} style={{cursor:'pointer'}} src="/images/icons8_ford.svg"/>
-                    </StyledBadge>
-                    
-                   </Stack>
+                   {
+                    !productsLoading && (
+                      <BrandFilters/>
+                    )
+                   }
             <Box sx={{display:'flex',justifyContent:smallScreen?'space-between':'flex-end',mb:1,mt:smallScreen?1:0,alignItems:"center"}}>
             {
              smallScreen&&(

@@ -231,6 +231,7 @@ if(profileDetail) {
                         onChange={(e)=>setPhoneNumber(e.target.value)}
                         fullWidth
                         required
+                        disabled
                          />
             </Grid>
             <Grid

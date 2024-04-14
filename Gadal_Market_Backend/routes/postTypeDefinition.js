@@ -46,7 +46,7 @@ router.post('/postTypeDefinitions', async (req, res) => {
     }
   });
   
-router.put('/postTypeDefinitions/:id', async (req, res) => {
+router.put('/postPriceUpdate/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const updatedPostTypeDefinition = await PostTypeDefinition.findByIdAndUpdate(id, req.body, { new: true });

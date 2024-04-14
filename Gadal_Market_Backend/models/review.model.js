@@ -4,11 +4,11 @@
  const reviewSchema = Schema({
     description:String,
     stars:Number,
-    rate:{
-        type:String,
-        enum:['Good','Bad','Neutral'],
+    // rate:{
+    //     type:String,
+    //     enum:['Good','Bad','Neutral'],
 
-    },
+    // },
     user:{
         type:Schema.Types.ObjectId,
         ref:'User'
@@ -19,24 +19,28 @@
     },
     status:{
         type:String,
-        validate:{
-        validator:function(value){
-          return Object.values(ReviewStateEnum).includes(value)
-        },
-        message:'Invalid Review status'
-        }
+        // validate:{
+        // validator:function(value){
+        //   return Object.values(ReviewStateEnum).includes(value)
+        // },
+        // message:'Invalid Review status'
+        // }
     },
     recordStatus:{
         type:String,
         default:1,
-        validate:{
-            validator:function(value){
-                return Object.values(RecordStatusEnum).includes(value)
-            },
-        message:'Invalid Record Status value'
-        }
+        // validate:{
+        //     validator:function(value){
+        //         return Object.values(RecordStatusEnum).includes(value)
+        //     },
+        // message:'Invalid Record Status value'
+        // }
     },
     remark:String
- })
+ },
+ {
+    timestamps: true,
+  }
+)
  const Review = mongoose.model('Review',reviewSchema)
  module.exports = Review

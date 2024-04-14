@@ -47,14 +47,9 @@ state:{
     }
   },
   postType:{
-    type:Number,
-    default:3,
-    validate:{
-      validator:function (value){
-      return Object.values(ProductPostTypeEnums).includes(value)
-      },
-      message:'Invalid Post Type value',
-    }
+    type:Schema.Types.ObjectId,
+    ref:"PostTypeDefinition"
+    
   },
   derivedState:{
     type:Number,
@@ -77,6 +72,7 @@ state:{
     }
   },
   isFixed:Boolean,
+  isPayed:Boolean,
   consignee:{
     type:Schema.Types.ObjectId,
     ref:'User'

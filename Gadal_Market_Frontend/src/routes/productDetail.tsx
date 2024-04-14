@@ -65,10 +65,10 @@ export default function ProductDetail(){
             </Box>
         <Box sx={{m:smallScreen?1:2}}>
             <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={5.5}>
                   <ProductImageGallery loading={productLoading} images={product?.productImages?.map((imagPath:string,index:number)=>({id:`${index}`,path:`${IMAGE_URL}/${imagPath}`}))}/>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={6.5}>
                     <ProductInfo data={product} loading = {productLoading}/>
                 </Grid>
             </Grid>

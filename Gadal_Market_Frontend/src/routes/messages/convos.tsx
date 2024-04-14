@@ -5,7 +5,7 @@ import KeyboardVoiceOutlinedIcon from '@mui/icons-material/KeyboardVoiceOutlined
 import AttachFileOutlinedIcon from '@mui/icons-material/AttachFileOutlined';
 import SendIcon from '@mui/icons-material/Send';
 import { Menu, MenuItem, MenuButton } from '@szhsin/react-menu';
-import { useContext, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { IMAGE_URL } from "../../api/apiConfig";
 import useSmallScreen from "../../utils/hooks/useSmallScreen";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -14,12 +14,15 @@ import addMessage from "../../api/messages/addMesage";
 import getConversation from "../../api/messages/getConversation";
 import { SocketCon } from "../../components/context/socketContext";
 import { getBadgeVariant } from "./userList";
+import updateSeen from "../../api/messages/updateSeen";
+import { NavLink } from "react-router-dom";
 interface ConvosProps {
   messageDetail:any,
   onGoBack:()=>void
 }
 export default function Convos(props:ConvosProps){
   const {messageDetail,onGoBack} = props
+  const {unreadCount} = useContext(SocketCon)
   const {connectedUsers} = useContext(SocketCon)
   const [message,setMessage] = useState('')
   const newMessageRef = useRef<HTMLDivElement|null>(null)
@@ -38,6 +41,14 @@ export default function Convos(props:ConvosProps){
         newMessageRef.current.scrollIntoView({behavior:'smooth'})
       }
       return await queryClient.invalidateQueries(({queryKey:['get_conversations']}))
+    } 
+  })
+  const {mutate:mutateSeen} = useMutation({
+    mutationKey:['update_seen',],
+    mutationFn:updateSeen,
+    onSuccess:()=>{
+      queryClient.invalidateQueries({queryKey:['get_messages']})
+      queryClient.invalidateQueries({queryKey:['get_unread_Messages_count']})
     }
   })
   const handleMessageSent = (message:string)=>{
@@ -50,7 +61,15 @@ export default function Convos(props:ConvosProps){
     mutate(messaePayload)
     setMessage('');
   }
-
+ useEffect(()=>{
+  mutateSeen({
+    messageId:messageDetail?._id,
+    userId:localStorage.getItem('userId') as string
+  })
+  if(newMessageRef.current){
+    newMessageRef.current.scrollIntoView({behavior:'smooth'})
+  }
+ },[unreadCount,newMessageRef])
     return (
         <>
         {
@@ -159,6 +178,17 @@ export default function Convos(props:ConvosProps){
           }}
           >
                {/* product information */}
+          <NavLink
+           to={`/products/${conversations?.product?._id}`}
+           style={({isTransitioning }) => {
+               return {
+                 color:'black',
+                 textDecoration:'none',
+                 viewTransitionName: isTransitioning ? "slide" : "",
+                 alignSelf:'center',
+               };
+             }}
+          >
           <Paper
           sx={{
             display:'flex',
@@ -197,6 +227,7 @@ export default function Convos(props:ConvosProps){
             </Stack>
             
           </Paper>
+          </NavLink>
           {/* conversations */}
          <Box 
           sx={{
@@ -205,21 +236,15 @@ export default function Convos(props:ConvosProps){
             display:'flex',
             flexDirection:'column',
             gap:1,
-            // height:'calc(100vh - 59px)',
-            height:'100%',
+            height:'100vh',
             overflowY:'auto',
             pr:smallScreen?4:2,
-            border:'1px solid black'
             }}>
           {
             conversations?.conversations?.map((convo:any)=>(
                <Box 
                key={convo?._id}
                 sx={{
-                  // alignSelf:convo?.isFromInterestedParty && localStorage.getItem('userId') === messageDetail?.interestedParty?._id ? 'flex-end':
-                  //           !convo?.isFromInterestedParty && localStorage.getItem('userId') === messageDetail?.productOwner?._id ? 'flex-end':'flex-start',
-                  // background:convo?.isFromInterestedParty && localStorage.getItem('userId') === messageDetail?.interestedParty?._id ? '#DAFDFC':
-                  //            !convo?.isFromInterestedParty && localStorage.getItem('userId') === messageDetail?.productOwner?._id ? '#DAFDFC':'#FDE6C4',          
                   alignSelf:convo?.sender === localStorage.getItem('userId') ? 'flex-end' : 'flex-start',
                   background:convo?.sender === localStorage.getItem('userId') ? '#DAFDFC' : '#FDE6C4',
                   p:1,
@@ -238,10 +263,6 @@ export default function Convos(props:ConvosProps){
             isPending && (
               <Box 
                sx={{
-                //  alignSelf:variables?.isFromBuyer && localStorage.getItem('userId') === messageDetail?.interestedParty?._id ? 'flex-end':
-                //            !variables?.isFromBuyer && localStorage.getItem('userId') === messageDetail?.productOwner?._id ? 'flex-end':'flex-start',
-                //  background:variables?.isFromBuyer && localStorage.getItem('userId') === messageDetail?.interestedParty?._id ? '#DAFDFC':
-                //             !variables?.isFromBuyer && localStorage.getItem('userId') === messageDetail?.productOwner?._id ? '#DAFDFC':'#FDE6C4',          
                 alignSelf:variables?.sender === localStorage.getItem('userId') ? 'flex-end' : 'flex-start',
                 background:variables?.sender === localStorage.getItem('userId') ? '#DAFDFC' : '#FDE6C4',
 
@@ -270,103 +291,104 @@ export default function Convos(props:ConvosProps){
              }
 
          {/* action area */}
-        <Box
-       sx={{
-        position:'absolute',
-        bottom:2,
-        left:0,
-        right:22,
-        borderTop:'1px solid #F1F1F1'
-      }}
-      component={'form'}
-      onSubmit={(e)=>{
-        e.preventDefault();
-        if(!message){
-          return;
-        }
-        handleMessageSent(message);
-      }}
-        >
-        <Box
-         sx={{
-          display:'flex',alignItems:'center',
-          justifyContent:'space-between',
-          gap:1,
-          p:.5,
-         }}
-         >
-         
-          <Stack direction={'row'} alignItems={'center'}>
-          
-            <IconButton>
-              <KeyboardVoiceOutlinedIcon 
-              fontSize={smallScreen ? 'medium' : "large"} 
-              color="primary"
-              />
-            </IconButton>
-            <IconButton size="small">
-              <AttachFileOutlinedIcon 
-                fontSize={smallScreen ? 'medium' : "large"} 
-                color="primary"
-                />
-            </IconButton>
-          </Stack>
-          <Box
-           sx={{
-            p:'4px 6px',borderRadius:"20px",
-            background:'#EFEFEF',
-            flexGrow:1,
-          }}
-           >
-             <InputBase
-             value={message}
-             onChange={(e)=>setMessage(e.target.value)}
-             autoFocus
-            sx={{ ml:1}}
-            placeholder="Type Message.."
-            
-      />
-      
-         </Box>
-          {
-            smallScreen ? (
-              <>
+         {
+          !convosLoading && (
+            <Box
+            sx={{
+             borderTop:'1px solid #F1F1F1',
+             pr:1,
+           }}
+           component={'form'}
+           onSubmit={(e)=>{
+             e.preventDefault();
+             if(!message){
+               return;
+             }
+             handleMessageSent(message);
+           }}
+             >
+             <Box
+              sx={{
+               display:'flex',alignItems:'center',
+               justifyContent:'space-between',
+               gap:1,
+               p:.5,
+              }}
+              >
+              
+               <Stack direction={'row'} alignItems={'center'}>
+               
+                 <IconButton>
+                   <KeyboardVoiceOutlinedIcon 
+                   fontSize={smallScreen ? 'medium' : "large"} 
+                   color="primary"
+                   />
+                 </IconButton>
+                 <IconButton size="small">
+                   <AttachFileOutlinedIcon 
+                     fontSize={smallScreen ? 'medium' : "large"} 
+                     color="primary"
+                     />
+                 </IconButton>
+               </Stack>
+               <Box
+                sx={{
+                 p:'4px 6px',borderRadius:"20px",
+                 background:'#EFEFEF',
+                 flexGrow:1,
+               }}
+                >
+                  <InputBase
+                  value={message}
+                  onChange={(e)=>setMessage(e.target.value)}
+                  autoFocus
+                 sx={{ ml:1}}
+                 placeholder="Type Message.."
+                 
+           />
+           
+              </Box>
                {
-                message ? (
-                  <IconButton
-                  type="submit"
-                  >
-                  <SendIcon 
-                  color="primary"            
-                  />
-                    </IconButton>
-                ):
-                null
+                 smallScreen ? (
+                   <>
+                    {
+                     message ? (
+                       <IconButton
+                       type="submit"
+                       >
+                       <SendIcon 
+                       color="primary"            
+                       />
+                         </IconButton>
+                     ):
+                     null
+                    }
+                   </>
+                 
+                 ):
+                 (
+                   <Button
+              variant="contained"
+              type="submit"
+              sx={{
+               color:'white',
+               display:'flex',
+               alignItems:'center',
+               gap:1,
+               
+              }}
+              >
+               <Typography variant="body2">
+                 Send
+               </Typography>
+               <SendIcon fontSize="small"/>
+              </Button>
+                 )
                }
-              </>
-            
-            ):
-            (
-              <Button
-         variant="contained"
-         type="submit"
-         sx={{
-          color:'white',
-          display:'flex',
-          alignItems:'center',
-          gap:1,
-          
-         }}
-         >
-          <Typography variant="body2">
-            Send
-          </Typography>
-          <SendIcon fontSize="small"/>
-         </Button>
-            )
-          }
-         </Box>
-        </Box>
+              </Box>
+             </Box>
+          )
+         }
         </Box>
           )
         }

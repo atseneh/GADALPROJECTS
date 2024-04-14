@@ -1,7 +1,11 @@
 import { Button, Rating, Skeleton, Stack, TextField } from "@mui/material";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
+import addReveiw from "../../api/reviews/createReveiw";
+import { useParams } from "react-router-dom";
+import CustomAlert from "./customAlert";
 
 export default function DescriptionAndReview(props:{data:any,loading:boolean}){
     const {data,loading} = props
@@ -62,6 +66,39 @@ export default function DescriptionAndReview(props:{data:any,loading:boolean}){
 }
 
 function Reviews(){
+  const [review,setReveiw] = useState('')
+  const [stars,setStars] = useState(0)
+  const {id:productId} = useParams();
+  const [notificationSnackbarOpen,setNotificationSnackbarOpen] = useState(false)
+  const [notificationSeverity,setNotficationSeverity] = useState<'error'|'success'|undefined>()
+  const handleNotificationSnackbarClose = ()=>{
+    setNotificationSnackbarOpen(false)
+  }
+  const {mutate,isPending,error} = useMutation({
+    mutationFn:addReveiw,
+    mutationKey:['add_review'],
+    onSuccess:()=>{
+        setNotficationSeverity('success')
+    },
+    onError:()=>{
+        setNotficationSeverity('error')
+    },
+    onSettled:()=>{
+        setNotificationSnackbarOpen(true)
+    }
+  })
+  const handleReviewAdd = ()=>{
+    const payload = {
+    user:localStorage.getItem('userId') as string,
+    product:productId as string,
+    description:review,
+    stars,
+    }
+    if(!review || stars===0){
+        return;
+    }
+    mutate(payload)
+  } 
     return (
         <Box
         sx={{
@@ -95,28 +132,52 @@ function Reviews(){
        <Typography fontWeight={'bold'}>
             Add A Review
         </Typography>
-        <form>
+        <form
+        onSubmit={(e)=>{
+            e.preventDefault();
+            handleReviewAdd();
+        }}
+        >
           <Box sx={{display:'flex',alignItems:'center',gap:1}}>
             <Typography variant="body2">
                 Your Rating
             </Typography>
-            <Rating size="small"/>
+            <Rating
+             size="small"
+             value={stars}
+             onChange={(event,newValue)=>setStars(newValue as number)}
+             
+             />
           </Box>
           <TextField
            fullWidth
            required multiline placeholder="Comment"
            rows={4}
            sx={{background:"white",mt:1}}
+           value={review}
+           onChange={(e)=>setReveiw(e.target.value)}
            />
            <Button
            type="submit"
            variant="contained"
            sx={{color:'white',mt:1}}
+           disabled = {isPending}
            >
             Submit
            </Button>
         </form>
        </Stack>
+       {
+           notificationSnackbarOpen&&(
+            <CustomAlert
+            open={notificationSnackbarOpen}
+            handleSnackBarClose = {handleNotificationSnackbarClose}
+            severity={notificationSeverity}
+            errorMessage={error?.message as string}
+            successMessage="Reveiw successfully saved"
+            />
+           )
+          }
         </Box>
     )
 }

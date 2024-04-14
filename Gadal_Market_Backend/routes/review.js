@@ -3,8 +3,18 @@ const router = express.Router();
 const Review = require('../models/review.model');
 
 router.post('/reviews', async (req, res) => {
+  const {description,stars,product,user} = req.body
+  const data = {
+    user,
+    product,
+    status:1,
+    description,
+    stars,
+    recordStatus:1,
+    remark:'',
+  }
   try {
-    const newReview = await Review.create(req.body);
+    const newReview = await Review.create(data);
     res.status(201).json(newReview);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -35,7 +45,18 @@ router.get('/reviews/:id', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
+router.get('/reviews/:productId', async (req, res) => {
+  const {productId} = req.params
+  try {
+    const review = await Review.findOne({product:productId});
+    // if (!review) {
+    //   return res.status(404).json({ message: 'Review not found' });
+    // }
+    res.status(200).json(review);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 router.put('/reviews/:id', async (req, res) => {
   try {
     const updatedReview = await Review.findByIdAndUpdate(

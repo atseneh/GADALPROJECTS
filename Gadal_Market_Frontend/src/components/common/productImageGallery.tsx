@@ -72,9 +72,10 @@ export default function ProductImageGallery(props:{images:imageType[],loading:bo
                  backgroundPosition: 'center center',
                  cursor:'pointer',
                 }}
+                onClick={()=>setOpenLightBox(true)}
              >
               
-                 <IconButton
+                 {/* <IconButton
                  sx={{
                      position:'absolute',
                      bottom:0,
@@ -85,12 +86,13 @@ export default function ProductImageGallery(props:{images:imageType[],loading:bo
                  onClick={()=>setOpenLightBox(true)}
                  >
                      <FullscreenIcon color="inherit"/>
-                 </IconButton>
+                 </IconButton> */}
              </Box>
             </Box>
         )
         }
         <Lightbox
+        index={Number(selectedImage)}
         open={openLightBox}
         close={()=>setOpenLightBox(false)}
         slides={

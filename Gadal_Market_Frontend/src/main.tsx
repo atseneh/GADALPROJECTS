@@ -36,6 +36,7 @@ import PackageSubscription from './routes/packageSubscription.tsx';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import SocketContext from './components/context/socketContext.tsx';
+import VerifyPhone from './routes/verifyPhone.tsx';
 TimeAgo.addDefaultLocale(en)
 const queryClient = new QueryClient()
 const router = createBrowserRouter([
@@ -111,6 +112,10 @@ const router = createBrowserRouter([
   {
     path:'/login',
     element:<Login/>
+  },
+  {
+    path:'/verifyPhone',
+    element:<VerifyPhone/>
   },
   {
     path:'/register',

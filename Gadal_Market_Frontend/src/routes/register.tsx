@@ -34,8 +34,9 @@ const [notificationSnackbarOpen,setNotificationSnackbarOpen] = useState(false)
 const registerMutation = useMutation({
     mutationKey:['registerUser'],
     mutationFn:signUp,
-    onSuccess:()=>{
-        navigate('/login')
+    onSuccess:(data)=>{
+        // console.log(data)
+        navigate('/verifyPhone',{state:{verificationDetail:{verificationId:data?.verificationId,phoneNumber:phoneNumber}}})
     },
     onError:(error)=>{
       console.log(error)
@@ -87,7 +88,7 @@ setBirthDateError(age < 18)
         flexDirection:'row-reverse'
        }}
        >
-       <Paper sx={{borderRadius:0}}>
+       <Paper sx={{borderRadius:0,height:'97vh'}}>
        <Box
         sx={{p:smallScreen?0:7,pt:0,pb:0.7}}
         component={'form'}
@@ -200,6 +201,7 @@ setBirthDateError(age < 18)
               error:birthDateError
             }
           }}
+          disableFuture
           />
             </Box>
             <TextField 
@@ -246,15 +248,15 @@ setBirthDateError(age < 18)
                 >
                     <Typography>CREATE</Typography>
                 </Button>
-                <Typography variant="h6" sx={{mt:1,ml:15,color:'#535252',fontWeight:'bold'}}>
+                {/* <Typography variant="h6" sx={{mt:1,ml:15,color:'#535252',fontWeight:'bold'}}>
                     OR
-                </Typography>
+                </Typography> */}
                  
         </Box>
-        <Stack spacing={1} sx={{ml:smallScreen?4:11}}>
+        {/* <Stack spacing={1} sx={{ml:smallScreen?4:11}}>
             <LoginWithButton type="google"/>
             <LoginWithButton type="facebook"/>  
-        </Stack>
+        </Stack> */}
             </Box>
         </Box>
        </Paper>
