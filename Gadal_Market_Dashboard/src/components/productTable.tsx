@@ -33,12 +33,12 @@ interface ProductTableProps {
 export default function ProductTable(props:ProductTableProps){
     const {onEdit,selectedCategory} = props
     const [page, setPage] = React.useState(1);
-    const [pageCount,setPageCount] = useState(5)
+    const [pageCount,setPageCount] = useState(10)
     const handleChange = (event: React.ChangeEvent<unknown>, value: number) => {
       setPage(value);
     };
     const {serviceId} = useParams()
-    const {data:products,isLoading:productsLoading} = useQuery({
+    const {data,isLoading:productsLoading} = useQuery({
         queryKey:['products',serviceId,selectedCategory,page,pageCount],
         queryFn:()=>getProducts({
             productType:Number(serviceId),
@@ -47,10 +47,12 @@ export default function ProductTable(props:ProductTableProps){
             pageSize:pageCount,
         })
     })
+    const products = data?.products || [];
     const [selectedProducts,setSelectedProducts] = useState<any[]>([])
     // const productIds = products?.map((prodcut:any)=>prodcut?._id)
     const productIds = Array.isArray(products) ? products.map((product:any) => product?._id) : [];
-
+    {console.log(products)}
+    {console.log(productIds)}
     const allAreSelected = compareArrays(selectedProducts,productIds)
     const handleAllSelection = ()=>{
     if(allAreSelected){
@@ -158,10 +160,10 @@ export default function ProductTable(props:ProductTableProps){
             </Typography>
          )
          :
-         (
-            Array.isArray(products) && products.length > 0 ? (
-            products?.map((product:any,index:number)=>(
+         ( 
+            Array.isArray(products) && products.map((product:any,index:number) =>(
                 <React.Fragment key={index}>
+              
                 <Grid container spacing={1} alignItems={'center'}>
                 <Grid item lg={5}>
                 <Box
@@ -234,9 +236,7 @@ export default function ProductTable(props:ProductTableProps){
                 <Divider/>
                 </React.Fragment>
             ))
-            ) : (
-                <Typography variant="caption">No products found.</Typography>
-              )
+            
          )
          }
         </Paper>
