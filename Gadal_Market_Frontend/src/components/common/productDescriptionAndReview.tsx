@@ -1,11 +1,13 @@
 import { Button, Rating, Skeleton, Stack, TextField } from "@mui/material";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import addReveiw from "../../api/reviews/createReveiw";
 import { useParams } from "react-router-dom";
 import CustomAlert from "./customAlert";
+import getReviewsOfProduct from "../../api/reviews/getReviewsOfProduct";
+import ReactTimeAgo from "react-time-ago";
 
 export default function DescriptionAndReview(props:{data:any,loading:boolean}){
     const {data,loading} = props
@@ -13,6 +15,11 @@ export default function DescriptionAndReview(props:{data:any,loading:boolean}){
     const handleTabChange = (tab:number)=>{
         setActiveTab(tab)
     }
+    const {id:productId} = useParams();
+    const {data:reviews} = useQuery({
+      queryKey:['get_reviews',productId],
+      queryFn:()=>getReviewsOfProduct(productId as string)
+    })
     return (
        <>
         <Box sx={{display:'flex',alignItems:'center',justifyContent:'center',gap:2}}>
@@ -26,7 +33,7 @@ export default function DescriptionAndReview(props:{data:any,loading:boolean}){
         onClick={()=>handleTabChange(2)}
         sx={{cursor:'pointer',color:activeTab!==2?'#ABABAB':''}}
         variant="h5" fontWeight={'bold'}>
-           {'Review(3)'}
+           {`Review(${reviews?.length || 0})`}
         </Typography>
    </Box>
            {
@@ -69,6 +76,11 @@ function Reviews(){
   const [review,setReveiw] = useState('')
   const [stars,setStars] = useState(0)
   const {id:productId} = useParams();
+  const queryClient = useQueryClient();
+  const {data:reviews,isLoading} = useQuery({
+    queryKey:['get_reviews',productId],
+    queryFn:()=>getReviewsOfProduct(productId as string)
+  })
   const [notificationSnackbarOpen,setNotificationSnackbarOpen] = useState(false)
   const [notificationSeverity,setNotficationSeverity] = useState<'error'|'success'|undefined>()
   const handleNotificationSnackbarClose = ()=>{
@@ -79,6 +91,9 @@ function Reviews(){
     mutationKey:['add_review'],
     onSuccess:()=>{
         setNotficationSeverity('success')
+        setReveiw('')
+        setStars(0)
+        queryClient.invalidateQueries({queryKey:['get_reviews']})
     },
     onError:()=>{
         setNotficationSeverity('error')
@@ -110,19 +125,28 @@ function Reviews(){
         }}
         >
        {
-        [1,2,3].map((item)=>(
-            <Stack spacing={1} sx={{ml:1}} key={item}>
+        reviews?.map((review:any)=>(
+            <Stack spacing={1} sx={{ml:1}} key={review?.id}>
             <Box sx={{display:'flex',gap:1}}>
-            <Typography>
-                Dawit Fissha
+            <Typography
+            sx={{
+                textTransform:'capitalize',
+                fontWeight:'bold'
+            }}
+            >
+                {
+                 `${review?.user?.firstName} ${review?.user?.lastName}`
+                }
             </Typography>
             <Typography variant="body2" sx={{mt:.2}}>
-                Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                {
+                    review?.description
+                }
             </Typography>
             </Box>
-            <Rating size="small" readOnly value={4}/>
+            <Rating size="small" readOnly value={review?.stars}/>
             <Typography>
-                2 months ago
+            <ReactTimeAgo date={review?.updatedAt}/>
             </Typography>
             {/* <Divider/> */}
             </Stack>

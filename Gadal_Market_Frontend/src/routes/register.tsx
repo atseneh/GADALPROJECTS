@@ -144,6 +144,7 @@ setBirthDateError(age < 18)
             onChange={(e)=>setPhoneNumber(e.target.value)} 
             label={"Phone Number"} 
             required 
+            type="number"
             />
             <TextField 
             autoComplete="off" 

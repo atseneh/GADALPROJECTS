@@ -307,7 +307,9 @@ export default function UserTable(){
                 </Box>
                </Stack>
                </Box> 
-                    <Box sx={{display:'flex',flexDirection:'column',gap:1}}>
+              
+             
+                       <Box sx={{display:'flex',flexDirection:'column',gap:1}}>
                     <IconButton
                     onClick={()=>setOpenDeleteConfirmation(true)}
                     size="small"

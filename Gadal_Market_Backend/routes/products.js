@@ -50,13 +50,12 @@ const applyWatermarkAndConvert = async (inputPath, outputPath, watermarkPath, ap
 const upload = multer({dest:'/images'})
 router.post('/products', checkPackage, upload.array('images', 10), async (req, res) => {
   try {
-   
     const watermarkPath = path.join(__dirname,'..','images', 'watermark.svg');
     // '/images/watermark.svg'
     const { title, description, productType, previousPrice, currentPrice, category, postType, isFixed, consignee, currency, brand, model, location, subCity, wereda, transactionType, youtubeLink,isPayed } = req.body;
     let uploadedImages = [];
     let productAttributes = []
-    const postTypeDefinition = await PostTypeDefinition.findById("661bc0d4b6116f918ab00b58");
+    const postTypeDefinition = await PostTypeDefinition.findById("65c8d2fc3458b4f8df0d9fae");
     const { name, no_day_onTop_cat, no_day_onTop_home, no_day_on_Gadal } = postTypeDefinition;
     let remainingPostsField;
     switch (name) {
@@ -72,46 +71,55 @@ router.post('/products', checkPackage, upload.array('images', 10), async (req, r
       default:
         return res.status(400).json({ error: 'Invalid product post type' });
     }
-  
-  
     const activePackage = await Package.findOne({
       user: consignee,
       [remainingPostsField]: { $gt: 0 },
       recordStatus: 1
     });
-    console.log("check for isActive Package")
-    console.log(activePackage)
+
     if (!activePackage) {
       req.body.isPayed = false;
-    }else{
-      req.body.isPayed = true;
     }
     req.body.no_day_onTop_cat = no_day_onTop_cat;
     req.body.no_day_onTop_home = no_day_onTop_home;
     req.body.no_day_on_Gadal = no_day_on_Gadal;
  
     if (req.files) {
-      
+      console.log('running')
      const images = req.files
-      try {
-        const processPromises = images.map((file, index) => {
-            const inputPath = file.path;
-            const outputPath = path.join(__dirname,'..', 'images/', `${file.filename}-${Date.now()}.webp`); // Change extension to .webp
-            uploadedImages.push(`images/${file.filename}-${Date.now()}.webp`)
-           
-            // Apply watermark and convert to WEBP for images other than the first
-            return applyWatermarkAndConvert(inputPath, outputPath, watermarkPath, index!==0);
-        });
-        await Promise.all(processPromises);
-    } catch (error) {
-        // Handle the error here
-        console.error('An error occurred while processing images:', error);
-    }
-    
+      // for (const file of req.files) {
+      //   const webpBuffer = await sharp(file.path).webp().toBuffer();
+      //   // Save the converted image to disk
+      //   const imagePath = `images/${file.filename}-${Date.now()}.webp`;
+      //   try {
+      //     await sharp(webpBuffer)
+      //     .composite([{
+      //        input: watermarkPath, 
+      //        gravity: 'southeast', 
+      //        blend: 'over',
+      //       }])
+      //     .toFile(imagePath);
+      //   } catch (error) {
+          
+      //   }
+      //   uploadedImages.push(imagePath);
+      // }
+      const processPromises = images.map((file, index) => {
+        const inputPath = file.path;
+        const outputPath = path.join(__dirname,'..', 'images/', `${file.filename}-${Date.now()}.webp`); // Change extension to .webp
+        uploadedImages.push(`images/${file.filename}-${Date.now()}.webp`)
+        
+          // Apply watermark and convert to WEBP for images other than the first
+          return applyWatermarkAndConvert(inputPath, outputPath, watermarkPath, index!==0);
+      });
+      await Promise.all(processPromises);
     } else {
       const defaultImage = "images/1eedaa36ff2986a8031be9544a8af4e6-1711896958928.webp";
       uploadedImages.push(defaultImage);
     }
+    console.log(req.body.attributes)
+    // productAttributes = req.body.attributes ? JSON.parse(req.body.attributes) : [];
+    console.log(productAttributes)
     const newProduct = new Product({ 
       title, 
       description, 
@@ -140,11 +148,8 @@ router.post('/products', checkPackage, upload.array('images', 10), async (req, r
     });
 
     const savedProduct = await newProduct.save();
-    console.log("just save product")
       // Update remaining posts count in the package
     if (!savedProduct.isPayed) {
-      console.log("has no active package")
-      console.log(savedProduct._id)
       return res.status(200).json({ productId: savedProduct._id });
     }
     else {
@@ -234,22 +239,11 @@ router.get('/products', async (req, res) => {
     // ];
     
     // Count the total number of documents matching the filter criteria
-    // const totalProductsQuery = filterQuery && Object.keys(filterQuery).length > 0
-    //   ? Product.countDocuments(filterQuery)
-    //   : Product.countDocuments();
-
-    // const totalProducts = await totalProductsQuery;
-
     const totalProductsQuery = filterQuery && Object.keys(filterQuery).length > 0
-    ? Product.aggregate([
-        { $match: filterQuery },
-        { $group: { _id: null, count: { $sum: 1 } } }
-      ])
-    : Product.aggregate([
-        { $group: { _id: null, count: { $sum: 1 } } }
-      ]);
-      const result = await totalProductsQuery;
-      const totalProducts = result.length > 0 ? result[0].count : 0;
+      ? Product.countDocuments(filterQuery)
+      : Product.countDocuments();
+
+    const totalProducts = await totalProductsQuery;
 
     // Pagination
     const page = parseInt(filters.pageNum) || 1; 

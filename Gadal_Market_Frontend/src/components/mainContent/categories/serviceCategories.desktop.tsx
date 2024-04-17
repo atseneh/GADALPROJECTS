@@ -9,11 +9,11 @@ import Skeleton from '@mui/material/Skeleton'
 interface serviceCategoryProps {
     serviceName:string;
     isLink:boolean;
-    localTransactionType?:'rent'|'sale',
-    setLocalTransactionType?:(t:'rent'|'sale')=>void;
-    activeTransaction?:'rent'|'sale';
+    localTransactionType?:'rent'|'sale'|null,
+    setLocalTransactionType?:(t:'rent'|'sale'|null)=>void;
+    activeTransaction?:'rent'|'sale'|null;
     activeService?:'property'|'machinery'|'vehicle'|'others';
-    handleTransactionChange?:(t:'rent'|'sale',s:'property'|'machinery'|'vehicle'|'others')=>void
+    handleTransactionChange?:(t:'rent'|'sale'|null,s:'property'|'machinery'|'vehicle'|'others')=>void
 }
 export default function ServiceCategory(props:serviceCategoryProps){
     const theme = useTheme()
@@ -29,7 +29,13 @@ export default function ServiceCategory(props:serviceCategoryProps){
     queryFn:()=>getCategoriesByService(serviceId)
    })
     return (
-        <Box sx={{display:'flex',flexDirection:'column',gap:1,mb:1}}>
+        <Box 
+          sx={{
+            display:'flex',
+            flexDirection:'column',
+            gap:1,
+            mb:1
+            }}>
             <Box sx={{background:'rgb(239 239 239)',borderRadius:'32px',display:'flex',alignItems:'center',pr:1}}>
           <Box sx={{flexGrow:1,ml:1}}>
           <img width={40} src={`/images/${serviceName.toLowerCase()}.svg`}/>
@@ -46,13 +52,18 @@ export default function ServiceCategory(props:serviceCategoryProps){
                    color={isRentActive?'primary':'default'} label="Rent" 
                    onClick={()=>{
                    if(handleTransactionChange){
+                    if(isRentActive){
+                      handleTransactionChange(null,serviceName.toLowerCase() as 'property'|'machinery'|'vehicle'|'others' )
+                      return;
+                    }
                     handleTransactionChange('rent',serviceName.toLowerCase() as 'property'|'machinery'|'vehicle'|'others' )
                     return
                    }
-                   
+                   if(isRentActive){
+                    setLocalTransactionType!(null)
+                    return;
+                   }
                    setLocalTransactionType!('rent')
-
-                   
                   }}
                    icon={isRentActive?<CheckCircleOutlineIcon fontSize='small' color='inherit'/>:undefined}/>
                   <Chip 
@@ -60,7 +71,16 @@ export default function ServiceCategory(props:serviceCategoryProps){
                    color={isSaleActive?'primary':'default'} label="Sale"
                    onClick={()=>{
                     if(handleTransactionChange){
+                      if(isSaleActive){
+                        handleTransactionChange(null,serviceName.toLowerCase() as 'property'|'machinery'|'vehicle'|'others')
+                        return;
+                      }
                      handleTransactionChange('sale',serviceName.toLowerCase() as 'property'|'machinery'|'vehicle'|'others')
+                     return
+                    }
+                    if(isSaleActive){
+                      setLocalTransactionType!(null)
+                      return;
                     }
                     setLocalTransactionType!('sale')
                     }}

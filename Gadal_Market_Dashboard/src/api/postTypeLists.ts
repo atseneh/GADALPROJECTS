@@ -1,9 +1,9 @@
 import axios from 'axios'
-import BASE_URL from '../apiConfig'
-async function getReviewsOfProduct(productId:string){
+import BASE_URL from './apiConfig'
+async function getPostTypes(){
 try {
     const {data} = await axios.get(
-        `${BASE_URL}reviews?product=${productId}`
+        `${BASE_URL}postTypeDefinitions`
     )
     return data
 } catch (error:any) {
@@ -11,4 +11,4 @@ try {
     throw new Error(error?.response.data.message)
 }
 }
-export default getReviewsOfProduct
+export default getPostTypes

@@ -27,7 +27,7 @@ const {
     sortCriteria,
     brand,
 } = queryData
-let url = `products?recordStatus=1`
+let url = `products?recordStatus=1&state=1`
 if(category){
 url = `${url}&category=${category}`
 }

@@ -1,7 +1,7 @@
-import { Paper,Box,Typography,Stack,useTheme, InputBase, Button,Grid } from "@mui/material";
+import { Paper,Box,Typography,Stack,useTheme, InputBase, Button,Grid, FormControlLabel, Checkbox, Chip } from "@mui/material";
 import Enums from '../utils/constants/serviceEnums'
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import getCategoriesByService from "../api/getCategoryByService";
 import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
 import getCategoryAttributes from "../api/getCategoryAttributes";
@@ -9,6 +9,13 @@ import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
 import getLocations from "../api/getLocations";
 import getSubcities from "../api/getSubCity";
 import getWeredas from "../api/getWereda";
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import TextField from '@mui/material/TextField';
+import createAttributes from "../api/createAttributeForCategory";
+import addAttributeValue from "../api/addAttributeValue";
 export default function Customize(){
     const {ServiceEnums} = Enums
     const services =  Object.entries(ServiceEnums).map(([key, value]) => ({ name: key, value: value }));
@@ -16,7 +23,17 @@ export default function Customize(){
     const [selectedSubCategory,setSelectedSubCategory] = useState('')
     const [location,setLocation] = useState('')
     const [subCity,setSubCity] = useState('')
+    const [description,setDescription] = useState('')
+    const [newAttributeValue,setNewAttributeValue]  = useState<{[key:string]:string}>()
+    const handleNewAttributeValueChange = (e:React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>)=>{
+        const {name,value} = e.target
+        setNewAttributeValue({
+            ...newAttributeValue,
+            [name]:value
+        })
+    }
     const theme = useTheme()
+    const queryClient = useQueryClient();
     const {data:categories,isLoading:categoriesLoding} = useQuery({
         queryKey:['categoriesByService',selectedService],
         queryFn:()=>getCategoriesByService(selectedService as number),
@@ -41,7 +58,90 @@ export default function Customize(){
         queryFn:()=>getWeredas(subCity),
         enabled:Boolean(subCity)
        })
-    return (
+       const [open, setOpen] = useState(false);
+       const [isInsertion,setIsInsertion] = useState(false)
+       const handleIsInsertion = (e:React.ChangeEvent<HTMLInputElement>)=>{
+        setIsInsertion(e.target.checked)
+        if(e.target.checked === true){
+            setAttributeValues([])
+        }
+       }
+       const handleClickOpen = () => {
+         setOpen(true);
+       };
+     
+       const handleClose = () => {
+         setOpen(false);
+       };
+       const [attributeValues, setAttributeValues] = useState<string[]>([]);
+       const [inputValue, setInputValue] = useState('');
+     
+       const handleInputChange = (event:any) => {
+         setInputValue(event.target.value);
+       };
+       const handleInputKeyDown = (event:any) => {
+        if (event.key === 'Enter' && inputValue.trim() !== '') {
+          setAttributeValues([...attributeValues, inputValue.trim()]);
+          setInputValue('');
+        }
+      };
+      const {mutate:saveAttribute,isPending:savePending} = useMutation({
+        mutationFn:createAttributes,
+        mutationKey:['create_attributes'],
+        onSuccess:()=>{
+            queryClient.invalidateQueries({queryKey:['categoryAttributes']})
+            setDescription('')
+            setAttributeValues([])
+            setIsInsertion(false)
+            handleClose();
+        }
+      })
+      const {mutate:addAttribute,isPending:addPending} = useMutation({
+        mutationFn:addAttributeValue,
+        mutationKey:['add_attribute_value'],
+        onSuccess:()=>{
+            queryClient.invalidateQueries({queryKey:['categoryAttributes']})
+            setNewAttributeValue(
+                categoryAttributes?.filter((ca:any)=>!ca?.isInsertion)?.reduce((acc:any,cv:any)=>({
+                    ...acc,
+                    [cv?._id]:''
+                     }),{})
+            )
+        }
+      })
+      const handleAttributeSave = ()=>{
+        const payload = {
+            name:description,
+            isInsertion,
+            values:attributeValues,
+            category:selectedSubCategory
+        }
+        if(!description){
+            return;
+        }
+        saveAttribute(payload)
+      }
+const handleAddAttributeValue = (id:string)=>{
+    if(!newAttributeValue){
+        return;
+    }
+    const payload = {
+        id,
+        value:newAttributeValue[id]
+    }
+    addAttribute(payload)
+}
+useEffect(()=>{
+if(Array.isArray(categoryAttributes)&&categoryAttributes?.length>0){
+    const value = categoryAttributes?.filter((ca:any)=>!ca?.isInsertion)?.reduce((acc,cv)=>({
+        ...acc,
+        [cv?._id]:''
+         }),{})
+setNewAttributeValue(value)
+}
+},[categoryAttributes])   
+
+return (
         <Stack spacing={1}>
          <Paper
     sx={{
@@ -337,6 +437,7 @@ export default function Customize(){
      sx={{
         display:'flex',
         gap:4,
+        alignItems:'flex-start'
      }}
      >
     <Stack spacing={.5}>
@@ -422,95 +523,180 @@ export default function Customize(){
             )
      }
     </Stack>
-    <Grid
-     container
-     columnSpacing={2}
-     >
-      {
-      attributesLading?
-      (
-        <Typography variant="caption">
-            Loading ...
-        </Typography>
-      )
-      :
-      (
+     {
         <>
         {
-            categoryAttributes?.filter((attr:any)=>!attr?.isInsertion)?.map((attribute:any)=>(
-                <Grid item xs={12} sm={3}>
-                      <Box
-     sx={{
-        display:'flex',
-        gap:1,
-     }}
-     >
-    <Stack spacing={.5}>
-     <Typography variant="h6" fontWeight={'bold'}>
-        {attribute?.name}
-     </Typography>
-     
-       
-                <Box
-                sx={{
-                   display:'flex',
-                   flexDirection:'column',
-                   gap:2,
-                   border:"1px solid #535252",
-                   p:2,
-                   borderRadius:'8px'
-                }}
-                >
-                {
-                   attribute.values?.map((value:any)=>(
-                     
-                       <Typography >
-                           {
-                            value
-                           }
-                       </Typography>
-                     
-                   ))
-                }
-                <Stack
-                spacing={.5}
-                >
-                <InputBase
-                   sx={{ 
-                    ml: 1, flex: 1,background:'#EFEFEF',
-                    alignSelf:'center',
-                    '&:placeholder':{
-                        ml:2
+        attributesLading ? (
+            <Typography variant="caption">
+            Loading ...
+        </Typography>
+        ):
+        (
+        <Stack
+        spacing={1}
+        alignItems={'flex-start'}
+        >
+            <Button
+            disabled={!selectedSubCategory}
+            onClick={handleClickOpen}
+            variant="contained"
+            >Add</Button>
+            <Grid
+         container
+         columnSpacing={2}
+         >
+            <>
+            {
+                categoryAttributes?.filter((attr:any)=>!attr?.isInsertion)?.map((attribute:any)=>(
+                    <Grid item xs={12} sm={6}>
+                          <Box
+         sx={{
+            display:'flex',
+            gap:1,
+         }}
+         >
+        <Stack spacing={.5}>
+         <Typography variant="h6" fontWeight={'bold'}>
+            {attribute?.name}
+         </Typography>
+         
+           
+                    <Box
+                    sx={{
+                       display:'flex',
+                       flexDirection:'column',
+                       gap:2,
+                       border:"1px solid #535252",
+                       p:2,
+                       borderRadius:'8px'
+                    }}
+                    >
+                    {
+                       attribute.values?.map((value:any)=>(
+                         
+                           <Typography >
+                               {
+                                value
+                               }
+                           </Typography>
+                         
+                       ))
                     }
-                }}
-                   placeholder={`Add ${attribute?.name}`}
-                   
-                 />
-                   <Button
-                   sx={{
-                       height:25,width:30,color:'white',alignSelf:'center'
-                   }}
-                   size="small"
-                   variant="contained"
-                   >
-                       Add
-                   </Button>
-                </Stack>
-                </Box>
+                    <Stack
+                    spacing={.5}
+                    >
+                    <InputBase
+                       sx={{ 
+                        ml: 1, flex: 1,background:'#EFEFEF',
+                        alignSelf:'center',
+                        '&:placeholder':{
+                            ml:2
+                        }
+                    }}
+                       placeholder={`Add ${attribute?.name}`}
+                       name={attribute?._id}
+                       value={newAttributeValue ? newAttributeValue[attribute?._id]:''}
+                       onChange={handleNewAttributeValueChange}
+                     />
+                       <Button
+                       sx={{
+                           height:25,width:30,color:'white',alignSelf:'center'
+                       }}
+                       size="small"
+                       variant="contained"
+                       onClick={()=>{
+                        handleAddAttributeValue(attribute?._id)
+                       }}
+                       disabled={addPending}
+                       >
+                           Add
+                       </Button>
+                    </Stack>
+                    </Box>
+            
+        </Stack>
+         </Box>
+                    </Grid>
+                ))
+            }
+            </>
         
-    </Stack>
-     </Box>
-                </Grid>
-            ))
+         </Grid>
+        </Stack>
+        )
         }
         </>
-      )
-      }
-     </Grid>
+     }
      </Box>
         )
     }
     </Paper>
+    <Dialog
+        open={open}
+        onClose={handleClose}
+      >
+        <DialogTitle>New Attribute</DialogTitle>
+        <DialogContent>
+        <Stack
+        spacing={.5}
+        sx={{width:300}}
+        >
+              <TextField
+            required
+            margin="dense"
+            id="description"
+            name="description"
+            label="Description"
+            fullWidth
+            value={description}
+            onChange={(e)=>setDescription(e.target.value)}
+          />
+           <FormControlLabel 
+            control={<Checkbox value={isInsertion} 
+            onChange={handleIsInsertion}
+            />
+        }
+            label="Is Insertion ?" 
+            />
+           <TextField
+        label="Tags"
+        variant="outlined"
+        value={inputValue}
+        onChange={handleInputChange}
+        onKeyDown={handleInputKeyDown}
+        fullWidth
+        disabled={isInsertion}
+        InputProps={{
+          // Disable browser's auto-complete for the input field
+          autoComplete: 'off'
+        }}
+      />
+      <Stack
+      direction={'row'}
+      spacing={1}
+      >
+         {attributeValues.map((tag, index) => (
+            <Chip 
+            // size="small"
+            label={tag}
+            onDelete={()=>{
+            setAttributeValues(attributeValues.filter(value=>value !== tag))
+            }}
+            />
+          ))}
+      </Stack>
+        </Stack>   
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Cancel</Button>
+          <Button
+            disabled={savePending}
+            onClick={handleAttributeSave}
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
         </Stack>
     )
 }

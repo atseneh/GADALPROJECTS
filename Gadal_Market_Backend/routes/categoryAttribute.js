@@ -74,7 +74,23 @@ router.get('/categoryAttributes/:id', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
+router.put('/addNewAttributeValue/:id', async (req, res) => {
+  const {id} = req.params
+  const {value} = req.body
+  try {
+    const updatedCategoryAttributes = await CategoryAttributes.findOneAndUpdate(
+      {_id:id},
+      {$push:{values:value}},
+      { new: true }
+    );
+    if (!updatedCategoryAttributes) {
+      return res.status(404).json({ message: 'CategoryAttributes not found' });
+    }
+    res.status(200).json(updatedCategoryAttributes);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 router.put('/categoryAttributes/:id', async (req, res) => {
   try {
     const updatedCategoryAttributes = await CategoryAttributes.findByIdAndUpdate(

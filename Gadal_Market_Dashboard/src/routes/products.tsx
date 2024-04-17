@@ -9,7 +9,7 @@ import Box from "@mui/material/Box";
 import ChangePassword from "../components/changePassword";
 import AddProduct from "../components/addProduct";
 import { useLocation,useNavigate, useParams } from "react-router-dom";
-export default function Machinery(){
+export default function Products(){
 const [itemToEditId,setItemEditId] = useState('')
 const {serviceId} = useParams()
 const {pathname} = useLocation()

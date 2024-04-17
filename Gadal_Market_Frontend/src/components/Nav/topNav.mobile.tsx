@@ -1,4 +1,4 @@
-import {Box,IconButton,Badge,Card, Stack, Button, Typography} from '@mui/material'
+import {Box,IconButton,Badge,Card, Stack, Button, Typography, InputBase, Divider} from '@mui/material'
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 import SearchIcon from '@mui/icons-material/Search'
 import TextField from '@mui/material/TextField';
@@ -7,9 +7,11 @@ import Link from '@mui/material/Link';
 import AccountMenu from '../common/accountMenu';
 import CartMenu from '../common/cartMenu';
 import { useNavigate } from 'react-router-dom';
+import useSmallScreen from '../../utils/hooks/useSmallScreen';
 
 export default function TopNavMobile(){
     const [showSearch,setShowSearch] = useState(false)
+    const [searchTerm,setSearchTerm] = useState('')
     const navigate = useNavigate();
     const loggedIn = localStorage.getItem('token')
     const handleSearchClick = ()=>{
@@ -41,32 +43,26 @@ export default function TopNavMobile(){
         }
       };
     return (
-      <Card sx={{p:1}}>
+     <Stack
+     spacing={1}
+     >
+       <Card sx={{p:1}}>
           <Box
         sx={{display:'flex',alignItems:'center'}}
         >
          <Box
-          sx={{flexGrow:1,alignSelf:showSearch?'flex-start':"center"}}
+          sx={{flexGrow:1}}
          >
-         {
-            showSearch?
-            (<TextField variant='standard'/>):(
-                <Link href="/">
-                <img width={100} src='/images/Group 1180 (2).png'/>
-                </Link>
-            )
-         }
+        <Link href="/">
+                <img width={120} src='/images/Group 1180 (2).png'/>
+        </Link>
          </Box>
          {
           loggedIn ? (
             <Box 
             sx={{display:'flex',gap:.5,alignItems:'center'}}
            >
-               <IconButton
-               onClick={handleSearchClick}
-               >
-                  <SearchIcon fontSize='large'/>
-              </IconButton>
+            
               <IconButton
               onClick={handleClick}
               >
@@ -110,5 +106,36 @@ export default function TopNavMobile(){
          }
         </Box>
       </Card>
+      {/* <Divider/> */}
+        <Box
+         component={'form'}
+         onSubmit={(e)=>{
+          e.preventDefault()
+          if(!searchTerm){
+            return;
+          }
+          navigate(`/search?searchQuery=${searchTerm}`)
+        }}
+            sx={{
+              p: '2px 4px', 
+              display: 'flex',
+              alignItems: 'center',
+              border:`1px solid #A5A5A5`,
+              borderRadius:"20px",
+              // background:'#EFEFEF',
+            }}
+         >
+            <SearchIcon fontSize="small" sx={{ml:1}}/>
+             <InputBase
+            sx={{ ml: 1, flex: 1 }}
+            value={searchTerm}
+            onChange={(e)=>setSearchTerm(e.target.value)}     
+            placeholder="Search Gadal Market"
+            inputProps={{ 'aria-label': 'search gadal market' }}
+            
+      />
+      
+         </Box>
+     </Stack>
     )
 }

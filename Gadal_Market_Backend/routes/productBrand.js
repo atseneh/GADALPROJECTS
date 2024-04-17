@@ -46,7 +46,8 @@ router.get('/getProductBrandsByCategory/:category', async (req, res) => {
       const brandsWithProductCount = await Product.aggregate([
         {
           $match: {
-            category: categoryId
+            category: categoryId,
+            state:1,
           }
         },
         {

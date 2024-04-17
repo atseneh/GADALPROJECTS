@@ -78,11 +78,11 @@ export default function ServiceDetail(){
       )
     }
   })
-  const [localTransactionType,setLocalTransactionType] = useState<'rent'|'sale'>(transaction as 'sale'|'rent')
+  const [localTransactionType,setLocalTransactionType] = useState<'rent'|'sale'|null>(transaction as 'sale'|'rent'|null)
   const {data:products,isLoading:productsLoading} = useQuery({
     queryKey:['products',service,localTransactionType,categoryId,maxPrice,minPrice,selcetedAttributes,pageSize,pageNumber,sortCriteria,brand],
     queryFn:()=>getProducts({
-       transactionType:transactionTypeEnums[localTransactionType],
+       transactionType:localTransactionType ? transactionTypeEnums[localTransactionType]:undefined,
        productType:ServiceEnums[capitalizeFirstLetter(service as string)],
        category:categoryId as string,
        minPrice,

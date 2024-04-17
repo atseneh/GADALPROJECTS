@@ -27,7 +27,7 @@ router.get('/reviews', async (req, res) => {
     Object.keys(req.query).forEach((key) => {
       filter[key] = req.query[key];
     });
-    const reviews = await Review.find(filter);
+    const reviews = await Review.find(filter).populate('user');
     res.status(200).json(reviews);
   } catch (error) {
     res.status(500).json({ error: error.message });

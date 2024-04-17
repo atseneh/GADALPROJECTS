@@ -8,7 +8,7 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import Index from './routes/index.tsx'
-import Machinery from './routes/products.tsx'
+import Products from './routes/products.tsx'
 import  {QueryClient,QueryClientProvider}from '@tanstack/react-query'
 import Usercontrol from './routes/userControl.tsx'
 import GetEstimation from './routes/getEstimation.tsx'
@@ -30,7 +30,7 @@ const router = createBrowserRouter([
       },
       {
         path:'/product/:title/:serviceId',
-        element:<Machinery/>
+        element:<Products/>
       },
       {
         path:'/user/:title',

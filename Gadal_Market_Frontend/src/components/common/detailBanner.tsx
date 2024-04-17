@@ -4,7 +4,7 @@ import useSmallScreen from "../../utils/hooks/useSmallScreen";
 interface detailBannerProps {
     service:string;
     category:string;
-    transactionType:'rent'|'sale'
+    transactionType:'rent'|'sale'|null
 }
 export default function DetailBanner(props:detailBannerProps){
     const {category,service,transactionType} = props
@@ -27,7 +27,7 @@ export default function DetailBanner(props:detailBannerProps){
          <Box>
             <Typography sx={{color:'white',fontStyle:'italic',fontWeight:'bold',textTransform:'capitalize'}} variant={smallScreen?"h6":'h4'}>
                 {
-                 `${category} ${service} for ${transactionType}`
+                 `${category} ${service} for ${transactionType?transactionType:'All'}`
                 }
             </Typography>
          </Box>

@@ -72,7 +72,7 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
         setMessage('')
         setPriceToOffer('')
     }
-    const {addToCart} = useContext(context)
+    const {addToCart,products} = useContext(context)
     const favMutation = useMutation({
         mutationFn:addProductToFav,
         mutationKey:['addToFav2'],
@@ -323,6 +323,7 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                            
                         }}
                          variant="contained"
+                         disabled = {products?.findIndex((p:any)=>p?._id === data?._id) !== -1}
                          >
                         <ShoppingCartOutlinedIcon sx={{fontSize:'1rem',mr:.5}} fontSize="small"/>
                         Add to Cart</Button>

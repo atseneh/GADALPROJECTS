@@ -38,7 +38,7 @@ export default function ProductTable(props:ProductTableProps){
       setPage(value);
     };
     const {serviceId} = useParams()
-    const {data,isLoading:productsLoading} = useQuery({
+    const {data:products,isLoading:productsLoading} = useQuery({
         queryKey:['products',serviceId,selectedCategory,page,pageCount],
         queryFn:()=>getProducts({
             productType:Number(serviceId),
@@ -47,12 +47,8 @@ export default function ProductTable(props:ProductTableProps){
             pageSize:pageCount,
         })
     })
-    const products = data?.products || [];
     const [selectedProducts,setSelectedProducts] = useState<any[]>([])
-    // const productIds = products?.map((prodcut:any)=>prodcut?._id)
-    const productIds = Array.isArray(products) ? products.map((product:any) => product?._id) : [];
-    {console.log(products)}
-    {console.log(productIds)}
+    const productIds = products?.products?.map((prodcut:any)=>prodcut?._id)
     const allAreSelected = compareArrays(selectedProducts,productIds)
     const handleAllSelection = ()=>{
     if(allAreSelected){
@@ -60,9 +56,7 @@ export default function ProductTable(props:ProductTableProps){
     return;
     }
      setSelectedProducts([])
-    
-     setSelectedProducts(Array.isArray(products) ? products.map((product:any) => product?._id) : []);
-
+     setSelectedProducts(products?.map((product:any)=>product?._id))
     }
     const handleSingleSelection = (id:number)=>{
     const selectedIndex =  selectedProducts.findIndex((selected:any)=>selected === id)
@@ -73,11 +67,11 @@ export default function ProductTable(props:ProductTableProps){
         setSelectedProducts([...selectedProducts,id])
     }
     }
-  useEffect(()=>{
-    if(Array.isArray(products) && products?.length>0){
-        setPageCount(products?.length)
-    }
-  },[products])
+//   useEffect(()=>{
+//     if(Array.isArray(products?.products) && products?.products?.length>0){
+//         setPageCount(products?.products?.length)
+//     }
+//   },[products])
     return (
         <Stack spacing={1}>
         <Paper
@@ -93,11 +87,11 @@ export default function ProductTable(props:ProductTableProps){
                 >
                 <Checkbox
                 checked={allAreSelected}
-                indeterminate={selectedProducts?.length>0 && selectedProducts?.length<products?.length}
+                indeterminate={selectedProducts?.length>0 && selectedProducts?.length<products?.products?.length}
                 onChange={handleAllSelection}
                 size="small"/>
                 <Typography fontWeight={'bold'}>
-                    {`Products(${products?.length||0})`}
+                    {`Products(${products?.products?.length||0})`}
                 </Typography>
                 <IconButton size="small">
                     <ArrowDropDownIcon/>
@@ -160,10 +154,9 @@ export default function ProductTable(props:ProductTableProps){
             </Typography>
          )
          :
-         ( 
-            Array.isArray(products) && products.map((product:any,index:number) =>(
+         (
+            products?.products?.map((product:any,index:number)=>(
                 <React.Fragment key={index}>
-              
                 <Grid container spacing={1} alignItems={'center'}>
                 <Grid item lg={5}>
                 <Box
@@ -236,7 +229,6 @@ export default function ProductTable(props:ProductTableProps){
                 <Divider/>
                 </React.Fragment>
             ))
-            
          )
          }
         </Paper>
@@ -247,7 +239,12 @@ export default function ProductTable(props:ProductTableProps){
             p:1,
         }}
         >
-        <Pagination sx={{alignSelf:'center'}} count={pageCount} page={page} onChange={handleChange} />
+        <Pagination 
+            sx={{alignSelf:'center'}} 
+            count={Math.ceil(products?.metadata?.totalProducts/pageCount)}
+            page={page} 
+            onChange={handleChange} 
+            />
         </Paper>
         </Stack>
     )

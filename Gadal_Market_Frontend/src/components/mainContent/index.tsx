@@ -21,7 +21,7 @@ export default function MainContent(){
     'property'|'machinery'|'vehicle'|'others'
     >('property')
     const {transactionTypeEnums,ServiceEnums} = Enums
-    const [activeTransactionType,setActiveTransactionType] = useState<'rent'|'sale'>('rent')
+    const [activeTransactionType,setActiveTransactionType] = useState<'rent'|'sale'|null>('rent')
     const handleTransactionChange = (transactionType:typeof activeTransactionType,service:typeof activeService) => {
       setActiveService(service);
       setActiveTransactionType(transactionType)
@@ -29,7 +29,7 @@ export default function MainContent(){
     const {data:newProducts,isLoading:productsLoading} = useQuery({
      queryKey:['newProducts',activeTransactionType,activeService],
      queryFn:()=>getProducts({
-        transactionType:transactionTypeEnums[activeTransactionType],
+        transactionType:activeTransactionType?transactionTypeEnums[activeTransactionType]:undefined,
         productType:ServiceEnums[capitalizeFirstLetter(activeService)],
         pageNumber:1,
         pageSize:4,

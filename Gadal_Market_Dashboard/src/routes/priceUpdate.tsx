@@ -1,17 +1,12 @@
 import Stack from "@mui/material/Stack";
-import Price from "../components/price";
+import PostPrice from "../components/postPrice";
+import EngagmentPrice from "../components/engagmentPrice";
 
 export default function PriceUpdate(){
     return (
       <Stack spacing={2}>
-        <Price
-        mainTitle="Post Price"
-        priceType={1}
-        />
-         <Price
-        mainTitle="Engagment Price"
-        priceType={2}
-        />
+        <PostPrice/>
+         <EngagmentPrice/>
       </Stack>
     )
 }
