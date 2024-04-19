@@ -13,7 +13,7 @@ router.post('/auth/manuallyVerifyPhone',multer().none(),async(req,res)=>{
       }
     })
     if(response?.data?.acknowledge === 'error'){
-      res.status(400).send(`Failed to send message to ${phoneNumber}`);
+      res.status(400).send({message:`Failed to send message to ${phoneNumber}`});
     }
     res.send({
       verificationId:response?.data?.response?.verificationId,
@@ -32,11 +32,10 @@ router.put('/auth/verifyPhone',multer().none(),async(req,res)=>{
     })
     // console.log(response?.data)
     if(response?.data?.acknowledge === 'error'){
-      console.log('error occured')
-      res.status(400).send('Verification Failed Please Check your code again');
+      return res.status(400).send({message:'Verification Failed Please Check your code again'});
     }
     const updatedUser = await User.findOneAndUpdate({phoneNumber:phoneNumber},{isVerified:true},{new:true})
-    res.send(updatedUser);
+    return res.send(updatedUser);
   } catch (error) {
     res.send('Something went wrong')
   }

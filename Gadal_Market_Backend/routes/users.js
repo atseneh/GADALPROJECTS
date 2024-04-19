@@ -3,15 +3,25 @@ const router = express.Router();
 const User = require("../models/user.model");
 const Product = require("../models/product.model");
 const verifyToken = require('../verifyToken');
+const multer = require('multer');
+const sharp = require('sharp')
+const path = require('path');
+const ConverttoWebp = async (inputPath, outputPath) => {
+  let image = sharp(inputPath).webp();  // Convert all images to WEBP format
+  return image.toFile(outputPath);
+};
+
+const upload = multer({dest:'/images'})
 router.post('/users', async (req, res) => {
-    try {
-      const newUser = new User(req.body);
-      const savedUser = await newUser.save();
-      res.status(201).json(savedUser);
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
-  });
+  try {
+    const newUser = new User(req.body);
+    const savedUser = await newUser.save();
+    res.status(201).json(savedUser);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 router.put('/users/addToFav/:productId',verifyToken,async (req,res)=>{
   try {
   const {productId} = req.params;
@@ -95,10 +105,22 @@ router.get('/users/favorites',verifyToken,async (req,res)=>{
     }
   });
   
-  router.put('/users',verifyToken, async (req, res) => {
+  router.put('/users',verifyToken, upload.single('image') ,async (req, res) => {
     const {_id} = req.user
+    let profilePic = ''
     try {
-      const updatedUser = await User.findByIdAndUpdate(_id, req.body, {
+    
+      if (req.file) {
+        const image = req.file;
+        // const processPromises = images.map((file, index) => {
+          const inputPath = image.path;
+          const outputPath = path.join(__dirname, '..', 'images/', `${image.filename}-${Date.now()}.webp`); // Change extension to .webp
+          profilePic = `images/${image.filename}-${Date.now()}.webp`
+          ConverttoWebp(inputPath, outputPath);
+          
+        // });
+      }
+      const updatedUser = await User.findByIdAndUpdate(_id, {...req.body,proflePic:profilePic}, {
         new: true,
       });
       if (!updatedUser) {

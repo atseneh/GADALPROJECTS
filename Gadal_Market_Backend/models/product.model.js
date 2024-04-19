@@ -66,9 +66,9 @@ state:{
     required:[true,'Image Must be Provided'],
     validate:{
         validator:function(arr){
-            return arr.length >= 1 && arr.length <= 5;
+            return arr.length >= 1 && arr.length <= 10;
         },
-        message: 'You have to provide at least one image and not more than 5 images'
+        message: 'You have to provide at least one image and not more than 10 images'
     }
   },
   isFixed:Boolean,

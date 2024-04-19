@@ -117,8 +117,8 @@ router.post('/products', checkPackage, upload.array('images', 10), async (req, r
       const defaultImage = "images/1eedaa36ff2986a8031be9544a8af4e6-1711896958928.webp";
       uploadedImages.push(defaultImage);
     }
-    console.log(req.body.attributes)
-    // productAttributes = req.body.attributes ? JSON.parse(req.body.attributes) : [];
+    // console.log(req.body.attributes)
+    productAttributes = req.body.attributes ? JSON.parse(req.body.attributes) : [];
     console.log(productAttributes)
     const newProduct = new Product({ 
       title, 
@@ -178,7 +178,7 @@ router.get('/products', async (req, res) => {
     const filters = req.query;
     const filterQuery = {};
     
-    const numericProperties = ['productType', 'state', 'postType', 'derivedState', 'viewCount'];
+    const numericProperties = ['productType', 'state', 'postType', 'derivedState', 'viewCount','recordStatus'];
     numericProperties.forEach((property) => {
       if (filters[property]) {
         filterQuery[property] = parseInt(filters[property]);
@@ -240,10 +240,15 @@ router.get('/products', async (req, res) => {
     
     // Count the total number of documents matching the filter criteria
     const totalProductsQuery = filterQuery && Object.keys(filterQuery).length > 0
-      ? Product.countDocuments(filterQuery)
-      : Product.countDocuments();
-
-    const totalProducts = await totalProductsQuery;
+    ? Product.aggregate([
+        { $match: filterQuery },
+        { $group: { _id: null, count: { $sum: 1 } } }
+      ])
+    : Product.aggregate([
+        { $group: { _id: null, count: { $sum: 1 } } }
+      ]);
+      const result = await totalProductsQuery;
+      const totalProducts = result.length > 0 ? result[0].count : 0;
 
     // Pagination
     const page = parseInt(filters.pageNum) || 1; 
@@ -366,7 +371,6 @@ router.get('/products/:userId', async (req, res) => {
 router.put('/products/:productId', async (req, res) => {
   const { productId } = req.params;
   console.log(productId)
-
   try {
     console.log(req.body)
     const updatedProduct = await Product.findByIdAndUpdate(productId, req.body, {
