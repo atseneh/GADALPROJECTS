@@ -27,7 +27,7 @@ export default function DetailBanner(props:detailBannerProps){
          <Box>
             <Typography sx={{color:'white',fontStyle:'italic',fontWeight:'bold',textTransform:'capitalize'}} variant={smallScreen?"h6":'h4'}>
                 {
-                 `${category} ${service} for ${transactionType?transactionType:'All'}`
+                 `${category} ${service} for ${transactionType ==='rent' || transactionType === 'sale' ? transactionType:'All'}`
                 }
             </Typography>
          </Box>

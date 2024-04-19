@@ -1,7 +1,7 @@
 import axios from 'axios'
 import BASE_URL from '../apiConfig'
 
-async function updateUser(userData:any){
+async function updateUser(userData:FormData){
 const token = localStorage.getItem('token')
 try {
     const {data} = await axios.put(

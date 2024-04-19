@@ -9,7 +9,8 @@ export default function SocketContext({children}:{children:ReactElement}){
     const [connectedUsers,setConnectedUsers] = useState<string[]>([])
     const {data:unreadMessagesCount} = useQuery({
         queryKey:['get_unread_Messages_count',userId],
-        queryFn:()=>getUnreadMessageCount(userId as string)
+        queryFn:()=>getUnreadMessageCount(userId as string),
+        enabled:false
     })
     React.useEffect(()=>{
     // establish connection if user is logged in

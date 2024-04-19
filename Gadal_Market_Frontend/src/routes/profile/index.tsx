@@ -13,7 +13,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import PeopleIcon from '@mui/icons-material/People';
 import CampaignIcon from '@mui/icons-material/Campaign';
-import {Grid, Skeleton, useTheme} from '@mui/material'
+import {Avatar, Grid, Skeleton, useTheme} from '@mui/material'
 import Favourites from "./favourites";
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
@@ -27,6 +27,8 @@ import { QueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import getUserProfileDetail from "../../api/user/getUserProfileDetail";
 import updateUser from "../../api/user/updateUser";
 import CustomAlert from "../../components/common/customAlert";
+import { useDropzone } from "react-dropzone";
+import { IMAGE_URL } from "../../api/apiConfig";
 export default function Profile(){
 const smallScreen = useSmallScreen()
 const navigate = useNavigate()
@@ -42,6 +44,21 @@ const [region,setRegion] = useState('')
 const variant = smallScreen?'caption':'body1'
 const theme = useTheme()
 const queryClient = new QueryClient();
+const [selectedImage, setSelectedImage] = useState<any>();
+const openImages = (acceptedImages:any) => {
+    console.log(acceptedImages)
+    const newFile =   {
+        file:acceptedImages?.at(0),
+        preview: URL.createObjectURL(acceptedImages?.at(0)),
+      }
+    console.log(newFile)
+    setSelectedImage(newFile)
+  };
+const onDrop = (acceptedFiles:any) => {
+    openImages(acceptedFiles);
+  };
+   //image dropzone initialization
+const { getRootProps, getInputProps} = useDropzone({ onDrop,multiple:false })
 const [notificationSnackbarOpen,setNotificationSnackbarOpen] = React.useState(false)
 const [notificationSeverity,setNotificationSeverity] = useState<'success'|'error'>()
     const handleNotificationSnackbarClose = ()=>{
@@ -66,16 +83,17 @@ const userMutation = useMutation({
     }
 })
 const handleProfileUpdate = ()=> {
-    const payload = {
-        firstName,
-        lastName,
-        phoneNumber,
-        email,
-        region,
-        city,
-        subCity,
+    const formData = new FormData()
+    formData.append('firstName',firstName)
+    formData.append('lastName',lastName)
+    formData.append('email',email)
+    formData.append('region',region)
+    formData.append('city',city)
+    formData.append('subCity',subCity)
+    if(selectedImage){
+        formData.append('image',selectedImage?.file)
     }
-  userMutation.mutate(payload)
+    userMutation.mutate(formData)
 }
 useEffect(()=>{
 if(profileDetail) {
@@ -88,6 +106,7 @@ if(profileDetail) {
  setCity(profileDetail?.city||'')
 }
 },[profileDetail])
+console.log(selectedImage)
     return (    
     <>
     <Card
@@ -110,7 +129,25 @@ if(profileDetail) {
                 flexDirection:smallScreen?'column':'row',
                 justifyContent:smallScreen?"center":'flex-start'
                 }}>
-            <img style={{marginLeft:smallScreen?'25%':0,}} width={100} src="/images/maleUser.svg"/>
+              {
+                <div {...getRootProps({className: 'dropzone'})}>
+            <input {...getInputProps()} />
+
+                    {/* <img 
+                        style={{
+                            marginLeft:smallScreen?'25%':0,
+                            objectFit:'contain'
+                        }} 
+                        width={100} 
+                        src={selectedImage ? selectedImage?.preview : profileDetail?.proflePic ? `${IMAGE_URL}/${profileDetail?.proflePic}` : "/images/maleUser.svg"}
+                        /> */}
+                    <Avatar
+                    alt="Profile pic"
+                    src={selectedImage ? selectedImage?.preview : profileDetail?.proflePic ? `${IMAGE_URL}/${profileDetail?.proflePic}` : "/images/maleUser.svg"}
+                    sx={{ width: 100, height: 90 }}
+                    />
+                </div>
+              }
             <Stack>
             <Typography variant="h6" fontWeight={"bold"} sx={{marginLeft:smallScreen?'20%':0,}}>
                 {
@@ -517,7 +554,7 @@ if(profileDetail) {
             <CustomAlert
             open={notificationSnackbarOpen}
             handleSnackBarClose = {handleNotificationSnackbarClose}
-            severity={'success'}
+            severity={notificationSeverity}
             successMessage="Profile Successfully updated"
             errorMessage={userMutation.error?.message}
             />

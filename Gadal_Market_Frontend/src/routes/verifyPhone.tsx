@@ -38,7 +38,7 @@ export default function VerifyPhone(){
      }
      verifyMutation.mutate(payload)
     }
-    
+    console.log(verifyMutation.error)
     return (
         <div
         style={{

@@ -2,27 +2,35 @@ import Box from '@mui/material/Box'
 import Divider from '@mui/material/Divider'
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import { Button, Stack, Typography,IconButton,useTheme, Pagination} from '@mui/material'
+import { Button, Stack, Typography,IconButton,useTheme, Pagination, Popover} from '@mui/material'
 import useSmallScreen from '../../utils/hooks/useSmallScreen';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import getUsersAds from '../../api/user/getUsersAds';
 import { IMAGE_URL } from '../../api/apiConfig';
 import getProducts from '../../api/products/getProducts';
+import updateProduct from '../../api/products/updateProduct';
+import CustomAlert from '../../components/common/customAlert';
 export default function Ads(){
 const smallScreen = useSmallScreen()
 const variant = smallScreen?'caption':'body1'
 const [pageNumber, setPageNumber] = useState(1);
 const [pageSize, setPageSize] = useState(5);
-const {data:yourAds,isLoading} = useQuery({
-    queryKey:['products',pageSize,pageNumber],
-    queryFn:()=>getUsersAds(localStorage.getItem('userId') as string)
-   })
 const [activeTab,setActiveTab] = useState(0)
 const handleTabSelection = (tab:number)=>{
     setActiveTab(tab)
 }
+const {data:yourAds,isLoading} = useQuery({
+    queryKey:['products',pageSize,pageNumber,activeTab],
+    queryFn:()=>getUsersAds({
+        userId:localStorage.getItem('userId') as string,
+        soldOut:activeTab === 1,
+        disabled:activeTab === 2,
+        deleted:activeTab === 3
+    })
+   })
+
 const theme = useTheme()
 const handlePaginationChange = (event: React.ChangeEvent<unknown>, value: number) => {
   setPageNumber(value);
@@ -97,7 +105,69 @@ const handlePaginationChange = (event: React.ChangeEvent<unknown>, value: number
     )
 }
 function AdCard({ad}:{ad:any}){
+const queryClient = useQueryClient();
 const smallScreen = useSmallScreen()
+const [notificationSnackbarOpen,setNotificationSnackbarOpen] = useState(false)
+const [notificationSeverity,setNotficationSeverity] = useState<'error'|'success'|undefined>()
+const handleNotificationSnackbarClose = ()=>{
+  setNotificationSnackbarOpen(false)
+}
+
+const productUpdateMutation = useMutation({
+    mutationKey:['product-update'],
+    mutationFn:updateProduct,
+    onSuccess:()=>{
+      setNotficationSeverity('success')
+      queryClient.invalidateQueries({queryKey:['products']})
+      queryClient.invalidateQueries({queryKey:['product']})
+    },
+    onError:()=>{
+      setNotficationSeverity('error')
+    },
+    onSettled:()=>{
+      setNotificationSnackbarOpen(true)
+    }
+
+  })
+  const handleProductUpdate = (data:any)=>{
+    if(productUpdateMutation.isPending) {
+      return;
+    }
+  productUpdateMutation.mutate(data)
+  }
+  const handleSoldOut = (productId:string)=>{
+    const payload = {
+      productId,
+      derivedState:5
+    }
+  handleProductUpdate(payload)
+  }
+  const handleDisableOrEnableAdd = (productId:string,isdisable:boolean)=>{
+    const payload = {
+      productId,
+      state:isdisable ? 4 : 1
+    }
+  handleProductUpdate(payload)
+  }
+  const handleProductDelete = (productId:string,)=>{
+    const payload = {
+      productId,
+      recordStatus:3
+    }
+  handleProductUpdate(payload)
+  }
+  const [deleteAnchorEl, setDeleteAnchorEl] = useState<HTMLButtonElement | null>(null);
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setDeleteAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setDeleteAnchorEl(null);
+  };
+
+  const openDelete = Boolean(deleteAnchorEl);
+  const id = openDelete ? 'delete-popover' : undefined;
+
     return ( 
         <Box
         sx={{display:'flex',gap:1,mt:2,alignItems:smallScreen?'flex-start':'center',flexDirection:smallScreen?'column':'row'}}
@@ -124,7 +194,14 @@ const smallScreen = useSmallScreen()
         </Typography>
         <Box sx={{display:'flex',gap:1,alignItems:'center'}}>
             <Button
-            size={smallScreen?'small':'medium'} variant='contained' sx={{color:'white'}}>
+            size={smallScreen?'small':'medium'} 
+            variant='contained' 
+            sx={{color:'white'}}
+            onClick={()=>{
+                handleSoldOut(ad?._id)
+            }}
+            disabled = {productUpdateMutation.isPending || ad?.derivedState === 5}
+            >
                 Sold out
             </Button>
             <Button size={smallScreen?'small':'medium'} variant='contained' sx={{background:'#EFEFEF',color:'#535252'}}>
@@ -132,17 +209,61 @@ const smallScreen = useSmallScreen()
             </Button>
             <Button size={smallScreen?'small':'medium'} variant='contained' sx={{background:'#EFEFEF',color:'#535252'}}>
                 {
-                    smallScreen?
-                    'Disable':
-                    'Enable Ad'
+                    ad.state === 1 ? 'Disable ad' : 'Enable ad'
                 }
             </Button>
-            <IconButton >
+            <IconButton 
+            onClick={handleClick}
+            disabled = {productUpdateMutation.isPending || ad?.recordStatus === 3}
+            >
                 <DeleteIcon color='error' />
             </IconButton>
+            <Popover
+        id={id}
+        open={openDelete}
+        anchorEl={deleteAnchorEl}
+        onClose={handleClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+      >
+        <Stack
+        >
+           <Typography sx={{ p: 2 }}>Are You sure?</Typography>
+           <Stack
+           direction={'row'}
+           >
+            <Button
+            onClick={handleClose}
+            >
+              No
+            </Button>
+            <Button
+            color="error"
+            onClick={()=>{
+              handleProductDelete(ad?._id)
+              handleClose();
+            }}
+            >
+              Yes
+            </Button>
+           </Stack>
+        </Stack>
+              </Popover>
         </Box>
         </Stack>
-        
+        {
+           notificationSnackbarOpen&&(
+            <CustomAlert
+            open={notificationSnackbarOpen}
+            handleSnackBarClose = {handleNotificationSnackbarClose}
+            severity={notificationSeverity}
+            errorMessage={productUpdateMutation.error?.message}
+            successMessage="Product Updated Successfully"
+            />
+           )
+          }
         </Box>
     )
 }

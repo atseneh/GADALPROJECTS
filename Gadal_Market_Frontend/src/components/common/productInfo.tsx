@@ -28,6 +28,7 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
     const {data,loading} = props
     const navigate = useNavigate();
     const isMyProduct = localStorage.getItem('userId') === data?.consignee?._id
+    const loggedIn = localStorage.getItem('token')
     const [showPhone,setShowPhone] = React.useState(false)
     const [startChat,setStartChat] = useState(false)
     const [offerPirce,setOfferPirce] = useState(false)
@@ -297,7 +298,7 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                 </Typography>
                  </Box>
                     {
-                    !isMyProduct && (
+                    !isMyProduct && loggedIn && (
                         <Button
                         size="small" 
                         sx={{color:'black',background:'rgb(254 222 161)'}}
@@ -310,7 +311,7 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                     }
                 </Box>
                   {
-                    !isMyProduct && (
+                    (!isMyProduct && loggedIn) && (
                         <Stack spacing={2} direction={smallScreen?'column':'row'} sx={{ml:smallScreen?4:0,mr:smallScreen?4:0}}>
                         <Button
                          onClick={()=>{

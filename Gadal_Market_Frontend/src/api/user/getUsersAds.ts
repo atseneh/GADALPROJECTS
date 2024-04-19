@@ -1,9 +1,26 @@
 import axios from 'axios'
 import BASE_URL from '../apiConfig'
-async function getUsersAds(userId:string){
+type UserAdsArgs = {
+userId:string,
+soldOut?:boolean,
+disabled?:boolean,
+deleted?:boolean,
+}
+async function getUsersAds(args:UserAdsArgs){
+const {userId,soldOut,disabled,deleted}  = args
+let url = `${BASE_URL}products?consignee=${userId}`
+if(soldOut){
+    url = `${url}&derivedState=5`
+}
+if(disabled){
+    url = `${url}&state=4`
+}
+if(deleted){
+    url = `${url}&recordStatus=3`
+}
 try {
     const {data} = await axios.get(
-        `${BASE_URL}products?consignee=${userId}`
+        url
     )
     return data
 } catch (error:any) {

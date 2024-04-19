@@ -21,7 +21,7 @@ export default function MainContent(){
     'property'|'machinery'|'vehicle'|'others'
     >('property')
     const {transactionTypeEnums,ServiceEnums} = Enums
-    const [activeTransactionType,setActiveTransactionType] = useState<'rent'|'sale'|null>('rent')
+    const [activeTransactionType,setActiveTransactionType] = useState<'rent'|'sale'|null>(null)
     const handleTransactionChange = (transactionType:typeof activeTransactionType,service:typeof activeService) => {
       setActiveService(service);
       setActiveTransactionType(transactionType)

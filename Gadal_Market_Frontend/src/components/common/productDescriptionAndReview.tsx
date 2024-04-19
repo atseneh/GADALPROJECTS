@@ -73,6 +73,7 @@ export default function DescriptionAndReview(props:{data:any,loading:boolean}){
 }
 
 function Reviews(){
+ const loggedIn = localStorage.getItem('token')
   const [review,setReveiw] = useState('')
   const [stars,setStars] = useState(0)
   const {id:productId} = useParams();
@@ -152,45 +153,49 @@ function Reviews(){
             </Stack>
         ))
        }
-       <Stack spacing={1}>
-       <Typography fontWeight={'bold'}>
-            Add A Review
-        </Typography>
-        <form
-        onSubmit={(e)=>{
-            e.preventDefault();
-            handleReviewAdd();
-        }}
-        >
-          <Box sx={{display:'flex',alignItems:'center',gap:1}}>
-            <Typography variant="body2">
-                Your Rating
-            </Typography>
-            <Rating
-             size="small"
-             value={stars}
-             onChange={(event,newValue)=>setStars(newValue as number)}
-             
-             />
-          </Box>
-          <TextField
-           fullWidth
-           required multiline placeholder="Comment"
-           rows={4}
-           sx={{background:"white",mt:1}}
-           value={review}
-           onChange={(e)=>setReveiw(e.target.value)}
-           />
-           <Button
-           type="submit"
-           variant="contained"
-           sx={{color:'white',mt:1}}
-           disabled = {isPending}
-           >
-            Submit
-           </Button>
-        </form>
-       </Stack>
+       {
+        loggedIn&&(
+            <Stack spacing={1}>
+            <Typography fontWeight={'bold'}>
+                 Add A Review
+             </Typography>
+             <form
+             onSubmit={(e)=>{
+                 e.preventDefault();
+                 handleReviewAdd();
+             }}
+             >
+               <Box sx={{display:'flex',alignItems:'center',gap:1}}>
+                 <Typography variant="body2">
+                     Your Rating
+                 </Typography>
+                 <Rating
+                  size="small"
+                  value={stars}
+                  onChange={(event,newValue)=>setStars(newValue as number)}
+                  
+                  />
+               </Box>
+               <TextField
+                fullWidth
+                required multiline placeholder="Comment"
+                rows={4}
+                sx={{background:"white",mt:1}}
+                value={review}
+                onChange={(e)=>setReveiw(e.target.value)}
+                />
+                <Button
+                type="submit"
+                variant="contained"
+                sx={{color:'white',mt:1}}
+                disabled = {isPending}
+                >
+                 Submit
+                </Button>
+             </form>
+            </Stack>
+        )
+       }
        {
            notificationSnackbarOpen&&(
             <CustomAlert

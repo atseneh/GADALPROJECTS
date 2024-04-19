@@ -21,6 +21,7 @@ import Dialog from '@mui/material/Dialog';
 import PostOptions from "./postOptions";
 import { useNavigate } from "react-router-dom";
 import getBrandByCategory from "../../api/categories/getBrandbyCategory";
+import { NumericFormat, NumericFormatProps } from 'react-number-format';
 const Transition = React.forwardRef(function Transition(
   props: TransitionProps & {
     children: React.ReactElement;
@@ -29,6 +30,35 @@ const Transition = React.forwardRef(function Transition(
 ) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
+interface CustomProps {
+  onChange: (event: { target: { name: string; value: string } }) => void;
+  name: string;
+}
+
+const NumericFormatCustom = React.forwardRef<NumericFormatProps, CustomProps>(
+  function NumericFormatCustom(props, ref) {
+    const { onChange, ...other } = props;
+
+    return (
+      <NumericFormat
+        {...other}
+        getInputRef={ref}
+        onValueChange={(values) => {
+          onChange({
+            target: {
+              name: props.name,
+              value: values.value,
+            },
+          });
+        }}
+        thousandSeparator
+        valueIsNumericString
+        prefix="Brr "
+      />
+    );
+  },
+);
+
 export default function Post(){
    const navigate = useNavigate()
    const [selectedPostType,setSelectedPostType] = useState(3)
@@ -37,6 +67,15 @@ export default function Post(){
     const [title,setTitle] = useState('')
     const [description,setDescription] = useState('')
     const [price,setPrice] = useState('')
+    const [values, setValues] = React.useState({
+      price: '',
+    });
+    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      setValues({
+        ...values,
+        [event.target.name]: event.target.value,
+      });
+    };
     const [videoLink,setVideoLink] = useState('')
     const [selectedService,setSelectedService] = useState(2)
     const [category,setCategory] = useState<any>(null)
@@ -50,6 +89,7 @@ export default function Post(){
     const [wereda,setWereda] = useState<any>(null)
     const [weredaInputValue,setWeredaInputValue] = useState('')
     const [attributeValues,setAttributeValues] = React.useState<{[key:string]:any}|any>()
+    console.log(attributeValues)
     const {ServiceEnums} = Enums
     const services =  Object.entries(ServiceEnums).map(([key, value]) => ({ name: key, value: value }));
     const smallScreen = useSmallScreen()
@@ -169,8 +209,8 @@ export default function Post(){
       }
       formData.append('title',title)
       formData.append('description',description)
-      formData.append('currentPrice',price)
-      formData.append('previousPrice',price)
+      formData.append('currentPrice',values?.price)
+      formData.append('previousPrice',values?.price)
       formData.append('category',category?._id)
       formData.append('isFixed',`${fixed}`)
       formData.append('consignee',localStorage.getItem('userId') as string)
@@ -289,7 +329,23 @@ export default function Post(){
                  label="Description" variant="outlined"
                  minRows={2}
                  multiline size="medium" sx={{background:'white'}} />
-                 <TextField value={price} onChange={(e)=>setPrice(e.target.value)} required type="number" id="pirce" label="Price" variant="outlined" size="medium" sx={{background:'white'}} />
+                 <TextField 
+                  // value={price} 
+                  // onChange={(e)=>setPrice(e.target.value)} 
+                  value={values.price}
+                  onChange={handleChange}
+                  required 
+                  // type="number" 
+                  id="price" 
+                  label="Price" 
+                  variant="outlined" 
+                  size="medium" 
+                  sx={{background:'white'}} 
+                  InputProps={{
+                    inputComponent: NumericFormatCustom as any,
+                  }}
+                  name="price"
+                  />
                  <Stack direction={'row'} spacing={1} sx={{mb:1}}>
                   <Chip
                    sx={{p:1,color:fixed?'white':'',fontWeight:'bold'}}

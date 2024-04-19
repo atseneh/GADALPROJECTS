@@ -159,6 +159,7 @@ export default function Login(){
         value={emailOrPhone}
         onChange={(e)=>setEmailOrPhone(e.target.value)}
         required
+        type="number"
       />
       
          </Box>
