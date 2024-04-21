@@ -47,19 +47,23 @@ function PaginationNav(props:{direction:'prev'|'next'}){
         </Box>
     )
 }
-export default function ServiceDetail(){
+export default function AllItems(){
   const  [openDrawer,setOpenDrawer] = useState(false)
+  const [activeService,setActiveService] = useState<
+  'property'|'machinery'|'vehicle'|'others'
+  >()
   const {transactionTypeEnums,ServiceEnums} = Enums
+  const [activeTransactionType,setActiveTransactionType] = useState<'rent'|'sale'|null>(null)
+  const handleTransactionChange = (transactionType:typeof activeTransactionType,service:typeof activeService) => {
+    setActiveService(service);
+    setActiveTransactionType(transactionType)
+  };
+
   let query = useReactRouterQuery()
   const navigate = useNavigate()
-  const categoryId = query.get('cat')
-  const minPrice = query.get('minPrice')
-  const maxPrice = query.get('maxPrice')
   const transaction = query.get('transaction')
   const sortCriteria =  query.get('sortCriteria')
-  const brand = query.get('brand')
   const smallScreen = useSmallScreen()
-  const {category,service} = useParams()
   const [searchParams] = useSearchParams();
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(12);
@@ -80,47 +84,12 @@ export default function ServiceDetail(){
   })
   const [localTransactionType,setLocalTransactionType] = useState<'rent'|'sale'|null>(transaction as 'sale'|'rent'|null)
   const {data:products,isLoading:productsLoading} = useQuery({
-    queryKey:['products',service,localTransactionType,categoryId,maxPrice,minPrice,selcetedAttributes,pageSize,pageNumber,sortCriteria,brand],
+    queryKey:['products',pageSize,pageNumber,sortCriteria,activeService,activeTransactionType],
     queryFn:()=>getProducts({
-       transactionType:localTransactionType ? transactionTypeEnums[localTransactionType]:undefined,
-       productType:ServiceEnums[capitalizeFirstLetter(service as string)],
-       category:categoryId as string,
-       minPrice,
-       maxPrice,
-       attributes:selcetedAttributes,
-       pageSize,
-       pageNumber,
-       sortCriteria:sortCriteria as string,
-       brand
+        transactionType:activeTransactionType?transactionTypeEnums[activeTransactionType]:undefined,
+        productType:activeService ? ServiceEnums[capitalizeFirstLetter(activeService)] : undefined,
     })
    })
-  const {data:priceRange} = useQuery({
-    queryKey:['priceRange',categoryId],
-    queryFn:()=>getPriceRangeByCategory(categoryId as string)
-  })
-  const {data:attributesForFilter,isLoading:attributesLoading} = useQuery({
-    queryKey:['attributesForFilter',categoryId],
-    queryFn:()=>getAttributesForFilter(categoryId as string)
-  })
-  const handleFilterClear = ()=>{
-   navigate(`?cat=${categoryId}&transaction=${transaction}`)
-  }
-    const breadcrumbs = [
-        <Link underline="hover" key="1" color="inherit" href="/" >
-        Home
-      </Link>,
-        <Typography variant="body2" sx={{textTransform:'capitalize',fontWeight:'lighter'}} key="2" color="text.primary">
-        {localTransactionType}
-      </Typography>,
-       <Typography variant="body2" sx={{textTransform:'capitalize',fontWeight:'lighter'}} key="2" color="text.primary">
-       {service}
-     </Typography>,
-      <Typography variant="body2" sx={{textTransform:'capitalize',fontWeight:'lighter'}} key="2" color="text.primary">
-      {
-         `${category} ${service}`
-      }
-    </Typography>,
-     ]
     return (
        <Box sx={{mt:1,ml:smallScreen?1:1,mr:1}}>
         {
@@ -131,36 +100,36 @@ export default function ServiceDetail(){
             onClose={()=>setOpenDrawer(false)}
             >
                 <Box sx={{m:1,width:250}}>
-                <ServiceCategory localTransactionType={localTransactionType} setLocalTransactionType={setLocalTransactionType} serviceName={service as string} isLink={false}/>
-                 {/* mobile filter panel */}
-                 <Stack spacing={1} sx={{mt:3}}>
-        <Box>
-        <Box sx={{display:'flex',alignItems:'center',justifyContent:'space-between',pl:.5}} >
-            <Typography variant="body2">
-                Filter:
-            </Typography>
-            <Button
-             variant="text" size="small"
-             onClick={handleFilterClear}
-             >
-                Clear all
-            </Button>
-            </Box>
-            <Divider/>
-        </Box>
-        <PriceRange range={priceRange}/>
-        {
-          attributesLoading?
-          (<p>loading...</p>):(
-            attributesForFilter?.map((attribute:any)=>(
-              <AttributeFilter key={attribute?.name} attribute = {attribute}/>
-            ))
-          )
-        }
-    </Stack>
-              <Box sx={{ml:4}}>
-                <EstimationButton/>
-                </Box>
+                {/* <ServiceCategory localTransactionType={localTransactionType} setLocalTransactionType={setLocalTransactionType} serviceName={service as string} isLink={false}/> */}
+                <ServiceCategory
+                        isLink={false}
+                        serviceName='Property'
+                        activeTransaction={activeTransactionType}
+                        activeService={activeService}
+                        handleTransactionChange={handleTransactionChange}
+                        />
+                         <ServiceCategory
+                         isLink={false}
+                        serviceName='Machinery'
+                        activeTransaction={activeTransactionType}
+                        activeService={activeService}
+                        handleTransactionChange={handleTransactionChange}
+                        />
+                         <ServiceCategory
+                         isLink={false}
+                        serviceName='Vehicle'
+                        activeTransaction={activeTransactionType}
+                        activeService={activeService}
+                        handleTransactionChange={handleTransactionChange}
+                        />
+                         <ServiceCategory
+                         isLink={false}
+                        serviceName='Others'
+                        activeTransaction={activeTransactionType}
+                        activeService={activeService}
+                        handleTransactionChange={handleTransactionChange}
+                        />
+                 
                 </Box>
             </Drawer>
           )
@@ -169,51 +138,64 @@ export default function ServiceDetail(){
             {
                 !smallScreen&&(
                     <Grid item xs={12} sm={smallScreen?0:2.5} gap={1}>
-                <ServiceCategory 
-                  localTransactionType={localTransactionType}
-                  setLocalTransactionType={setLocalTransactionType} 
-                  serviceName={service as string} 
-                  isLink={false}
-                  />
-                {/* desktop filter pannerl */}
-                <Stack spacing={1} sx={{mt:3}}>
-        <Box>
-        <Box sx={{display:'flex',alignItems:'center',justifyContent:'space-between',pl:.5}} >
-            <Typography variant="body2">
-                Filter:
-            </Typography>
-            <Button
-            onClick={handleFilterClear}
-            variant="text" size="small">
-                Clear all
-            </Button>
-            </Box>
-            <Divider/>
-        </Box>
-        <PriceRange range={priceRange}/>
-        {
-          attributesLoading?
-          (<p>loading...</p>):(
-            attributesForFilter?.map((attribute:any)=>(
-              <AttributeFilter key={attribute?.name} attribute = {attribute}/>
-            ))
-          )
-        }
-    </Stack>
-                <Box sx={{ml:2}}>
-                <EstimationButton/>
-                </Box>
+                         <ServiceCategory
+                        serviceName='Property'
+                        localTransactionType={localTransactionType}
+                        // activeService={activeService}
+                        setLocalTransactionType={setLocalTransactionType}
+                        isLink={false}
+                        />
+                         <ServiceCategory
+                        
+                        serviceName='Machinery'
+                        localTransactionType={localTransactionType}
+                        // activeService={activeService}
+                        setLocalTransactionType={setLocalTransactionType}
+                        isLink={false}
+                        />
+                         <ServiceCategory
+                        
+                        serviceName='Vehicle'
+                        localTransactionType={localTransactionType}
+                        // activeService={activeService}
+                        setLocalTransactionType={setLocalTransactionType}
+                        isLink={false}
+                        />
+                         <ServiceCategory
+                        
+                        serviceName='Others'
+                        localTransactionType={localTransactionType}
+                        // activeService={activeService}
+                        setLocalTransactionType={setLocalTransactionType}
+                        isLink={false}
+                        />
             </Grid>
                 )
             }
             <Grid item xs={12} sm={smallScreen?12:9.5}>
-                    <DetailBanner category={category as string}  service={service as string} transactionType={localTransactionType}/>
-                   <BreadCrums breadcrumbs={breadcrumbs}/>
-                   {
-                    !productsLoading && (
-                      <BrandFilters/>
-                    )
-                   }
+                {/* description banner */}
+                <Box
+        sx={{
+            width:'100%',
+            height:85,
+            display:'flex',
+            gap:3,
+            alignItems:'center',
+             background:'url(/images/Background.svg)',
+             backgroundSize:'cover',                   
+             backgroundRepeat:'no-repeat',
+             backgroundPosition: 'center center',
+            }}
+        >
+              <img width={100} src="/images/Carts.svg" style={{marginLeft:smallScreen?'8px':'32px'}}/>
+         <Box>
+            <Typography sx={{color:'white',fontStyle:'italic',fontWeight:'bold',textTransform:'capitalize'}} variant={smallScreen?"h6":'h4'}>
+                {
+                 `All items`
+                }
+            </Typography>
+         </Box>
+        </Box>
             <Box sx={{display:'flex',justifyContent:smallScreen?'space-between':'flex-end',mb:1,mt:smallScreen?1:0,alignItems:"center"}}>
             {
              smallScreen&&(

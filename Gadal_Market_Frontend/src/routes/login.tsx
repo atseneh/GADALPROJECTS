@@ -1,7 +1,7 @@
 import {InputBase, Typography,Button, Stack, Paper } from "@mui/material";
 import Box from "@mui/material/Box";
 import capitalizeFirstLetter from "../utils/helpers/capitalizeFirstLetter";
-import {useNavigate } from "react-router-dom";
+import {NavLink, useNavigate } from "react-router-dom";
 import useSmallScreen from "../utils/hooks/useSmallScreen";
 import { useMutation } from "@tanstack/react-query";
 import signIn from "../api/auth/signin";
@@ -196,9 +196,13 @@ export default function Login(){
       
          </Box>
         <Box sx={{alignSelf:'center'}}>
+        <NavLink
+        to={'/forgot_password'}
+        >
         <Typography>
             Forgot Password?
          </Typography>
+        </NavLink>
          <Button
                 variant='contained'
                 type="submit"
@@ -214,16 +218,8 @@ export default function Login(){
                 }}
                 >
                     <Typography>Sign in</Typography>
-                </Button>
-                {/* <Typography variant="h6" sx={{mt:smallScreen?1:2,ml:8,color:'#535252',fontWeight:'bold'}}>
-                    OR
-                </Typography> */}
-                 
+                </Button>             
         </Box>
-        {/* <Stack spacing={1} sx={{ml:smallScreen?2:11}}>
-            <LoginWithButton type="google"/>
-            <LoginWithButton type="facebook"/>  
-        </Stack> */}
             </Box>
         </Box>
        </Paper>

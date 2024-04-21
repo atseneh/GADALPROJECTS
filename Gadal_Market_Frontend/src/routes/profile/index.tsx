@@ -116,40 +116,44 @@ console.log(selectedImage)
         <Grid
         container
         spacing={2}
+        justifyContent={'center'}
         >
         <Grid
         item
         sm={12}
         md={4.5}
+        // alignSelf={'center'}
         >
         <Box 
             sx={{
                 display:'flex',
                 gap:smallScreen?1:3,
                 flexDirection:smallScreen?'column':'row',
-                justifyContent:smallScreen?"center":'flex-start'
+                alignItems:smallScreen ? 'flex-start':'center'
+                // justifyContent:smallScreen?"center":'flex-start'
                 }}>
               {
-                <div {...getRootProps({className: 'dropzone'})}>
-            <input {...getInputProps()} />
-
-                    {/* <img 
-                        style={{
-                            marginLeft:smallScreen?'25%':0,
-                            objectFit:'contain'
-                        }} 
-                        width={100} 
-                        src={selectedImage ? selectedImage?.preview : profileDetail?.proflePic ? `${IMAGE_URL}/${profileDetail?.proflePic}` : "/images/maleUser.svg"}
-                        /> */}
-                    <Avatar
-                    alt="Profile pic"
-                    src={selectedImage ? selectedImage?.preview : profileDetail?.proflePic ? `${IMAGE_URL}/${profileDetail?.proflePic}` : "/images/maleUser.svg"}
-                    sx={{ width: 100, height: 90 }}
-                    />
+            <div
+             {...getRootProps({className: 'dropzone'})}
+             style={{alignSelf:'center'}}
+             >
+            <input {...getInputProps()} />                
+            <Avatar
+            alt="Profile pic"
+            src={selectedImage ? selectedImage?.preview : profileDetail?.proflePic ? `${IMAGE_URL}/${profileDetail?.proflePic}` : "/images/maleUser.svg"}
+            sx={{ width: 100, height: 90 }}
+            />
                 </div>
               }
             <Stack>
-            <Typography variant="h6" fontWeight={"bold"} sx={{marginLeft:smallScreen?'20%':0,}}>
+            <Typography 
+            variant="h6" 
+            fontWeight={"bold"} 
+            sx={{
+                alignSelf:'center',
+                textTransform:'capitalize'
+            }}
+            >
                 {
                     isLoading?<Skeleton/>:
                     `${profileDetail?.firstName} ${profileDetail?.lastName}`
@@ -185,7 +189,12 @@ console.log(selectedImage)
                     12 Followers
                 </Typography>
              </Box>
-             <Box sx={{display:'flex',gap:smallScreen?4:2,mt:smallScreen?2:1}}>
+             <Box 
+             sx={{
+                display:'flex',
+                gap:2,
+                mt:1
+                }}>
              <Button sx={{background:'white',fontWeight:'bolder'}} size="small" variant="contained" color="inherit">
              <img width={15}  src="/images/Icon ionic-ios-share-alt.svg" style={{marginRight:'4px'}}/>
                 Share
@@ -334,6 +343,25 @@ console.log(selectedImage)
 
             </Grid>
         </Grid>
+       <Stack
+       direction={'row'}
+       spacing={1}
+       sx={{
+        alignSelf:smallScreen?'center':'flex-end',
+
+       }}
+       >
+       <Button 
+            sx={{
+                mt:smallScreen?1:0,
+                background:'white'
+                }} 
+                size="small" 
+                variant="contained"
+                onClick={()=>navigate('/change_password')}
+                >
+         Change Password
+        </Button>
         <Button 
             sx={{
                 alignSelf:smallScreen?'center':'flex-end',
@@ -346,6 +374,7 @@ console.log(selectedImage)
                 >
          Save Changes
         </Button>
+       </Stack>
         </Stack>
       
             

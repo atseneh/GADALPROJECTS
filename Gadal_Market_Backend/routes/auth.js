@@ -3,7 +3,8 @@ const User = require("../models/user.model");
 const bcrypt = require("bcryptjs");
 const multer = require("multer");
 const jwt = require("jsonwebtoken");
-const axios = require('axios')
+const axios = require('axios');
+const verifyToken = require("../verifyToken");
 router.post('/auth/manuallyVerifyPhone',multer().none(),async(req,res)=>{
   const {phoneNumber} = req.body
   try {
@@ -30,12 +31,27 @@ router.put('/auth/verifyPhone',multer().none(),async(req,res)=>{
         'Authorization': 'Bearer ' + process.env.AFRO_TOKEN
       }
     })
-    // console.log(response?.data)
     if(response?.data?.acknowledge === 'error'){
       return res.status(400).send({message:'Verification Failed Please Check your code again'});
     }
     const updatedUser = await User.findOneAndUpdate({phoneNumber:phoneNumber},{isVerified:true},{new:true})
     return res.send(updatedUser);
+  } catch (error) {
+    res.send('Something went wrong')
+  }
+})
+router.post('/auth/confirmOtp',multer().none(),async(req,res)=>{
+  const {verificationId,phoneNumber,code} = req.body
+  try {
+    const response =  await axios.get(`${process.env.AFRO_VERIFY_URL}?to=${phoneNumber}&vc=${verificationId}&code=${code}`,{
+      headers:{
+        'Authorization': 'Bearer ' + process.env.AFRO_TOKEN
+      }
+    })
+    if(response?.data?.acknowledge === 'error'){
+      return res.status(400).send({message:'Verification Failed Please Check your code again'});
+    }
+    return res.send({message:'success'});
   } catch (error) {
     res.send('Something went wrong')
   }
@@ -187,55 +203,45 @@ router.post("/auth/signin", multer().none(), async (req, res) => {
   const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
   res.header("token", token).json({ token: token, id: user._id,email:user.email,phoneNumber:user.phoneNumber});
 });
-// router.post("/forgotPassword",multer().none(),async(req,res)=>{
-//   const {email} = req.body
-//   try {
-//   const user = await User.findOne({email})
-//   if(!user) return res.status(400).send('User not found')
-//   let existingToken = await Token.find({userId:user._id})
-//   //if there are existing tokens for that user delete them
-//   if(existingToken) await Token.deleteMany({userId:user._id})
-//   let resetToken = crypto.randomBytes(32).toString("hex");
-//   const salt = await bcrypt.genSalt(10);
-//   const hash = await bcrypt.hash(resetToken, salt)
-//   const newToken = await new Token({
-//     userId: user._id,
-//     token:hash,
-//     createdAt: Date.now(),
-//   }).save();
-//   await sendEmail({
-//     email,
-//     subject:"Password Reset",
-//     userId:user._id,
-//     token:resetToken,
-//     template:'resetpassword'
-//   })
-//   return res.json(newToken)
-//   }
-//   catch(error){
-//     res.json({message:error})
-//   }
-// })
-// router.patch('/resetPassword',multer().none(),async(req,res)=>{
-//   const salt = await bcrypt.genSalt(10);
-//   const {
-//           newPassord,
-//           token,
-//           userId,
-//   } = req.body
-//   try {
-//     const passwordResetToken = await Token.findOne({userId})
-//     if(!passwordResetToken) return res.status(400).send('Expired Token')
-//     const isValid = await bcrypt.compare(token, passwordResetToken.token);
-//     if(!isValid) return res.status(400).send('Invalid Token')
-//     const hashedPassword = await bcrypt.hash(newPassord, salt);
-//     const passChangedUser = await User.findOneAndUpdate({_id:userId},{password:hashedPassword},{new:true})
-//     // console.log(hashedPassword)
-//     return res.json(passChangedUser)
-//   } catch (error) {
-//     res.status(400).send({message:error})
-//   }
-// })
+router.put("/auth/resetPassword",async(req,res)=>{
+  const {password,phoneNumber} = req.body
+  try {
+  const user = await User.findOne({phoneNumber})
+  if(!user) return res.status(400).send('User not found')
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+  await User.findOneAndUpdate({_id},{password:hashedPassword},{new:true})
+  res.status(200).json({message:'Password reset successful'})
+  }
+  catch(error){
+    res.json({message:error})
+  }
+})
+router.put('/auth/changePassword',verifyToken,async(req,res)=>{
+  const {_id} = req.user
+  const salt = await bcrypt.genSalt(10);
+  const {
+          oldPassword,
+          newPassword,
+  } = req.body
+  try {
+    const user = await User.findById(_id)
+    if(!user){
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const passwordMatch = await bcrypt.compare(oldPassword, user.password);
+    if(!passwordMatch) {
+      return res.status(400).json({ message: 'Invalid old password' });
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    await User.findOneAndUpdate({_id},{password:hashedPassword},{new:true})
+    // console.log(hashedPassword)
+    return res.json({message:'Password changed successfully'})
+  } catch (error) {
+    console.log(error)
+    res.status(400).json({message:error})
+  }
+})
 // router.post("/admin/login", multer().none(), async (req, res) => {
 //   const {email,password} = req.body
 //   //Checking user

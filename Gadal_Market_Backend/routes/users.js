@@ -22,12 +22,11 @@ router.post('/users', async (req, res) => {
   }
 });
 
-router.put('/users/addToFav/:productId',verifyToken,async (req,res)=>{
+router.put('/users/addToFav/:productId/:userId',async (req,res)=>{
   try {
-  const {productId} = req.params;
-  const {_id} = req.user;
-  const updatedUser = await User.findByIdAndUpdate(_id,{$push:{favourites:productId}},{new:true})
-  const updatedProduct = await Product.findByIdAndUpdate(productId,{$push:{likedBy:_id}},{new:true})
+  const {productId,userId} = req.params;
+  const updatedUser = await User.findByIdAndUpdate(userId,{$push:{favourites:productId}},{new:true})
+  const updatedProduct = await Product.findByIdAndUpdate(productId,{$push:{likedBy:userId}},{new:true})
   if(updatedUser && updatedProduct){
     res.status(200).send('Successefully Added to Fav')
   }
@@ -39,12 +38,11 @@ router.put('/users/addToFav/:productId',verifyToken,async (req,res)=>{
   
   }
 })
-router.put('/users/removeFromFav/:productId',verifyToken,async (req,res)=>{
+router.put('/users/removeFromFav/:productId/:userId',async (req,res)=>{
   try {
-  const {productId} = req.params;
-  const {_id} = req.user;
-  const updatedUser = await User.findByIdAndUpdate(_id,{$pull:{favourites:productId}},{new:true})
-  const updatedProduct = await Product.findByIdAndUpdate(productId,{$pull:{likedBy:_id}},{new:true})
+  const {productId,userId} = req.params;
+  const updatedUser = await User.findByIdAndUpdate(userId,{$pull:{favourites:productId}},{new:true})
+  const updatedProduct = await Product.findByIdAndUpdate(productId,{$pull:{likedBy:userId}},{new:true})
   if(updatedUser && updatedProduct){
     res.status(200).send('Successefully removed from Fav')
   }
@@ -120,7 +118,8 @@ router.get('/users/favorites',verifyToken,async (req,res)=>{
           
         // });
       }
-      const updatedUser = await User.findByIdAndUpdate(_id, {...req.body,proflePic:profilePic}, {
+      const profileData = profilePic ? {...req.body,proflePic:profilePic} : req.body
+      const updatedUser = await User.findByIdAndUpdate(_id, profileData, {
         new: true,
       });
       if (!updatedUser) {

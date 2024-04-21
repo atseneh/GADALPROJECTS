@@ -9,22 +9,23 @@ import Alert from '@mui/material/Alert';
 import RemoveIcon from '@mui/icons-material/Remove';
 import OtpInput from 'react-otp-input';
 import verifyPhone from "../api/auth/verifyPhone";
-export default function VerifyPhone(){
+import confirmOtp from "../api/auth/confirmOtp";
+export default function EnterOtp(){
     const theme = useTheme();
     const navigate = useNavigate()
     const [otp, setOtp] = useState('');
     const location = useLocation()
     const verificationDetail = location?.state?.verificationDetail
     const [verifyError,setVerifyError] = useState(false)
-    const verifyMutation = useMutation({
+    const confirmOtpMutaion = useMutation({
         mutationKey:['verify_phone'],
-        mutationFn:verifyPhone,
+        mutationFn:confirmOtp,
         onError:()=>{
             setVerifyError(true)
         },
         onSuccess:(data)=>{
             setVerifyError(false)
-            navigate('/login')
+            navigate('/resetPass',{state:{data:{phoneNumber:verificationDetail?.phoneNumber,}}})
         }
     })
     const handleVerification = ()=> {
@@ -33,12 +34,13 @@ export default function VerifyPhone(){
         verificationId:verificationDetail?.verificationId,
         code:otp,
      }
-     if(verifyMutation.isPending || otp.length<4){
+     if(confirmOtpMutaion.isPending || otp.length<4){
         return;
      }
-     verifyMutation.mutate(payload)
+     confirmOtpMutaion.mutate(payload)
+    // navigate('/resetPass')
     }
-    console.log(verifyMutation.error)
+    
     return (
         <div
         style={{
@@ -62,7 +64,7 @@ export default function VerifyPhone(){
         verifyError&& (
             <Alert sx={{m:1,}} severity="error">
                 {
-                    verifyMutation.error?.message
+                    confirmOtpMutaion.error?.message
                 }
             </Alert>
         )
@@ -107,7 +109,7 @@ export default function VerifyPhone(){
             color:'white'
         }}
         onClick={handleVerification}
-        disabled={verifyMutation.isPending}
+        disabled={confirmOtpMutaion.isPending}
         >
             Send
         </Button>

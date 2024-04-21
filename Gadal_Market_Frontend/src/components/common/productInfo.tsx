@@ -336,7 +336,10 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                                 return;
                             }
         
-                            favMutation.mutate(data?._id)
+                            favMutation.mutate({
+                                productId:data?._id,
+                                userId:localStorage.getItem('userId') as string
+                            })
                         }}      
                         sx={{
                             color:'black',fontSize:'0.75rem',

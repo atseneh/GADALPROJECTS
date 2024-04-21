@@ -15,8 +15,10 @@ import CardSkeleton from '../products/cardSkeleton'
 import Enums from '../../utils/constants/serviceEnums'
 import capitalizeFirstLetter from '../../utils/helpers/capitalizeFirstLetter'
 import Pagination from '@mui/material/Pagination';
+import { useNavigate } from 'react-router-dom'
 export default function MainContent(){
     const smallScreen = useSmallScreen()
+    const navigate = useNavigate();
     const [activeService,setActiveService] = useState<
     'property'|'machinery'|'vehicle'|'others'
     >('property')
@@ -171,8 +173,27 @@ export default function MainContent(){
                     </Grid>
                      {
                         newProducts?.products?.length>0&&(
-                            <Box sx={{display:'flex',justifyContent:'center',m:3,}}>
-                            <Button variant='contained' sx={{height:30,pt:2,pb:2,pl:4,pr:4,borderRadius:'16px',color:'white',fontSize:'.8rem'}}>
+                            <Box 
+                            sx={{
+                                display:'flex',
+                                justifyContent:'center',
+                                m:3,
+                                }}
+                                >
+                            <Button 
+                                variant='contained' 
+                                sx={{
+                                    height:30,
+                                    pt:2,
+                                    pb:2,
+                                    pl:4,
+                                    pr:4,
+                                    borderRadius:'16px',
+                                    color:'white',
+                                    fontSize:'.8rem'
+                                    }}
+                                    onClick={()=>{navigate('/allItems')}}
+                                    >
                                 See More Items
                             </Button>
                           </Box>

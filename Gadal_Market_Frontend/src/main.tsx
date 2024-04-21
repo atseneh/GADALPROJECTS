@@ -37,6 +37,11 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import SocketContext from './components/context/socketContext.tsx';
 import VerifyPhone from './routes/verifyPhone.tsx';
+import AllItems from './routes/allItems.tsx';
+import ChangePassword from './routes/changePassword.tsx';
+import ForgotPassword from './routes/forgotPaswword.tsx';
+import EnterOtp from './routes/enterOtp.tsx';
+import ResetPassword from './routes/resetPassword.tsx';
 TimeAgo.addDefaultLocale(en)
 const queryClient = new QueryClient()
 const router = createBrowserRouter([
@@ -48,6 +53,10 @@ const router = createBrowserRouter([
       {
         index:true,
         element:<Index/>
+      },
+      {
+        path:'/allItems',
+        element:<AllItems/>
       },
       {
         path:'/:service/:category',
@@ -105,6 +114,10 @@ const router = createBrowserRouter([
         path:'/get_packages',
         element:<PackageSubscription/>
       },
+      {
+        path:'/change_password',
+        element:<ChangePassword/>
+      },
       
     ],
     
@@ -120,6 +133,18 @@ const router = createBrowserRouter([
   {
     path:'/register',
     element:<Register/>
+  },
+  {
+    path:'/forgot_password',
+    element:<ForgotPassword/>
+  },
+  {
+    path:'/is_it_you',
+    element:<EnterOtp/>
+  },
+  {
+    path:'/resetPass',
+    element:<ResetPassword/>
   },
  
 ])

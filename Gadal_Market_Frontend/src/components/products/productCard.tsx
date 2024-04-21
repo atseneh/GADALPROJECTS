@@ -13,13 +13,16 @@ const {data} = props
 const smallScreen = useSmallScreen()
 const queryClient = useQueryClient()
 const loggedInUserId = localStorage.getItem('userId')
-const {mutate:addFav,isPending:addPending} = useMutation({
+const {mutate:addFav,isPending:addPending,variables} = useMutation({
     mutationFn:addProductToFav,
     mutationKey:['addToFav'],
-    onSuccess:()=>{
-        queryClient.invalidateQueries({queryKey:['newProducts']})
-        queryClient.invalidateQueries({queryKey:['products']})
-    }
+    // onSuccess:()=>{
+    //     queryClient.invalidateQueries({queryKey:['newProducts']})
+    //     queryClient.invalidateQueries({queryKey:['products']})
+    // },
+    onSettled: async () => {
+        return await queryClient.invalidateQueries({ queryKey: ['newProducts'] })
+      },
 })
 const {mutate:removeFav,isPending:removePending} = useMutation({
     mutationFn:removeProductFromFav,
@@ -58,35 +61,81 @@ const {mutate:removeFav,isPending:removePending} = useMutation({
 
             }}
             >
-                <IconButton
-                onClick={(e)=>{
-                    e.preventDefault()
-                    if(addPending || removePending){
-                        return;
-                    }
-                    if(data?.likedBy?.includes(loggedInUserId)){
-                        removeFav(data?._id)
-                        return;
-                    }
-                    addFav(data?._id)
-                }}
-                sx={{
-                 position:'absolute',
-                 top:1,
-                 right:1,
-                 
-                }}
-                >
-                <FavoriteBorderOutlinedIcon
-                sx={{
-                    border: '2px solid white',
-                    borderRadius: '50%',
-                    padding: '5px',
-                    background:data?.likedBy?.includes(loggedInUserId)?'rgb(255 170 1)':'white',
-                    color:data?.likedBy?.includes(loggedInUserId)?'white':"black"
-                }}
-                fontSize='small'/>
-                </IconButton>
+               {
+                data?.consignee !== localStorage.getItem('userId')&&(
+                    <IconButton
+                    onClick={(e)=>{
+                        e.preventDefault()
+                        if(addPending || removePending){
+                            return;
+                        }
+                        if(data?.likedBy?.includes(loggedInUserId)){
+                            removeFav(
+                                {
+                                    productId:data?._id,
+                                    userId:localStorage.getItem('userId') as string
+                                }
+                            )
+                            return;
+                        }
+                        addFav(
+                            {
+                                productId:data?._id,
+                                userId:localStorage.getItem('userId') as string
+                            }
+                        )
+                    }}
+                    sx={{
+                     position:'absolute',
+                     top:1,
+                     right:1,
+                     
+                    }}
+                    >
+                     {
+                        addPending ? (
+                            <FavoriteBorderOutlinedIcon
+                            sx={{
+                                border: '2px solid white',
+                                borderRadius: '50%',
+                                padding: '5px',
+                                background:'rgb(255 170 1)',
+                                color:'white'
+                            }}
+                            fontSize='small'/>
+                        ):
+                        (
+                          <>
+                          {
+                            removePending ? (
+                                <FavoriteBorderOutlinedIcon
+                                sx={{
+                                    border: '2px solid white',
+                                    borderRadius: '50%',
+                                    padding: '5px',
+                                    background:'white',
+                                    color:"black"
+                                }}
+                                fontSize='small'/>
+                            ):
+                            (
+                                <FavoriteBorderOutlinedIcon
+                                sx={{
+                                    border: '2px solid white',
+                                    borderRadius: '50%',
+                                    padding: '5px',
+                                    background:data?.likedBy?.includes(loggedInUserId)?'rgb(255 170 1)':'white',
+                                    color:data?.likedBy?.includes(loggedInUserId)?'white':"black"
+                                }}
+                                fontSize='small'/>
+                            )
+                          }
+                          </>
+                        )
+                     }
+                    </IconButton>
+                )
+               }
                 {
                     data?.previousPrice && data?.currentPrice && (data?.previousPrice>data?.currentPrice) &&(
                         <Box
