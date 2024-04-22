@@ -103,8 +103,10 @@ router.get('/users/favorites',verifyToken,async (req,res)=>{
     }
   });
   
-  router.put('/users',verifyToken, upload.single('image') ,async (req, res) => {
-    const {_id} = req.user
+  router.put('/users/:userId?',verifyToken, upload.single('image') ,async (req, res) => {
+    // const {_id} = req.user
+    const {userId} = req.params
+    const _id = userId ? userId : req.user?._id
     let profilePic = ''
     try {
     

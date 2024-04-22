@@ -78,15 +78,15 @@ const userSchema = Schema({
       message: 'Invalid Previlage Value',
     },
   },
-  status: {
-    type: Number,
-    validate: {
-      validator: function (value) {
-        return Object.values(UserStatusEnums).includes(value);
-      },
-      message: 'Invalid User Status Value',
-    },
-  },
+  // status: {
+  //   type: Number,
+  //   validate: {
+  //     validator: function (value) {
+  //       return Object.values(UserStatusEnums).includes(value);
+  //     },
+  //     message: 'Invalid User Status Value',
+  //   },
+  // },
   proflePic: String,
   isVerified: {
     type: Boolean,
@@ -98,10 +98,6 @@ const userSchema = Schema({
   },
   remark: String,
   sign: String,
-  createdAt: {
-    type: Date,
-    default: Date.now 
- },
   recordStatus: {
     type: Number,
     default: 1,

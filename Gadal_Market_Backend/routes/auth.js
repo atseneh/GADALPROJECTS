@@ -118,75 +118,75 @@ router.post("/auth/signup", multer().none(), async (req, res) => {
       res.status(400).send(err);
     }
   });
-//   router.post("/registerAdmin", multer().none(), async (req, res) => {
-//   const {
-//     name,
-//     email,
-//     password,
-//   } = req.body
-//     //checking if the email is valid
-//     const {valid, reason, validators} = await isEmailValid(email);
-//     // if(!valid) return res.status(400).send(`Invalid email ${validators[reason].reason}`)
-//     //Checking user
-//     const emailExist = await User.findOne({email});
-//     if (emailExist) return res.status(400).send("Email alread exist");
+  router.post("/auth/registerAdmin", multer().none(), async (req, res) => {
+  const {
+    firstName,
+    lastName,
+    phoneNumber,
+    password,
+    adminAcessLevel,
+  } = req.body
   
-//     //Hash password
-//     const salt = await bcrypt.genSalt(10);
-//     const hashPassword = await bcrypt.hash(password, salt);
-//     // Create Username
-//     const username = generateFromEmail(email, 3);
-//     //Create User
-//     const user = new User({
-//       name: name,
-//       email:email,
-//       username: username,
-//       password: hashPassword,
-//       accessLevel:1,
-//       isAdmin:true,
-//     });
+    const alreadyExists = await User.findOne({phoneNumber:phoneNumber});
+    if (alreadyExists) return res.status(400).send("Phone number already exists");
   
-//     try {
-//       const savedUser = await user.save();
-//       console.log({savedUser});
-//       // res.send({ _id: user._id });
-//       res.send({accessLevel:user.accessLevel});
-//     } catch (err) {
-//       res.status(400).send(err);
-//     }
-//   });
-// router.get('/verifyFromLogin/:email',multer().none(),async(req,res)=>{
-//   const {email} = req.params
-//   const user = await User.findOne({email})
-//   if(!user) return res.status(400).send("user not found")
-//   await sendEmail({
-//     email,
-//     subject:"Email Verification",
-//     userId:user._id,
-//     token:emailVerifyToken,
-//     template:'email'
-//   })
-//  res.json(user.isActive)
-// })
-// router.get('/verify/:userId/:token',multer().none(),async(req,res)=>{
-// try{
-//   const {userId,token} = req.params
-//   const emailVerifyed = token === emailVerifyToken
-//   if(!emailVerifyed) return  res.send("Email verification failed, possibly the link is invalid or expired");
-//   await User.findOneAndUpdate({_id:userId},{isVerifyed:true},{new:true})
-//   res.redirect('https://gadal-rent-fronend.vercel.app/verifyed')
-//   res.send('verifyed')
-// }
-// catch(err){
+    //Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashPassword = await bcrypt.hash(password, salt);
+    //Create User
+    const user = new User(
+      {
+      firstName,
+      lastName,
+      password: hashPassword,
+      adminAcessLevel,
+      isAdmin:true,
+      isVerified:true,
+      phoneNumber,
+    }
+  );
+  // console.log(user)
+    try {
+      const savedUser = await user.save();
+      // console.log(savedUser)
+      res.status(200).send({message:'Successfully saved'});
+    } catch (err) {
+      console.log(err)
+      res.status(400).send({message:'Internal server error'});
+    }
+  });
+router.get('/verifyFromLogin/:email',multer().none(),async(req,res)=>{
+  const {email} = req.params
+  const user = await User.findOne({email})
+  if(!user) return res.status(400).send("user not found")
+  await sendEmail({
+    email,
+    subject:"Email Verification",
+    userId:user._id,
+    token:emailVerifyToken,
+    template:'email'
+  })
+ res.json(user.isActive)
+})
+router.get('/verify/:userId/:token',multer().none(),async(req,res)=>{
+try{
+  const {userId,token} = req.params
+  const emailVerifyed = token === emailVerifyToken
+  if(!emailVerifyed) return  res.send("Email verification failed, possibly the link is invalid or expired");
+  await User.findOneAndUpdate({_id:userId},{isVerifyed:true},{new:true})
+  res.redirect('https://gadal-rent-fronend.vercel.app/verifyed')
+  res.send('verifyed')
+}
+catch(err){
 
-// }
+}
 
-// })
-// router.put('/manuallyVerify/:id',multer().none(),async(req,res)=>{
-//     const {id} = req.params
-//     const verifyedUser = await User.findOneAndUpdate({_id:id},{isVerifyed:true},{new:true})
-//     res.json(verifyedUser)
-// })
+})
+router.put('/manuallyVerify/:id',multer().none(),async(req,res)=>{
+    const {id} = req.params
+    const verifyedUser = await User.findOneAndUpdate({_id:id},{isVerifyed:true},{new:true})
+    res.json(verifyedUser)
+})
 
 router.post("/auth/signin", multer().none(), async (req, res) => {
   const {emailOrPhone,password}= req.body
@@ -198,6 +198,7 @@ router.post("/auth/signin", multer().none(), async (req, res) => {
   });
   if (!user) return res.status(400).send({message:'User Not found'})
   if (!user.isVerified) return res.status(400).send({message:'Your Phone Number is not verified',reason:'NotVerified'})
+  if (user.recordStatus !== 1) return res.status(400).send({message:'Your Account Is Not Active',reason:'NotActive'})
   const validPass = await bcrypt.compare(password, user.password);
   if (!validPass) return res.status(400).send({message:'Incorrect credentials'});
   const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
@@ -210,11 +211,12 @@ router.put("/auth/resetPassword",async(req,res)=>{
   if(!user) return res.status(400).send('User not found')
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
-  await User.findOneAndUpdate({_id},{password:hashedPassword},{new:true})
+  await User.findOneAndUpdate({phoneNumber},{password:hashedPassword},{new:true})
   res.status(200).json({message:'Password reset successful'})
   }
   catch(error){
-    res.json({message:error})
+    console.log(error)
+    res.status(400).send({message:error})
   }
 })
 router.put('/auth/changePassword',verifyToken,async(req,res)=>{
@@ -242,24 +244,26 @@ router.put('/auth/changePassword',verifyToken,async(req,res)=>{
     res.status(400).json({message:error})
   }
 })
-// router.post("/admin/login", multer().none(), async (req, res) => {
-//   const {email,password} = req.body
-//   //Checking user
-//     const user = await User.findOne({
-//         $or: [
-//           { email: email},
-//           { username:email},
-//         ],
-//       });
-//       if (!user) return res.status(400).send("User not found");
-//       const validPass = await bcrypt.compare(password, user.password);
-//       console.log(validPass)
-//       if (!validPass) return res.status(400).send("Incorrect Credential");
-    
-//       //Create Token
-//       const token = jwt.sign({ _id: user._id }, "adlknginvpwqlkjr");
-//       res.header("token", token).json({ token: token, id: user._id,level:user.accessLevel,username:user.username});
-// });
+router.post("/auth/admin/login",  async (req, res) => {
+  const {emailOrPhone,password} = req.body
+  //Checking user
+try {
+  const user = await User.findOne({
+    phoneNumber:emailOrPhone
+   });
+   if (!user) return res.status(400).send({message:"User not found"});
+   if(!user.isAdmin) return res.status(400).send({message:"Sorry You are not an admin"});
+   if(user.recordStatus !== 1) return res.status(400).send({message:"Your Account is Not Active"});
+   const validPass = await bcrypt.compare(password, user.password);
+   if (!validPass) return res.status(400).send({message:"Incorrect Credential"});
+ 
+   //Create Token
+   const token = jwt.sign({ _id: user._id }, "adlknginvpwqlkjr");
+   res.header("token", token).json({ token: token, id: user._id,level:user.adminAcessLevel,name:`${user?.firstName||''} ${user?.lastName||''}`});
+} catch (error) {
+  res.status(400).send({message:error})
+}
+});
 // router.patch("/admin/updatePassword", multer().none(), verify, async (req, res) => {
 //     try {
 //       const {username,newPassword,oldPassword} = req.body;
