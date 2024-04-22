@@ -144,7 +144,8 @@ router.post('/products', checkPackage, upload.array('images', 10), async (req, r
       no_day_onTop_cat,
       no_day_onTop_home,
       no_day_on_Gadal,
-      isPayed:req.body.isPayed
+      isPayed:req.body.isPayed,
+      recordStatus:1
     });
 
     const savedProduct = await newProduct.save();
