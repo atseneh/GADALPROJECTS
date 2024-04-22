@@ -1,6 +1,7 @@
 class DashboardMetrics {
     constructor(
       totalRegisteredUsers,
+      percentRegisteredSinceLastWeek,
       totalPostedProducts,
       totalSoldOutProducts,
       totalRentedProducts,
@@ -13,6 +14,7 @@ class DashboardMetrics {
       totalFreePosts
     ) {
       this.totalRegisteredUsers = totalRegisteredUsers;
+      this.percentRegisteredSinceLastWeek = percentRegisteredSinceLastWeek;
       this.totalPostedProducts = totalPostedProducts;
       this.totalSoldOutProducts = totalSoldOutProducts;
       this.totalRentedProducts = totalRentedProducts;

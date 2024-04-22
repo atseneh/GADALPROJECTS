@@ -98,6 +98,10 @@ const userSchema = Schema({
   },
   remark: String,
   sign: String,
+  createdAt: {
+    type: Date,
+    default: Date.now 
+ },
   recordStatus: {
     type: Number,
     default: 1,
