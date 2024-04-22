@@ -8,11 +8,11 @@ import { Stack, TextField, Typography } from '@mui/material';
 interface ConfirmeDeleteProps {
     open:boolean,
     handleClose:()=>void,
-    itemToDeleteId:string;
-    title:string;
+    title:string; 
+    handleDelete:()=>void,
 }
 export default function ConfirmDeleteDialog(props:ConfirmeDeleteProps) {
-  const {open,handleClose,itemToDeleteId,title} = props
+  const {open,handleClose,handleDelete,title} = props
 return (
     <React.Fragment>
    
@@ -40,7 +40,7 @@ return (
           <Button
           sx={{color:'black',border:'1px solid black'}} size='small'
           onClick={handleClose}>cancel</Button>
-          <Button color='error' size='small' variant='contained' onClick={handleClose} autoFocus>
+          <Button color='error' size='small' variant='contained' onClick={handleDelete} autoFocus>
             Delete
           </Button>
         </DialogActions>

@@ -1,17 +1,19 @@
 import { Grid, Paper, Stack, Typography,IconButton, Box, Divider, Avatar, Button, TextField, Switch, Collapse } from "@mui/material"
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import Checkbox from '@mui/material/Checkbox';
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import DeleteIcon from "@mui/icons-material/Delete";
 import ConfirmDeleteDialog from "./confirmDelete";
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
 import CloseIcon from '@mui/icons-material/Close';
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import getUsers from "../api/getUsers";
 import { IMAGE_URL } from "../api/apiConfig";
-import getUserById from "../api/getUserById";
 import { TextFieldProps } from "@mui/material/TextField";
+import updateUser from "../api/updateUser";
+import CustomAlert from "./customAlert";
+import CircleIcon from '@mui/icons-material/Circle';
 function ProfileTextField (props:TextFieldProps){
     return (
         <TextField
@@ -19,7 +21,7 @@ function ProfileTextField (props:TextFieldProps){
             background:'#F7F7F7'
         }}
         variant="standard"
-        InputProps={{readOnly:true}}
+        // InputProps={{readOnly:true}}
         {...props}
         />
     )
@@ -46,11 +48,25 @@ export default function UserTable(){
         queryKey:['users'],
         queryFn:()=>getUsers(false)
     })
+    const [firstName,setFristName] = useState('')
+    const [lastName,setLastName] = useState('')
+    const [email,setEmail] = useState('')
+    const [phoneNumber,setPhoneNumber] = useState('')
+    const [city,setCity] = useState('')
+    const [subCity,setSubCity] = useState('')
+    const [region,setRegion] = useState('')
     const [selectedUsers,setSelectedUsers] = useState<any[]>([])
     const userIds = users?.map((user:any)=>user?._id)
     const allAreSelected = compareArrays(selectedUsers,userIds)
-    const [expandUser,setExpandUser] = useState('')
+    const [expandUser,setExpandUser] = useState<{id:string,name:string}>({id:'',name:''})
     const [openDeleteConfirmation,setOpenDeleteConfirmation] = useState(false)
+    const queryClient = useQueryClient();
+    const [notificationSnackbarOpen,setNotificationSnackbarOpen] = React.useState(false)
+    const [notificationSeverity,setNotificationSeverity] = useState<'success'|'error'>()
+    const handleNotificationSnackbarClose = ()=>{
+      setNotificationSnackbarOpen(false)
+    }
+
     const handleAllSelection = ()=>{
     if(allAreSelected){
     setSelectedUsers([])
@@ -68,11 +84,89 @@ export default function UserTable(){
         setSelectedUsers([...selectedUsers,id])
     }
     }
-    const {data:user,isLoading:userLoading} = useQuery({
-        queryKey:['user',expandUser],
-        queryFn:()=>getUserById(expandUser),
-        enabled:Boolean(expandUser)
+   
+    const {mutate:update,isPending,error} = useMutation({
+        mutationKey:['update_user'],
+        mutationFn:updateUser,
+        onSuccess:()=>{
+        setNotificationSeverity('success')
+        queryClient.invalidateQueries({queryKey:['users']})
+        setOpenDeleteConfirmation(false)
+        },
+        onError:(error)=>{
+            setNotificationSeverity('error')
+        },
+        onSettled:()=>{
+            setNotificationSnackbarOpen(true)
+        }
     })
+    const handleSubmit = ()=>{
+        const payload = {
+            firstName,
+            lastName,
+            region,
+            email,
+            city,
+            subCity,
+            userId:expandUser.id
+        }
+       if(isPending){
+        return
+       }
+       update(payload)
+    }
+    const handleBlockClick = ()=>{
+        const payload = {
+            recordStatus:2,
+            userId:expandUser.id
+        }
+        if(isPending){
+            return;
+        }
+        update(payload)
+    }
+    const handleActiveClik = ()=>{
+        const payload = {
+            recordStatus:1,
+            userId:expandUser.id
+        } 
+        if(isPending){
+            return;
+        }
+        update(payload)
+    }
+    const handleDeleteClick = ()=>{
+        const payload = {
+            recordStatus:3,
+            userId:expandUser.id
+        } 
+        if(isPending){
+            return;
+        }
+        update(payload)
+    }
+    const handleVerifyClick = ()=>{
+        const payload = {
+            isVerified:1,
+            userId:expandUser.id
+        } 
+        if(isPending){
+            return;
+        }
+        update(payload)
+    }
+    useEffect(()=>{
+        if(Array.isArray(users) && users?.length > 0 && expandUser?.id) {
+        const profileDetail = users?.find((user:any)=>user?._id === expandUser?.id)
+         setFristName(profileDetail?.firstName||'')
+         setLastName(profileDetail?.lastName||'')
+         setPhoneNumber(profileDetail?.phoneNumber||'')
+         setEmail(profileDetail?.email||'')
+         setRegion(profileDetail?.region||'')
+         setSubCity(profileDetail?.subCity||'')
+         setCity(profileDetail?.city||'')
+        }
+        },[expandUser,users])
     return (
         <Stack spacing={0}>
         <Paper
@@ -220,11 +314,20 @@ export default function UserTable(){
                   </Typography>
                    </Grid>
                    <Grid item lg={2}>
-                  <Typography variant="body2" fontWeight={"bold"}>
-                  {
-                       user.status
-                   }
-                  </Typography>
+                   <Typography variant="body2" fontWeight={"bold"} sx={{display:'flex',alignItems:'center',gap:.5}}>
+                <CircleIcon
+                sx={{
+                    fontSize:'.8rem'
+                }}
+                fontSize="small"
+                color={
+                user?.recordStatus === 1 ?'success':user?.recordStatus===2?'warning':user?.recordStatus===3?'error':'inherit'} 
+                />
+               {
+                    user?.recordStatus === 1 ? 'Active' : user?.recordStatus === 2 ? 'Inactive' :'Deleted'
+                }
+
+               </Typography>
                    </Grid>
                    <Grid item lg={1}>
                   <Typography variant="body2" fontWeight={"bold"}>
@@ -236,7 +339,7 @@ export default function UserTable(){
                    </Grid>
                    <Grid item lg={1}>
                     <IconButton
-                    onClick={()=>setExpandUser(user?._id)}
+                    onClick={()=>setExpandUser({id:user?._id,name:`${user?.firstName} ${user?.lastName}`})}
                     sx={{
                        borderRadius: '50%',
                        backgroundColor: '#EDFDEC',
@@ -247,9 +350,9 @@ export default function UserTable(){
                    </Grid>
                    </Grid>
                    </Paper>
-                   <Collapse in={user?._id===expandUser} timeout="auto" unmountOnExit>
+                   <Collapse in={user?._id===expandUser?.id} timeout="auto" unmountOnExit>
                     {
-                       userLoading?
+                       false?
                        (
                            <Typography variant="caption">
                                Loading...
@@ -257,24 +360,47 @@ export default function UserTable(){
                        ):
                        (
                            <Box
-                   sx={{
-                       p:1,
-                       mb:1,mt:1,
-                       backgroundColor:'#F7F7F7',
-                       borderRadius:'10px',
-                       display:'flex',
-                       flexDirection:'column',
-                       gap:1,
-                   }}
-                   >
-                       <Box sx={{
-               display:'flex',
-               alignItems:'center',
-               justifyContent:'space-between'
-   
-           }}>
+                            sx={{
+                                p:1,
+                                mb:1,mt:1,
+                                backgroundColor:'#F7F7F7',
+                                borderRadius:'10px',
+                                display:'flex',
+                                flexDirection:'column',
+                                gap:1,
+                            }}
+                            component={'form'}
+                            onSubmit={(e)=>{
+                                e.preventDefault()
+                                handleSubmit();
+                            }}
+                        >
+                       <Box 
+                       sx={{
+                        display:'flex',
+                        alignItems:'center',
+                        justifyContent:'space-between'
+                    }}>
               <Box sx={{display:'flex',gap:3,alignItems:'center'}}>
-               <img style={{}} width={120} src="/icons/femaleSkin.svg"/>
+              <Stack
+              alignItems={'center'}
+              spacing={.5}
+              >
+              <img 
+                style={{objectFit:'contain'}} 
+                width={120} 
+                src={user?.profilePic ? `${IMAGE_URL}/${user?.profilePic}` : "/icons/femaleSkin.svg"}
+                />
+                <Typography
+                sx={{
+                    color:user?.isVerified ? 'green' : 'red'
+                }}
+                >
+                  {
+                    user?.isVerified ? 'Verified' : 'Unverified'
+                  }
+                </Typography>
+              </Stack>
                <Stack sx={{mt:1}}>
                <Typography variant="h5" fontWeight={"bold"} sx={{mb:1,}}>
                    {
@@ -323,37 +449,53 @@ export default function UserTable(){
                            <ProfileTextField
                             fullWidth 
                             label="First Name" 
-                            defaultValue={user?.firstName}
+                            value={firstName}
+                            onChange={(e)=>setFristName(e.target.value)}
+                            required
                             />
                            <ProfileTextField 
                            fullWidth
-                           label="Email Or Phone Number" 
+                           label="Phone Number" 
                            defaultValue={user?.phoneNumber} 
+                           disabled
                             />
+                            <ProfileTextField 
+                           fullWidth
+                           label="Email" 
+                           value={email}
+                           onChange={(e)=>setEmail(e.target.value)} 
                            
+                            />
                            </Box>
                            <Box sx={{display:'flex',gap:2,}}>
                            
                            <ProfileTextField 
                             label="Last Name" 
-                            defaultValue={user?.lastName}
+                            value={lastName}
+                            onChange={(e)=>setLastName(e.target.value)}
                             />
                            <ProfileTextField  
                            label="City"
-                           defaultValue={user?.location?.discripton} 
+                           value={city}
+                           onChange={(e)=>setCity(e.target.value)}
+                           required
+
                             />
                            <ProfileTextField 
                             label="Sub City" 
-                            defaultValue={user?.subCity?.discripton} 
+                            value={subCity}
+                            onChange={(e)=>setSubCity(e.target.value)}
+                            required
                             />
                            </Box>
                            <Box sx={{display:'flex',gap:2}}>
                            <ProfileTextField
-                            label="Region" />
-                           <ProfileTextField  
-                           label="Woreda" 
-                           
-                           />
+                            label="Region" 
+                            value={region}
+                            onChange={(e)=>setRegion(e.target.value)}
+                            required
+                            />
+                          
                            </Box>
                        </Box>
                  
@@ -364,12 +506,19 @@ export default function UserTable(){
                    alignSelf:'flex-end'
                }}
                  >
-               {/* <Stack  direction={'row'} alignItems={'center'}>
-                   <Typography>
-                       Admin
-                   </Typography>
-                   <Switch/>
-               </Stack> */}
+               <Button
+               size="small"
+               variant="contained"
+               sx={{
+                   color:'white',
+                   background:'green',
+                //    border:'1px solid tomato',
+               }}
+               onClick={handleVerifyClick}
+               >
+
+                   Verify
+               </Button>
                <Button
                size="small"
                variant="contained"
@@ -378,8 +527,9 @@ export default function UserTable(){
                    background:'#F7F7F7',
                    border:'1px solid tomato',
                }}
+               onClick={handleBlockClick}
                >
-                   Blocked
+                   Block
                </Button>
                <Button
                size="small"
@@ -389,19 +539,26 @@ export default function UserTable(){
                    background:'#F7F7F7',
                    border:'1px solid green',
                }}
+               onClick={handleActiveClik}
                >
-                   Activate
+                Activate
                </Button>
-                <Button sx={{color:'white'}} size="small" variant="contained">
-                               Save
-                           </Button>
+                <Button 
+                   type="submit"
+                    sx={{color:'white'}} 
+                    size="small" 
+                    variant="contained"
+                    disabled={isPending}
+                    >
+                    Save
+                </Button>
                 <IconButton
-               onClick={()=>setExpandUser('')}
+               onClick={()=>setExpandUser({id:'',name:''})}
                 >
                    <KeyboardArrowUpIcon/>
                 </IconButton>
                  </Box>
-                   </Box>
+                           </Box>
                        )
                     }
                   </Collapse>
@@ -412,7 +569,23 @@ export default function UserTable(){
            </Box>
          )
         }
-        <ConfirmDeleteDialog open={openDeleteConfirmation} handleClose={()=>setOpenDeleteConfirmation(false)} itemToDeleteId="someId" title="User Name"/>
+        <ConfirmDeleteDialog 
+            open={openDeleteConfirmation} 
+            handleClose={()=>setOpenDeleteConfirmation(false)} 
+            title={expandUser.name}
+            handleDelete={handleDeleteClick}
+            />
+        {
+           notificationSnackbarOpen&&(
+            <CustomAlert
+            open={notificationSnackbarOpen}
+            handleSnackBarClose = {handleNotificationSnackbarClose}
+            severity={notificationSeverity}
+            successMessage="User Successfully updated"
+            errorMessage={error?.message}
+            />
+           )
+          }
         </Stack>
     )
 }

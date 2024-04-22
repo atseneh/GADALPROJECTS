@@ -1,12 +1,27 @@
-import { Box, IconButton, InputBase, Paper, Typography,Badge, Avatar, Stack } from "@mui/material"
+import { Box, IconButton, InputBase, Paper, Typography,Badge, Avatar, Stack, Menu, MenuItem } from "@mui/material"
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 interface topNavProps {
     title:string
 }
 export default function TopNav(props:topNavProps){
     const {title} = props
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
+    const navigate = useNavigate()
+    const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+        setAnchorEl(event.currentTarget);
+      };
+      const handleClose = () => {
+        setAnchorEl(null);
+      };
+      const handleLogout = ()=>{
+        localStorage.clear();
+        navigate('/login')
+      }
     return (
         <Paper
         sx={{
@@ -47,14 +62,51 @@ export default function TopNav(props:topNavProps){
             </Badge>
             <Box sx={{display:'flex',alignItems:'center',gap:1,background:'#FAF8FF',p:.5}}>
             <Avatar sx={{width:30,height:30}} alt="Admin Profile" src="/icons/profile2.svg" />
-            <Stack>
+            <Stack
+            sx={{
+                cursor:'pointer'
+            }}
+            onClick = {(e)=>{handleClick(e)}}
+            >
                 <Typography variant="body2">
-                    User Name
+                  {localStorage.getItem('fullName')}
                 </Typography>
                 <Typography variant="caption">
                     Admin
                 </Typography>
             </Stack>
+            <Menu
+   id="basic-menu"
+   anchorEl={anchorEl}
+   open={open}
+   onClose={handleClose}
+   MenuListProps={{
+     'aria-labelledby': 'basic-button',
+   }}
+ >
+  <MenuItem onClick={()=>{
+    handleClose()
+    // handleLogout();
+   }}>
+   <Box sx={{display:'flex',alignItems:'center',gap:1}}>
+    <img width={16} src='/images/icons8_password.svg'/>
+   <Typography variant='caption' fontWeight={'bolder'}>
+        Change password
+    </Typography>
+   </Box>
+   </MenuItem>
+   <MenuItem onClick={()=>{
+    handleClose()
+    handleLogout();
+   }}>
+   <Box sx={{display:'flex',alignItems:'center',gap:1}}>
+    <img width={16} src='/images/login.svg'/>
+   <Typography variant='caption' fontWeight={'bolder'}>
+        Logout
+    </Typography>
+   </Box>
+   </MenuItem>
+    </Menu>
             </Box>
          </Box>
         </Box>

@@ -35,6 +35,14 @@ export default function Login(){
     const navigate = useNavigate()
     const smallScreen = useSmallScreen()
     const [emailOrPhone,setEmailOrPhone] = useState('');
+    const handlePhoneNumberChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const { value } = event.target;
+    // Regular expression to check if the input is only + and numbers
+    // Allows '+' only at the beginning and numbers afterwards
+    if (/^\+?[0-9]*$/.test(value)) {
+      setEmailOrPhone(value);
+    }
+      };
     const [password,setPassword] = useState('');
     const [signinError,setSigninError] = useState(false)
     const getOtpMutation = useMutation({
@@ -130,7 +138,7 @@ export default function Login(){
             <Box sx={{display:'flex',justifyContent:'center',flexDirection:'column',gap:2}}>
             <Typography fontWeight={'bold'} variant={smallScreen?'h6':"h4"}  sx={{textTransform:'capitalize',mb:smallScreen?1:2,textAlign:'center'}}>
                 {
-                    smallScreen?'Singin':'sign in to gadal market'
+                    smallScreen?'Signin':'sign in to gadal market'
                 }
             </Typography>
         <Box
@@ -157,9 +165,8 @@ export default function Login(){
         inputProps={{ 'aria-label': 'email or phone number' }}
         name="emailOrPhone"
         value={emailOrPhone}
-        onChange={(e)=>setEmailOrPhone(e.target.value)}
+        onChange={handlePhoneNumberChange}
         required
-        type="number"
       />
       
          </Box>

@@ -32,14 +32,15 @@ if(title){
     <Paper
     sx={{
         display:'flex',flexDirection:'column',p:1,
-        alignItems:'center',borderRadius:'8px'
+        alignItems:'center',borderRadius:'8px',
+        height:'100vh'
     }}
     >
         <img width={150} src="/logo.svg"/>
         <Divider sx={{m:1}}/>
         <Box sx={{display:'flex',flexDirection:'column',gap:3}}>
         {
-        sideNavItems.map((item)=>(
+        sideNavItems.filter(nav=>!nav.hidden)?.map((item)=>(
         <Grid
          container spacing={1}
          alignItems={'center'}

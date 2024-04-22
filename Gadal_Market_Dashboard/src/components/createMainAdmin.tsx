@@ -5,7 +5,8 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useMutation } from "@tanstack/react-query";
 import createAdmin from "../api/createAdmin";
 import CustomAlert from "./customAlert";
-const previlages = [
+import registerAdmin from "../api/auth/registerAdmin";
+export const previlages = [
   {
     description :'Propery Admin',
     value:1,
@@ -25,7 +26,17 @@ const previlages = [
 
 ]
 export default function CreateMainAdmin(){
-    const [emailOrPhone,setEmailOrPhone] = React.useState('')
+    const [firstName,setFirstName] = React.useState('')
+    const [lastName,setLastName] = React.useState('')
+    const [phoneNumber,setPhoneNumber] = React.useState('')
+    const handlePhoneNumberChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const { value } = event.target;
+  // Regular expression to check if the input is only + and numbers
+  // Allows '+' only at the beginning and numbers afterwards
+  if (/^\+?[0-9]*$/.test(value)) {
+    setPhoneNumber(value);
+  }
+    };
     const [password,setPassword] = React.useState('')
     const [showPassword,setShowPassword] = React.useState(false)
     const [selectedPrevilage,setSelectedPrevilage] = React.useState('1')
@@ -40,7 +51,7 @@ export default function CreateMainAdmin(){
 
     const mutaion = useMutation({
       mutationKey:['create_admin'],
-      mutationFn:createAdmin,
+      mutationFn:registerAdmin,
       onSuccess:()=>{
         setNotficationSeverity('success')
       },
@@ -53,26 +64,41 @@ export default function CreateMainAdmin(){
     })
     const handleAdminCreation = ()=>{
       const payload = {
-        email:emailOrPhone,
+        phoneNumber,
         password,
         adminAcessLevel:Number(selectedPrevilage),
-        isAdmin:true,
-        
+        lastName,
+        firstName,
       }
+      if(mutaion.isPending){
+        return;
+      }
+      mutaion.mutate(payload)
     }
     return (
         <Paper sx={{borderRadius:'8x',alignSelf:'center',p:2,mt:'5%'}}>
        <Box
         sx={{p:2}}
         >
-            <Box sx={{display:'flex',justifyContent:'center',flexDirection:'column',gap:2}}>
+            <Box 
+            sx={{
+              display:'flex',
+              justifyContent:'center',
+              flexDirection:'column',
+              gap:2
+              }}
+              component={'form'}
+              onSubmit={(e)=>{
+                e.preventDefault();
+                handleAdminCreation();
+              }}
+              >
             <Typography fontWeight={'bold'} variant={"h4"} textAlign={'center'}>
                 {
                     'Create Admin'
                 }
             </Typography>
             <Box
-         component={'form'}
          sx={{width:380,p: '2px 4px', display: 'flex',  
          background:'#EFEFEF',
          alignItems: 'center',borderRadius:"10px",height:45}}
@@ -80,9 +106,41 @@ export default function CreateMainAdmin(){
         <img width={16} src="/icons/icons8_Email_1.svg" style={{marginLeft:'6px'}}/>
        <InputBase
         sx={{ ml: 1, flex: 1,fontWeight:'bold',}}
-        placeholder="Email Or Phone Number"
-        value={emailOrPhone}
-        onChange={(e)=>setEmailOrPhone(e.target.value)}
+        placeholder="First Name"
+        value={firstName}
+        onChange={(e)=>setFirstName(e.target.value)}
+        required
+      />
+      
+         </Box>
+         <Box
+  
+         sx={{width:380,p: '2px 4px', display: 'flex',  
+         background:'#EFEFEF',
+         alignItems: 'center',borderRadius:"10px",height:45}}
+         >
+        <img width={16} src="/icons/icons8_Email_1.svg" style={{marginLeft:'6px'}}/>
+       <InputBase
+        sx={{ ml: 1, flex: 1,fontWeight:'bold',}}
+        placeholder="Last Name"
+        value={lastName}
+        onChange={(e)=>setLastName(e.target.value)}
+      />
+      
+         </Box>
+            <Box
+         
+         sx={{width:380,p: '2px 4px', display: 'flex',  
+         background:'#EFEFEF',
+         alignItems: 'center',borderRadius:"10px",height:45}}
+         >
+        <img width={16} src="/icons/icons8_Email_1.svg" style={{marginLeft:'6px'}}/>
+       <InputBase
+        sx={{ ml: 1, flex: 1,fontWeight:'bold',}}
+        placeholder="Phone Number"
+        value={phoneNumber}
+        onChange={handlePhoneNumberChange}
+        required
       />
       
          </Box>
@@ -98,6 +156,7 @@ export default function CreateMainAdmin(){
         type={showPassword?"text":"password"}
         value={password}
         onChange={(e)=>setPassword(e.target.value)} 
+        required
       />
          <IconButton
          onClick={()=>setShowPassword(!showPassword)}
@@ -108,7 +167,10 @@ export default function CreateMainAdmin(){
          </IconButton>
          </Box>
       
-         <FormControl fullWidth>
+         <FormControl 
+         fullWidth
+         required
+         >
   <InputLabel id="previlage-selector">Previlage</InputLabel>
   <Select
     labelId="previlage-selector"
@@ -147,6 +209,7 @@ export default function CreateMainAdmin(){
             handleSnackBarClose = {handleNotificationSnackbarClose}
             severity={notificationSeverity}
             errorMessage={mutaion.error?.message}
+            successMessage="Admin Successfully created"
             />
            )
           }

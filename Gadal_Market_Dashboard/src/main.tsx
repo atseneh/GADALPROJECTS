@@ -18,6 +18,7 @@ import UiUpdate from './routes/uiUpdate.tsx'
 import PriceUpdate from './routes/priceUpdate.tsx'
 import Customize from './routes/customize.tsx'
 import Checkout from './routes/checkout.tsx'
+import Login from './routes/auth/login.tsx'
 const queryClient = new QueryClient()
 const router = createBrowserRouter([
   {
@@ -65,6 +66,10 @@ const router = createBrowserRouter([
         element:<Checkout/>
       }
     ]
+  },
+  {
+    path:'/login',
+    element:<Login/>
   }
 ])
 ReactDOM.createRoot(document.getElementById('root')!).render(

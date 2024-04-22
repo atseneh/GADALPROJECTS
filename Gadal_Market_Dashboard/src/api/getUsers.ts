@@ -3,7 +3,7 @@ import BASE_URL from './apiConfig'
 async function getUsers(isAdmin:boolean){
 try {
     const {data} = await axios.get(
-        `${BASE_URL}users?recordStatus=1&isAdmin=${isAdmin}`
+        `${BASE_URL}users?isAdmin=${isAdmin}`
     )
     return data
 } catch (error:any) {
