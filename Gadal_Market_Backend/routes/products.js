@@ -39,8 +39,8 @@ const applyWatermarkAndConvert = async (inputPath, outputPath, watermarkPath, ap
     image = image.composite([
       { 
         input: watermark,
-        top:(await image.metadata()).height/2,
-        left:(await image.metadata()).width/2,
+        top:Math.floor((await image.metadata()).height/2),
+        left:Math.floor((await image.metadata()).width/2,),
         // blend:'atop'
       }
     ]); // Position watermark
@@ -56,6 +56,7 @@ router.post('/products', checkPackage, upload.array('images', 10), async (req, r
     let uploadedImages = [];
     let productAttributes = []
     const postTypeDefinition = await PostTypeDefinition.findById("65c8d2fc3458b4f8df0d9fae");
+    // console.log(postTypeDefinition)
     const { name, no_day_onTop_cat, no_day_onTop_home, no_day_on_Gadal } = postTypeDefinition;
     let remainingPostsField;
     switch (name) {
@@ -85,7 +86,7 @@ router.post('/products', checkPackage, upload.array('images', 10), async (req, r
     req.body.no_day_on_Gadal = no_day_on_Gadal;
  
     if (req.files) {
-      console.log('running')
+      // console.log('running')
      const images = req.files
       // for (const file of req.files) {
       //   const webpBuffer = await sharp(file.path).webp().toBuffer();
@@ -119,7 +120,7 @@ router.post('/products', checkPackage, upload.array('images', 10), async (req, r
     }
     // console.log(req.body.attributes)
     productAttributes = req.body.attributes ? JSON.parse(req.body.attributes) : [];
-    console.log(productAttributes)
+    // console.log(productAttributes)
     const newProduct = new Product({ 
       title, 
       description, 
@@ -153,7 +154,7 @@ router.post('/products', checkPackage, upload.array('images', 10), async (req, r
       return res.status(200).json({ productId: savedProduct._id });
     }
     else {
-      console.log("has package")
+      // console.log("has package")
         const postTypeDefinition = await PostTypeDefinition.findById("65c8d2fc3458b4f8df0d9fae");
         if (!postTypeDefinition) {
           return res.status(400).json({ error: 'Invalid post type id' });
@@ -344,6 +345,8 @@ router.get('/searchProducts',async (req,res)=>{
   const products = await Product.find(
     {
     $text: {$search: searchTerm},
+    recordStatus:1,
+    state:1,
   },
   { score : { $meta: "textScore"}}
   ).sort( 
@@ -353,6 +356,7 @@ router.get('/searchProducts',async (req,res)=>{
   }
    catch (error) {
     res.status(500).json({error})
+    console.log(error)
   }
 })
 router.get('/products/:userId', async (req, res) => {
@@ -370,13 +374,13 @@ router.get('/products/:userId', async (req, res) => {
 
 router.put('/products/:productId', async (req, res) => {
   const { productId } = req.params;
-  console.log(productId)
+  // console.log(productId)
   try {
-    console.log(req.body)
+    // console.log(req.body)
     const updatedProduct = await Product.findByIdAndUpdate(productId, req.body, {
       new: true,
     });
-    console.log(updatedProduct)
+    // console.log(updatedProduct)
     if (!updatedProduct) {
       return res.status(404).json({ error: 'Product not found' });
     }

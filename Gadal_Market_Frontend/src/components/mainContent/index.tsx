@@ -14,10 +14,20 @@ import getProducts from '../../api/products/getProducts'
 import CardSkeleton from '../products/cardSkeleton'
 import Enums from '../../utils/constants/serviceEnums'
 import capitalizeFirstLetter from '../../utils/helpers/capitalizeFirstLetter'
-import Pagination from '@mui/material/Pagination';
+import PhoneIcon from '@mui/icons-material/Phone';
+import Fab from '@mui/material/Fab';
 import { useNavigate } from 'react-router-dom'
 export default function MainContent(){
+    const hotline = '9830'
     const smallScreen = useSmallScreen()
+    const fabStyle = {
+        position: 'fixed',
+        bottom: smallScreen ? 120:20,
+        right: smallScreen ? 10 :100,
+        '&:hover':{
+            background:'orange'
+        }
+      };
     const navigate = useNavigate();
     const [activeService,setActiveService] = useState<
     'property'|'machinery'|'vehicle'|'others'
@@ -37,9 +47,27 @@ export default function MainContent(){
         pageSize:4,
      })
     })
+    const handleCallClick = () => {
+        window.location.href = `tel:${hotline}`;
+      };
     return (
-        <>
-      
+        <Box
+        sx={{
+            position:'relative'
+        }}
+        >
+        <Fab 
+            color="primary" 
+            aria-label="call"
+            sx={fabStyle}
+            onClick={handleCallClick}
+            >
+        <PhoneIcon
+        sx={{
+            color:'white'
+        }}
+        />
+      </Fab>
                 <Grid container spacing={2} sx={{mt:smallScreen?0:1,ml:smallScreen?0:'1px'}}>
                 {
                     !smallScreen&&(
@@ -206,6 +234,6 @@ export default function MainContent(){
                 </Grid>
             </Grid>
          
-        </>
+        </Box>
     )
 }

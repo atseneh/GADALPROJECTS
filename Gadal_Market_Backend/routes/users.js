@@ -38,6 +38,40 @@ router.put('/users/addToFav/:productId/:userId',async (req,res)=>{
   
   }
 })
+router.put('/users/follow/:user/:userToFollow',async (req,res)=>{
+  try {
+  const {user,userToFollow} = req.params
+  // console.log(user,userToFollow)
+  const updatedUser1 = await User.findByIdAndUpdate(user,{$push:{following:userToFollow}},{new:true})
+  const updatedUser2 = await User.findByIdAndUpdate(userToFollow,{$push:{followers:user}},{new:true})
+  if(updatedUser1 && updatedUser2){
+    res.status(200).send('Successefully Following')
+  }
+  else {
+    res.status(400).send('Something went Wrong')
+  }
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  
+  }
+})
+router.put('/users/unFollow/:user/:userToUnFollow',async (req,res)=>{
+  try {
+  const {user,userToUnFollow} = req.params
+  // console.log(user,userToFollow)
+  const updatedUser1 = await User.findByIdAndUpdate(user,{$pull:{following:userToUnFollow}},{new:true})
+  const updatedUser2 = await User.findByIdAndUpdate(userToUnFollow,{$pull:{followers:user}},{new:true})
+  if(updatedUser1 && updatedUser2){
+    res.status(200).send('Successefully unfollowed')
+  }
+  else {
+    res.status(400).send('Something went Wrong')
+  }
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  
+  }
+})
 router.put('/users/removeFromFav/:productId/:userId',async (req,res)=>{
   try {
   const {productId,userId} = req.params;
@@ -81,6 +115,16 @@ router.get('/users/favorites',verifyToken,async (req,res)=>{
     const {_id} = req.user
     const favorites = await User.findById(_id,{recordStatus:1}).select('favourites').populate('favourites')
     res.json(favorites)
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ error: 'Internal server error' });
+  }
+})
+router.get('/users/followings/:user',async (req,res)=>{
+  try {
+    const {user} = req.params
+    const followings = await User.findById(user,{recordStatus:1}).select('following').populate('following')
+    res.status(200).json(followings)
   } catch (error) {
     console.log(error)
     res.status(500).json({ error: 'Internal server error' });

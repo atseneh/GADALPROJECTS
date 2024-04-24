@@ -13,7 +13,7 @@ if(soldOut){
     url = `${url}&derivedState=5`
 }
 if(disabled){
-    url = `${url}&state=4`
+    url = `${url}&recordStatus=2`
 }
 if(deleted){
     url = `${url}&recordStatus=3`

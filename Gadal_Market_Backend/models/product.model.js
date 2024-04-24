@@ -134,6 +134,7 @@ state:{
   youtubeLink:String,
   remark:String,
   recordStatus:{
+    default:1,
     type:Number,
     validate:{
         validator:function(value){

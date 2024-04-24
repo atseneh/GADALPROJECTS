@@ -1,14 +1,22 @@
-import {InputBase, Typography,Button, Paper, Alert } from "@mui/material";
+import {InputBase, Typography,Button, Paper, Alert, Stack } from "@mui/material";
 import Box from "@mui/material/Box";
 import {useNavigate } from "react-router-dom";
 import useSmallScreen from "../utils/hooks/useSmallScreen";
 import { useMutation } from "@tanstack/react-query";
-import {useState } from "react";
+import {useEffect, useState } from "react";
 import getOtp from "../api/auth/getOtp";
+import validatePhoneNumber from "../utils/helpers/validatePhoneNumber";
 export default function ForgotPassword(){
     const navigate = useNavigate()
     const smallScreen = useSmallScreen()
     const [phoneNumber,setPhoneNUmber] = useState('')
+    const [phoneNumberError,setPhoneNumberError] = useState(false)
+    const handlePhoneNumberChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const { value } = event.target;
+      if (/^\+?[0-9]*$/.test(value)) {
+        setPhoneNUmber(value);
+      }
+      };
     const getOtpMutation = useMutation({
         mutationKey:['get_otp'],
         mutationFn:getOtp,
@@ -19,6 +27,13 @@ export default function ForgotPassword(){
 
         }
     })
+    useEffect(()=>{
+        if(phoneNumberError){
+         if(validatePhoneNumber(phoneNumber)){
+           setPhoneNumberError(false)
+         }
+        }
+       },[phoneNumberError,phoneNumber])
     return (
         <>
        <Box
@@ -50,6 +65,10 @@ export default function ForgotPassword(){
             if(getOtpMutation.isPending){
                 return
             }
+            if(!validatePhoneNumber(phoneNumber)){
+                setPhoneNumberError(true);
+                return;
+            }
             getOtpMutation.mutate(phoneNumber)
         }}
         >
@@ -69,8 +88,8 @@ export default function ForgotPassword(){
                     'Enter Phone number'
                 }
             </Typography>
-       
-         <Box
+          <Stack>
+          <Box
          sx={{
             width:smallScreen?270:400,
             p: '2px 4px',
@@ -93,15 +112,27 @@ export default function ForgotPassword(){
              fontWeight:'bold' 
             }}
             placeholder="Your phone number here please"
-        type="number"
         inputProps={{ 'aria-label': 'phoneNumber' }}
         required
         name="phoneNumber"
         value={phoneNumber}
-        onChange={(e)=>setPhoneNUmber(e.target.value)}
+        onChange={handlePhoneNumberChange}
       />
       
          </Box>
+          {
+            phoneNumberError && (
+                <Typography
+                sx={{
+                   textAlign:'center ',
+                   color:'red'
+                }}
+                >
+                   Invalid phone number
+                </Typography>
+            )
+          }
+          </Stack>
         <Box sx={{alignSelf:'center'}}>
          <Button
                 variant='contained'

@@ -1,4 +1,4 @@
-import { Button, Divider, Grid, Rating, Skeleton, Stack, TextField, Typography } from "@mui/material";
+import { Avatar, Button, Divider, Grid, Rating, Skeleton, Stack, TextField, Typography } from "@mui/material";
 import  Box  from "@mui/material/Box";
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import theme from "../../theme";
@@ -17,17 +17,21 @@ import getServiceTypeDescription from "../../utils/helpers/getServiceTypeDescrip
 import ProductInfoSkeleton from "./productInfoSkeleton";
 import { NavLink, useNavigate } from "react-router-dom";
 import React, { useContext, useEffect, useState } from "react";
-import { useMutation,QueryClient} from "@tanstack/react-query";
+import { useMutation,QueryClient, useQueryClient} from "@tanstack/react-query";
 import addProductToFav from "../../api/products/addProductToFav";
 import { context } from "./cartContext";
 import CustomAlert from "./customAlert";
 import getTransactionTypeDescription from "../../utils/helpers/getTransactionTypeDescription";
 import createMessage from "../../api/messages/startChat";
+import { IMAGE_URL } from "../../api/apiConfig";
+import followUser from "../../api/user/follow";
 export default function ProductInfo(props:{data:any,loading:boolean}){
     const smallScreen = useSmallScreen()
     const {data,loading} = props
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const isMyProduct = localStorage.getItem('userId') === data?.consignee?._id
+    const loggedInUserId = localStorage.getItem('userId')
     const loggedIn = localStorage.getItem('token')
     const [showPhone,setShowPhone] = React.useState(false)
     const [startChat,setStartChat] = useState(false)
@@ -36,6 +40,13 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
     const [priceToOffer,setPriceToOffer] = useState('')
     const token = localStorage.getItem('token')
     const [messageNotification,setMessageNotification] = React.useState(false)
+    const {mutate:follow,isPending:followPending} = useMutation({
+        mutationFn:followUser,
+        mutationKey:['follow_user'],
+        onSuccess:()=>{
+        queryClient.invalidateQueries({queryKey:['getSingleProduct']})
+        }
+    })
     const messageMuation = useMutation({
         mutationFn:createMessage,
         mutationKey:['create_message'],
@@ -84,6 +95,15 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
     const [notificationSnackbarOpen,setNotificationSnackbarOpen] = React.useState(false)
     const handleNotificationSnackbarClose = ()=>{
         setNotificationSnackbarOpen(false)
+    }
+    const handleFollow = (userToFollow:string)=>{
+        if(followPending){
+            return;
+        }
+        follow({
+            user:loggedInUserId as string,
+            userToFollow,
+        })
     }
     return (
        <>
@@ -290,7 +310,11 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                 <Divider/>
                 <Box sx={{display:'flex',alignItems:'center',gap:2,justifyContent:smallScreen?'space-between':""}}>
                 <Box sx={{display:'flex',alignItems:'center',gap:1,}}>
-                <AccountCircleIcon sx={{fontSize:smallScreen?'2rem':'3rem'}} fontSize={smallScreen?'small':"large"}/>
+                {/* <AccountCircleIcon sx={{fontSize:smallScreen?'2rem':'3rem'}} fontSize={smallScreen?'small':"large"}/> */}
+                <Avatar alt="User profile pic" 
+                src={data?.consignee?.proflePic ? `${IMAGE_URL}/${data?.consignee?.proflePic}` : "/images/maleUser.svg"}
+                sx={{ width:smallScreen ? 24 :46, height: smallScreen?24: 46 }}
+                />
                 <Typography fontSize={smallScreen?'1rem':'1.5rem'}>
                     {
                         `${data?.consignee?.firstName} ${data?.consignee?.lastName}`
@@ -299,14 +323,33 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                  </Box>
                     {
                     !isMyProduct && loggedIn && (
-                        <Button
-                        size="small" 
-                        sx={{color:'black',background:'rgb(254 222 161)'}}
-                        variant="outlined"
-                        >
-                       <AddIcon sx={{fontSize:'1rem'}} fontSize="small"/>
-                       Follow
-                       </Button>
+                        <>
+                         {
+                            data?.consignee?.followers?.includes(loggedInUserId) ?
+                            (
+                            <Typography
+                            sx={{
+                                color:'green',
+                                // fontWeight:'bold'
+                            }}
+                            >
+                                following
+                            </Typography>
+                            ):
+                            <Button
+                            size="small" 
+                            sx={{color:'black',background:'rgb(254 222 161)'}}
+                            variant="outlined"
+                            onClick={()=>{
+                                handleFollow(data?.consignee?._id)
+                            }}
+                            disabled={followPending}
+                            >
+                           <AddIcon sx={{fontSize:'1rem'}} fontSize="small"/>
+                           Follow
+                           </Button>
+                         }
+                        </>
                     )
                     }
                 </Box>

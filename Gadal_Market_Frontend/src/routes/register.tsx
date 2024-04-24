@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs, {Dayjs} from 'dayjs'
 import CustomAlert from "../components/common/customAlert";
+import validatePhoneNumber from "../utils/helpers/validatePhoneNumber";
 export default function Register(){
 const navigate = useNavigate()
 const theme = useTheme()
@@ -16,6 +17,13 @@ const smallScreen = useSmallScreen()
 const [firstName,setFirstName] = useState('')
 const [lastName,setLastName] = useState('')
 const [phoneNumber,setPhoneNumber] = useState('')
+const [phoneNumberError,setPhoneNumberError] = useState(false)
+const handlePhoneNumberChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const { value } = event.target;
+if (/^\+?[0-9]*$/.test(value)) {
+setPhoneNumber(value);
+}
+};
 const [email,setEmail] = useState('')
 const [city,setCity] = useState('')
 const [subCity,setSubCity] = useState('')
@@ -56,6 +64,10 @@ const handleRegistration = ()=>{
     password:confirmPassword,
     birthDate:dayjs(birthDate).format('DD/MM/YYYY')
   }
+  if(!validatePhoneNumber(phoneNumber)){
+    setPhoneNumberError(true)
+    return;
+  }
   if(birthDateError || passwordsDontMatchError || !acceptTerms){
     return;
   }
@@ -77,6 +89,13 @@ const age = today.diff(birthDate,'year')
 setBirthDateError(age < 18)
 }
 },[birthDate])
+useEffect(()=>{
+ if(phoneNumberError){
+  if(validatePhoneNumber(phoneNumber)){
+    setPhoneNumberError(false)
+  }
+ }
+},[phoneNumberError,phoneNumber])
     return (
         <Box
        sx={{
@@ -141,10 +160,12 @@ setBirthDateError(age < 18)
             id="user-emailOrphone" 
             name="phoneNumber" 
             value={phoneNumber} 
-            onChange={(e)=>setPhoneNumber(e.target.value)} 
+            onChange={handlePhoneNumberChange} 
             label={"Phone Number"} 
             required 
-            type="number"
+            type="text"
+            error={phoneNumberError}
+            helperText={phoneNumberError ? "Invalid phone number" : ""}
             />
             <TextField 
             autoComplete="off" 

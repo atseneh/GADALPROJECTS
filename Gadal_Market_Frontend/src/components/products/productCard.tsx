@@ -16,13 +16,10 @@ const loggedInUserId = localStorage.getItem('userId')
 const {mutate:addFav,isPending:addPending,variables} = useMutation({
     mutationFn:addProductToFav,
     mutationKey:['addToFav'],
-    // onSuccess:()=>{
-    //     queryClient.invalidateQueries({queryKey:['newProducts']})
-    //     queryClient.invalidateQueries({queryKey:['products']})
-    // },
-    onSettled: async () => {
-        return await queryClient.invalidateQueries({ queryKey: ['newProducts'] })
-      },
+    onSuccess:()=>{
+        queryClient.invalidateQueries({queryKey:['newProducts']})
+        queryClient.invalidateQueries({queryKey:['products']})
+    },
 })
 const {mutate:removeFav,isPending:removePending} = useMutation({
     mutationFn:removeProductFromFav,
@@ -62,7 +59,7 @@ const {mutate:removeFav,isPending:removePending} = useMutation({
             }}
             >
                {
-                data?.consignee !== localStorage.getItem('userId')&&(
+                data?.consignee?._id !== loggedInUserId && (
                     <IconButton
                     onClick={(e)=>{
                         e.preventDefault()

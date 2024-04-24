@@ -142,10 +142,10 @@ const productUpdateMutation = useMutation({
     }
   handleProductUpdate(payload)
   }
-  const handleDisableOrEnableAdd = (productId:string,isdisable:boolean)=>{
+  const handleDisableOrEnableAdd = (productId:string,status:number)=>{
     const payload = {
       productId,
-      state:isdisable ? 4 : 1
+      recordStatus:status
     }
   handleProductUpdate(payload)
   }
@@ -192,66 +192,78 @@ const productUpdateMutation = useMutation({
                 `${new Intl.NumberFormat().format(ad?.currentPrice)} Brr`
             }
         </Typography>
-        <Box sx={{display:'flex',gap:1,alignItems:'center'}}>
-            <Button
-            size={smallScreen?'small':'medium'} 
-            variant='contained' 
-            sx={{color:'white'}}
-            onClick={()=>{
-                handleSoldOut(ad?._id)
+            {
+              ad?.recordStatus !== 3 && (
+                <Box sx={{display:'flex',gap:1,alignItems:'center'}}>
+                <Button
+                size={smallScreen?'small':'medium'} 
+                variant='contained' 
+                sx={{color:'white'}}
+                onClick={()=>{
+                    handleSoldOut(ad?._id)
+                }}
+                disabled = {productUpdateMutation.isPending || ad?.derivedState === 5}
+                >
+                    Sold out
+                </Button>
+                <Button size={smallScreen?'small':'medium'} variant='contained' sx={{background:'#EFEFEF',color:'#535252'}}>
+                    Edit
+                </Button>
+                <Button 
+                  size={smallScreen?'small':'medium'} 
+                  variant='contained' 
+                  sx={{background:'#EFEFEF',color:'#535252'}}
+                  onClick={()=>{
+                    handleDisableOrEnableAdd(ad?._id,ad?.recordStatus === 1 ? 2 : 1)
+                  }}
+                  >
+                    {
+                        ad.recordStatus === 1 ? 'Disable ad' : 'Enable ad'
+                    }
+                </Button>
+               
+                    <IconButton 
+                    onClick={handleClick}
+                    disabled = {productUpdateMutation.isPending || ad?.recordStatus === 3}
+                    >
+                        <DeleteIcon color='error' />
+                    </IconButton>
+                <Popover
+            id={id}
+            open={openDelete}
+            anchorEl={deleteAnchorEl}
+            onClose={handleClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'left',
             }}
-            disabled = {productUpdateMutation.isPending || ad?.derivedState === 5}
+          >
+            <Stack
             >
-                Sold out
-            </Button>
-            <Button size={smallScreen?'small':'medium'} variant='contained' sx={{background:'#EFEFEF',color:'#535252'}}>
-                Edit
-            </Button>
-            <Button size={smallScreen?'small':'medium'} variant='contained' sx={{background:'#EFEFEF',color:'#535252'}}>
-                {
-                    ad.state === 1 ? 'Disable ad' : 'Enable ad'
-                }
-            </Button>
-            <IconButton 
-            onClick={handleClick}
-            disabled = {productUpdateMutation.isPending || ad?.recordStatus === 3}
-            >
-                <DeleteIcon color='error' />
-            </IconButton>
-            <Popover
-        id={id}
-        open={openDelete}
-        anchorEl={deleteAnchorEl}
-        onClose={handleClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left',
-        }}
-      >
-        <Stack
-        >
-           <Typography sx={{ p: 2 }}>Are You sure?</Typography>
-           <Stack
-           direction={'row'}
-           >
-            <Button
-            onClick={handleClose}
-            >
-              No
-            </Button>
-            <Button
-            color="error"
-            onClick={()=>{
-              handleProductDelete(ad?._id)
-              handleClose();
-            }}
-            >
-              Yes
-            </Button>
-           </Stack>
-        </Stack>
-              </Popover>
-        </Box>
+               <Typography sx={{ p: 2 }}>Are You sure?</Typography>
+               <Stack
+               direction={'row'}
+               >
+                <Button
+                onClick={handleClose}
+                >
+                  No
+                </Button>
+                <Button
+                color="error"
+                onClick={()=>{
+                  handleProductDelete(ad?._id)
+                  handleClose();
+                }}
+                >
+                  Yes
+                </Button>
+               </Stack>
+            </Stack>
+                  </Popover>
+            </Box>
+              )
+            }
         </Stack>
         {
            notificationSnackbarOpen&&(

@@ -9,9 +9,31 @@ import useSmallScreen from "../../utils/hooks/useSmallScreen";
 import Rating from "@mui/material/Rating";
 import { NavLink } from "react-router-dom";
 import { IMAGE_URL } from "../../api/apiConfig";
+import addProductToFav from "../../api/products/addProductToFav";
+import { useQueryClient,useMutation } from "@tanstack/react-query";
+import removeProductFromFav from "../../api/products/removeProductFromFav";
 export default function ProductCard2(props:{data:any}){
     const smallScreen = useSmallScreen()
+    const queryClient = useQueryClient();
     const {data} = props
+    const loggedInUserId = localStorage.getItem('userId')
+    const {mutate:addFav,isPending:addPending,variables} = useMutation({
+        mutationFn:addProductToFav,
+        mutationKey:['addToFav'],
+        onSuccess:()=>{
+            queryClient.invalidateQueries({queryKey:['newProducts']})
+            queryClient.invalidateQueries({queryKey:['products']})
+        },
+    })
+    const {mutate:removeFav,isPending:removePending} = useMutation({
+        mutationFn:removeProductFromFav,
+        mutationKey:['removeFromFav'],
+        onSuccess:()=>{
+            queryClient.invalidateQueries({queryKey:['newProducts']})
+            queryClient.invalidateQueries({queryKey:['products']})
+        }
+    })
+    
     return (
         <NavLink
         to={`/products/${data?._id}`}
@@ -27,42 +49,97 @@ export default function ProductCard2(props:{data:any}){
         sx={{display:'flex',gap:1,mt:2,alignItems:smallScreen?'flex-start':'center',flexDirection:smallScreen?'column':'row'}}
         >
             <Box
-            sx={{
-            width:220,
-            height:smallScreen?250:180,
-            position:'relative',
-             borderRadius:'20px',
-             background:`url(${IMAGE_URL}/${data?.productImages?.at(0)})`,
-             backgroundSize:'contain',                   
-             backgroundRepeat:'no-repeat',
-             backgroundPosition: 'center center',
-            }}
+             sx={{
+                width:220,
+                height:smallScreen?250:170,
+                position:'relative',
+                 borderRadius:'20px',
+                 background:`url(${IMAGE_URL}/${data?.productImages?.at(0)})`,
+                 backgroundSize:'contain',                   
+                 backgroundRepeat:'no-repeat',
+                 backgroundPosition: 'center center',
+                 border:'1px solid #EBEDEF'
+    
+                }}
             >
-                <IconButton
-                onClick={(e)=>{
-                    e.preventDefault()
-                    // alert(`${data?._id} added to fav`)
-                }}
-                sx={{
-                 position:'absolute',
-                 top:1,
-                 right:1,
-                 
-                }}
-                >
-                <FavoriteBorderOutlinedIcon
-                sx={{
-                    border: '2px solid white',
-                    borderRadius: '50%',
-                    padding: '5px',
-                    background:'white'
-                }}
-                fontSize='small'/>
-                </IconButton>
-                {
-                    // data?.previousPrice && data?.currentPrice && (data?.previousPrice>data?.currentPrice) 
-                    true
-                    &&(
+               {
+                data?.consignee?._id !== loggedInUserId && (
+                    <IconButton
+                    onClick={(e)=>{
+                        e.preventDefault()
+                        if(addPending || removePending){
+                            return;
+                        }
+                        if(data?.likedBy?.includes(loggedInUserId)){
+                            removeFav(
+                                {
+                                    productId:data?._id,
+                                    userId:localStorage.getItem('userId') as string
+                                }
+                            )
+                            return;
+                        }
+                        addFav(
+                            {
+                                productId:data?._id,
+                                userId:localStorage.getItem('userId') as string
+                            }
+                        )
+                    }}
+                    sx={{
+                     position:'absolute',
+                     top:1,
+                     right:1,
+                     
+                    }}
+                    >
+                     {
+                        addPending ? (
+                            <FavoriteBorderOutlinedIcon
+                            sx={{
+                                border: '2px solid white',
+                                borderRadius: '50%',
+                                padding: '5px',
+                                background:'rgb(255 170 1)',
+                                color:'white'
+                            }}
+                            fontSize='small'/>
+                        ):
+                        (
+                          <>
+                          {
+                            removePending ? (
+                                <FavoriteBorderOutlinedIcon
+                                sx={{
+                                    border: '2px solid white',
+                                    borderRadius: '50%',
+                                    padding: '5px',
+                                    background:'white',
+                                    color:"black"
+                                }}
+                                fontSize='small'/>
+                            ):
+                            (
+                                <FavoriteBorderOutlinedIcon
+                                sx={{
+                                    border: '2px solid white',
+                                    borderRadius: '50%',
+                                    padding: '5px',
+                                    background:data?.likedBy?.includes(loggedInUserId)?'rgb(255 170 1)':'white',
+                                    color:data?.likedBy?.includes(loggedInUserId)?'white':"black"
+                                }}
+                                fontSize='small'/>
+                            )
+                          }
+                          </>
+                        )
+                     }
+                    </IconButton>
+                )
+               }
+               
+               {
+                    data?.previousPrice && data?.currentPrice && (data?.previousPrice>data?.currentPrice) &&(
                         <Box
                         style={{
                             position:'absolute',
@@ -79,10 +156,9 @@ export default function ProductCard2(props:{data:any}){
                         }}
                         >
                         
-                          
                             <Typography sx={{fontWeight:'bold'}}>
                             {
-                                `${getPercentOff(100,80)}% Off`
+                                `${getPercentOff(data?.previousPrice as number,data?.currentPrice as number)}% Off`
                             }
                         </Typography>
                          
@@ -90,7 +166,6 @@ export default function ProductCard2(props:{data:any}){
                         </Box>
                     )
                 }
-               
             </Box>
         <Stack>
         <Typography variant='h6' fontWeight={'bold'}>
