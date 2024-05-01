@@ -1,13 +1,14 @@
-import { Stack, Typography } from "@mui/material";
+import { Skeleton, Stack, Typography } from "@mui/material";
 import Paper from "@mui/material/Paper";
 interface kpiProps {
     title:string
     icon?:string
     kpiNumber:number
-    growth:number
+    growth:number,
+    loading:boolean,
 }
 export default function KpiCard(props:kpiProps){
-    const {title,icon,kpiNumber,growth} = props
+    const {title,icon,kpiNumber,growth,loading} = props
     return (
         <Paper
         sx={{
@@ -19,7 +20,11 @@ export default function KpiCard(props:kpiProps){
         }}
         >
             <Stack>
-                <Typography variant="body2" sx={{textTransform:'capitalize',ml:1,color:'#3A3A3A'}} fontWeight={'bold'}>
+                <Typography 
+                    variant="body2" 
+                    sx={{textTransform:'capitalize',ml:1,color:'#3A3A3A'}} 
+                    fontWeight={'bold'}
+                    >
                     {title}
                 </Typography>
                 {
@@ -29,18 +34,26 @@ export default function KpiCard(props:kpiProps){
                 }
             </Stack>
             <Stack spacing={1} sx={{ml:1}}>
-                <Typography variant="h5" fontWeight={'bold'}>
+                  {
+                    loading ? <Skeleton/> : (
+                        <Typography variant="h5" fontWeight={'bold'}>
                     {
                         new Intl.NumberFormat('en-US',{maximumFractionDigits:3}).format(kpiNumber)
                     }
                 </Typography>
-                <Typography
-                variant="body2"
-                sx={{display:'flex',alignItems:'center',gap:1,}}
-                >
-                <img width={20} src="/icons/arrow-growth.svg"/>
-                <span style={{color:'green'}}>{`${growth}%`}</span> {' Since Last Week'}
-                </Typography>
+                    )
+                  }
+                 {
+                    loading ? <Skeleton/> : (
+                        <Typography
+                        variant="body2"
+                        sx={{display:'flex',alignItems:'center',gap:1,}}
+                        >
+                        <img width={20} src="/icons/arrow-growth.svg"/>
+                        <span style={{color:'green'}}>{`${growth}%`}</span> {' Since Last Week'}
+                        </Typography>
+                    )
+                 }
             </Stack>
         </Paper>
     )

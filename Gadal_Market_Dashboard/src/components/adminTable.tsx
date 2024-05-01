@@ -321,7 +321,7 @@ export default function AdminTable(){
                     (
                        <Typography>
                         {
-                            previlages?.find((prev)=>prev.value === admin?.adminAcessLevel)?.description || ''
+                          admin?.adminAcessLevel === 0 ? "Super Admin" : previlages?.find((prev)=>prev.value === admin?.adminAcessLevel)?.description || ''
                         }
                        </Typography>
                     )
@@ -379,6 +379,7 @@ export default function AdminTable(){
                            borderRadius: '50%',
                            backgroundColor: '#EDFDEC',
                         }}
+                        disabled={admin?.adminAcessLevel === 0}
                         >
                            <img width={15} src="/icons/edit.svg"/>
                         </IconButton>

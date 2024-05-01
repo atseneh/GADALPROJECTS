@@ -7,9 +7,10 @@ import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOu
 interface UiAssetProps {
     title:string,
     assetUrls:string[],
+    assetType:number,
 }
 export default function UiAsset(props:UiAssetProps){
-    const {title,assetUrls} = props
+    const {title,assetUrls,assetType} = props
     const [selectedImage,setSelectedImage] = useState(0)
     return (
         <Paper
@@ -26,7 +27,18 @@ export default function UiAsset(props:UiAssetProps){
         <Box 
         sx={{p:1,}}
         >
-         <img width={'100%'} src={assetUrls[selectedImage]}/>
+         {
+            assetUrls?.length > 0 ? (
+                <img width={'100%'} src={assetUrls[selectedImage]}/>
+            ):
+            (
+                <Typography>
+                    {
+                        `No ${title} Images Found`
+                    }
+                </Typography>
+            )
+         }
          <Box sx={{display:'flex',flexDirection:'column',mb:1}}>
          <Stack direction={'row'} sx={{alignSelf:'center'}}>
          {
@@ -43,20 +55,24 @@ export default function UiAsset(props:UiAssetProps){
           }
          </Stack>
          <Box  sx={{display:'flex',alignItems:'center',gap:1,alignSelf:'flex-end'}}>
-            <Button
-            size="small"
-            variant="contained"        
-            sx={{bgcolor:'white',color:'#F23F4B',border:'1px solid #F23F4B',fontWeight:'bold'}}
-            >
-                Remove
-            </Button>
-            <Button
+           {
+            assetUrls?.length>0 && (
+                <Button
+                size="small"
+                variant="contained"        
+                sx={{bgcolor:'white',color:'#F23F4B',border:'1px solid #F23F4B',fontWeight:'bold'}}
+                >
+                    Remove
+                </Button>
+            )
+           }
+            {/* <Button
             size="small"
             variant="contained"        
             sx={{bgcolor:'#ABABAB',color:'white',border:'1px solid #ABABAB',fontWeight:'bold'}}
             >
                 Change
-            </Button>
+            </Button> */}
             <IconButton>
                 <AddCircleOutlineOutlinedIcon fontSize="large"/>
             </IconButton>

@@ -52,7 +52,7 @@ export default function Login(){
             localStorage.setItem('userId',data?.id)
             localStorage.setItem('fullName',data?.name)
             
-            if(data?.level){
+            if(typeof data?.level === 'number'){
                 localStorage.setItem('plx',data?.level)
             }
             

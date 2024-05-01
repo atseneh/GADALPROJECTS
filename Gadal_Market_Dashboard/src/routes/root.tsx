@@ -33,7 +33,7 @@ if(title){
     sx={{
         display:'flex',flexDirection:'column',p:1,
         alignItems:'center',borderRadius:'8px',
-        height:'100vh'
+        minHeight:'100vh'
     }}
     >
         <img width={150} src="/logo.svg"/>

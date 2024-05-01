@@ -5,6 +5,7 @@ interface sideNavItem  {
     hidden:boolean
 }
 const accessLevel = localStorage.getItem('plx')
+const superAdmin = Number(accessLevel) === 0
 const  sideNavItems:sideNavItem[]= [
     {
         description:'Dashboard',
@@ -16,25 +17,25 @@ const  sideNavItems:sideNavItem[]= [
         description:'Machinery',
         iconPath:'/icons/machinery.svg',
         path:'/product/Machinery/1?active=table',
-        hidden:Number(accessLevel) !== 2
+        hidden:!superAdmin && Number(accessLevel) !== 2
     },
     {
         description:'Vehicles',
         iconPath:'/icons/vehicle.svg',
         path:'/product/Vehicles/3?active=table',
-        hidden:Number(accessLevel) !== 3
+        hidden:!superAdmin && Number(accessLevel) !== 3
     },
     {
         description:'Property',
         iconPath:'/icons/property.svg',
         path:'/product/Property/2?active=table',
-        hidden:Number(accessLevel) !== 1
+        hidden:!superAdmin && Number(accessLevel) !== 1
     },
     {
-        description:'Others',
+        description:'Constructions',
         iconPath:'/icons/others.svg',
         path:'/product/Others/4?active=table',
-        hidden:Number(accessLevel) !== 4
+        hidden:!superAdmin && Number(accessLevel) !== 4
     },
     {
         description:'User Control',
@@ -52,7 +53,8 @@ const  sideNavItems:sideNavItem[]= [
         description:'Admin Control',
         iconPath:'/icons/admin.svg',
         path:'admin/admin-control?active=table',
-        hidden:Number(accessLevel) !== 0
+        // hidden:Number(accessLevel) !== 0
+        hidden:false
     }, 
     {
         description:'Campaign',

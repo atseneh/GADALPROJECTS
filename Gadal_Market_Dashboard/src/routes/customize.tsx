@@ -1,6 +1,6 @@
 import { Paper,Box,Typography,Stack,useTheme, InputBase, Button,Grid, FormControlLabel, Checkbox, Chip } from "@mui/material";
 import Enums from '../utils/constants/serviceEnums'
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import getCategoriesByService from "../api/getCategoryByService";
 import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
@@ -16,11 +16,27 @@ import DialogTitle from '@mui/material/DialogTitle';
 import TextField from '@mui/material/TextField';
 import createAttributes from "../api/createAttributeForCategory";
 import addAttributeValue from "../api/addAttributeValue";
+import createCategory from "../api/createCategory";
+import createLocation from "../api/createLocation";
+import createSubCity from "../api/createSubCity";
+import createWereda from "../api/createWereda";
 export default function Customize(){
     const {ServiceEnums} = Enums
     const services =  Object.entries(ServiceEnums).map(([key, value]) => ({ name: key, value: value }));
     const [selectedService,setSelectedService] = useState<number|'location'>(2)
     const [selectedSubCategory,setSelectedSubCategory] = useState('')
+    const [categoryIcon, setCategoryIcon] = useState<File|null>(null);
+    const handleImageChange = (event:React.ChangeEvent<HTMLInputElement>) => {
+       if(event.target.files){
+        const file = event.target.files[0];
+        setCategoryIcon(file);
+       }
+      };
+    const [categoryName,setCategoryName] = useState('')
+    const categoryImageRef = useRef<HTMLInputElement | null>(null)
+    const [locationName,setLocationName] = useState('')
+    const [subCityName,setSubCityName] = useState('')
+    const [weredaName,setWeredaName] = useState('')
     const [location,setLocation] = useState('')
     const [subCity,setSubCity] = useState('')
     const [description,setDescription] = useState('')
@@ -85,6 +101,80 @@ export default function Customize(){
           setInputValue('');
         }
       };
+      const {mutate:addCategory,isPending:categoryAddPending} = useMutation({
+        mutationKey:['create_category'],
+        mutationFn:createCategory,
+        onSuccess:()=>{
+        queryClient.invalidateQueries({queryKey:['categoriesByService',selectedService]})
+        setCategoryName('')
+        setCategoryIcon(null)
+        },
+        onError:()=>{
+
+        },
+        onSettled:()=>{
+            
+        }
+    })
+    const handleCategoryAdd = ()=>{
+        if(!categoryIcon || !categoryName) {
+             return;
+        }
+        const formData = new FormData()
+        formData.append('name',categoryName)
+        formData.append('image',categoryIcon)
+        formData.append('serviceId',`${selectedService}`)
+        addCategory(formData)
+    }
+    const {mutate:addLocation,isPending:locationAddPending} = useMutation({
+        mutationKey:['create_location'],
+        mutationFn:createLocation,
+        onSuccess:()=>{
+        queryClient.invalidateQueries({queryKey:['locations']})
+        setLocationName('')
+        },
+        onError:()=>{
+
+        },
+        onSettled:()=>{
+            
+        }
+    })
+    const handleLocationAdd = ()=>{
+        if(!locationName) {
+             return;
+        }
+        addLocation({descripton:locationName})
+    }
+    const {mutate:addSubCity,isPending:addSubCityPending} = useMutation({
+        mutationKey:['create_subCity'],
+        mutationFn:createSubCity,
+        onSuccess:()=>{
+        queryClient.invalidateQueries({queryKey:['subCities']})
+        setSubCityName('')
+        },
+    })
+    const handleSubcityAdd = ()=>{
+        if(!subCityName) {
+             return;
+        }
+        addSubCity({descripton:subCityName,location:location})
+    }
+    const {mutate:addWereda,isPending:addWeredaPending} = useMutation({
+        mutationKey:['create_wereda'],
+        mutationFn:createWereda,
+        onSuccess:()=>{
+        queryClient.invalidateQueries({queryKey:['weredas']})
+        setWeredaName('')
+        },
+    })
+    const handleWeredaAdd = ()=>{
+        if(!weredaName) {
+             return;
+        }
+        addWereda({descripton:weredaName,subCity:subCity})
+    }
+
       const {mutate:saveAttribute,isPending:savePending} = useMutation({
         mutationFn:createAttributes,
         mutationKey:['create_attributes'],
@@ -273,7 +363,8 @@ return (
                     <InputBase
                        sx={{ ml: 1, flex: 1,background:'#EFEFEF',alignSelf:'center',}}
                        placeholder="Type location"
-                       
+                       value={locationName}
+                       onChange={(e)=>setLocationName(e.target.value)}
                      />
                      
                        <Button
@@ -282,6 +373,8 @@ return (
                        }}
                        size="small"
                        variant="contained"
+                       onClick={handleLocationAdd}
+                       disabled={locationAddPending}
                        >
                            Add
                        </Button>
@@ -350,7 +443,8 @@ return (
                     <InputBase
                        sx={{ ml: 1, flex: 1,background:'#EFEFEF',alignSelf:'center',}}
                        placeholder="Type Sub city"
-                       
+                       value={subCityName}
+                       onChange={(e)=>setSubCityName(e.target.value)}
                      />
                      
                        <Button
@@ -359,6 +453,8 @@ return (
                        }}
                        size="small"
                        variant="contained"
+                       onClick={handleSubcityAdd}
+                       disabled={addSubCityPending || !Boolean(location)}
                        >
                            Add
                        </Button>
@@ -412,7 +508,8 @@ return (
                     <InputBase
                        sx={{ ml: 1, flex: 1,background:'#EFEFEF',alignSelf:'center',}}
                        placeholder="Type Wereda"
-                       
+                       value={weredaName}
+                       onChange={(e)=>setWeredaName(e.target.value)}
                      />
                      
                        <Button
@@ -421,6 +518,8 @@ return (
                        }}
                        size="small"
                        variant="contained"
+                       onClick={handleWeredaAdd}
+                       disabled = {addWeredaPending || !Boolean(subCity)}
                        >
                            Add
                        </Button>
@@ -494,13 +593,32 @@ return (
                 <InputBase
                    sx={{ ml: 1, flex: 1,background:'#EFEFEF',alignSelf:'center',}}
                    placeholder="Type Sub Category"
-                   
+                   value={categoryName}
+                   onChange={(e)=>setCategoryName(e.target.value)}
                  />
-                 <Stack direction={'row'} spacing={.5} alignItems={'center'}>
-                   <Button
+                 <Stack 
+                    direction={'row'} 
+                    spacing={.5} 
+                    alignItems={'center'}
+                    >
+                 <input 
+                 type="file" 
+                 accept="image/*" 
+                 onChange={handleImageChange} 
+                 style={{ display: 'none' }} 
+                 id="image-upload"
+                 ref={categoryImageRef}
+                 />
+                  {/* <label htmlFor="image-upload"> */}
+                  <Button
                    size="small"
                    sx={{
                        display:'flex',gap:.5,alignItems:'center',color:'black',border:'1px solid black',height:25,
+                   }}
+                   onClick={()=>{
+                    if(categoryImageRef?.current){
+                        categoryImageRef?.current.click();
+                    }
                    }}
                    >
                    <Typography variant="body2">
@@ -508,16 +626,28 @@ return (
                    </Typography>
                    <AddCircleOutlineOutlinedIcon color="inherit" fontSize="small"/>
                    </Button>
+                  {/* </label> */}
                    <Button
                    sx={{
                        height:25,width:30,color:'white'
                    }}
                    size="small"
                    variant="contained"
+                   onClick={handleCategoryAdd}
+                   disabled = {categoryAddPending}
                    >
                        Add
                    </Button>
                  </Stack>
+                  {
+                    categoryIcon && (
+                        <Typography
+                        variant="body2"
+                        >
+                            {categoryIcon?.name}
+                        </Typography>
+                    )
+                  }
                 </Stack>
                 </Box>
             )
