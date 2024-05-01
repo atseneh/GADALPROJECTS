@@ -12,6 +12,7 @@ import { IMAGE_URL } from '../../api/apiConfig';
 import getProducts from '../../api/products/getProducts';
 import updateProduct from '../../api/products/updateProduct';
 import CustomAlert from '../../components/common/customAlert';
+import { NavLink, Navigate, useNavigate } from 'react-router-dom';
 export default function Ads(){
 const smallScreen = useSmallScreen()
 const variant = smallScreen?'caption':'body1'
@@ -112,7 +113,7 @@ const [notificationSeverity,setNotficationSeverity] = useState<'error'|'success'
 const handleNotificationSnackbarClose = ()=>{
   setNotificationSnackbarOpen(false)
 }
-
+const navigate = useNavigate();
 const productUpdateMutation = useMutation({
     mutationKey:['product-update'],
     mutationFn:updateProduct,
@@ -141,6 +142,9 @@ const productUpdateMutation = useMutation({
       derivedState:5
     }
   handleProductUpdate(payload)
+  }
+  const handleProductEdit = (productId:string)=>{
+    navigate(`/editPost/${productId}`)
   }
   const handleDisableOrEnableAdd = (productId:string,status:number)=>{
     const payload = {
@@ -172,7 +176,17 @@ const productUpdateMutation = useMutation({
         <Box
         sx={{display:'flex',gap:1,mt:2,alignItems:smallScreen?'flex-start':'center',flexDirection:smallScreen?'column':'row'}}
         >
-             <Box
+     {/* <NavLink
+      to={`/products/${ad?._id}`}
+      style={({isTransitioning }) => {
+          return {
+            color:'black',
+            textDecoration:'none',
+            viewTransitionName: isTransitioning ? "slide" : "",
+          };
+        }}
+     > */}
+     <Box
     sx={{
         width:200,
         height:170,
@@ -183,6 +197,7 @@ const productUpdateMutation = useMutation({
          backgroundRepeat:'no-repeat',
          backgroundPosition: 'center center',
     }}/>
+     {/* </NavLink> */}
         <Stack>
         <Typography variant='h5' fontWeight={'bold'}>
             {ad?.title}
@@ -206,7 +221,14 @@ const productUpdateMutation = useMutation({
                 >
                     Sold out
                 </Button>
-                <Button size={smallScreen?'small':'medium'} variant='contained' sx={{background:'#EFEFEF',color:'#535252'}}>
+                <Button 
+                  size={smallScreen?'small':'medium'} 
+                  variant='contained' 
+                  sx={{background:'#EFEFEF',color:'#535252'}}
+                  onClick={()=>{
+                    handleProductEdit(ad?._id)
+                  }}
+                  >
                     Edit
                 </Button>
                 <Button 

@@ -195,9 +195,9 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                 <Box sx={{display:'flex',alignItems:offerPirce?'flex-start':'center',justifyContent:'space-between',mt:1}}>
                      <Box sx={{display:'flex',gap:.5,color:theme.palette.primary.main,}}>
                         <Typography variant={smallScreen?'h6':"h4"} fontWeight={'bold'}>
-                           
-                            {new Intl.NumberFormat().format(data?.currentPrice)}
-                            
+                        {
+                        `ETB ${new Intl.NumberFormat().format(data?.currentPrice)}`
+                        }
                         </Typography>
                         <Typography fontWeight={'bold'}>
                             {

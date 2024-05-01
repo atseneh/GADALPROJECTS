@@ -19,7 +19,7 @@ import Slide from '@mui/material/Slide';
 import { TransitionProps } from '@mui/material/transitions';
 import Dialog from '@mui/material/Dialog';
 import PostOptions from "./postOptions";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import getBrandByCategory from "../../api/categories/getBrandbyCategory";
 import { NumericFormat, NumericFormatProps } from 'react-number-format';
 const Transition = React.forwardRef(function Transition(
@@ -59,7 +59,8 @@ const NumericFormatCustom = React.forwardRef<NumericFormatProps, CustomProps>(
   },
 );
 
-export default function Post(){
+export default function EditPost(){
+    const {id} = useParams();
    const navigate = useNavigate()
    const [selectedPostType,setSelectedPostType] = useState(3)
     const [fixed,setFixed] = useState(true)
@@ -89,9 +90,9 @@ export default function Post(){
     const [wereda,setWereda] = useState<any>(null)
     const [weredaInputValue,setWeredaInputValue] = useState('')
     const [attributeValues,setAttributeValues] = React.useState<{[key:string]:any}|any>()
-    console.log(attributeValues)
     const {ServiceEnums} = Enums
     const services =  Object.entries(ServiceEnums).map(([key, value]) => ({ name: key, value: value }));
+    console.log(services)
     const smallScreen = useSmallScreen()
     const [selectedImages, setSelectedImages] = useState<any>([]);
     const [notificationSnackbarOpen,setNotificationSnackbarOpen] = React.useState(false)

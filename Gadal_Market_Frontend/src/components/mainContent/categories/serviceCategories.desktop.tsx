@@ -12,7 +12,7 @@ interface serviceCategoryProps {
     localTransactionType?:'rent'|'sale'|null,
     setLocalTransactionType?:(t:'rent'|'sale'|null)=>void;
     activeTransaction?:'rent'|'sale'|null;
-    activeService?:'property'|'machinery'|'vehicle'|'others';
+    activeService?:'property'|'machinery'|'vehicle'|'others'|null;
     handleTransactionChange?:(t:'rent'|'sale'|null,s:'property'|'machinery'|'vehicle'|'others')=>void
 }
 export default function ServiceCategory(props:serviceCategoryProps){

@@ -42,6 +42,8 @@ import ChangePassword from './routes/changePassword.tsx';
 import ForgotPassword from './routes/forgotPaswword.tsx';
 import EnterOtp from './routes/enterOtp.tsx';
 import ResetPassword from './routes/resetPassword.tsx';
+import EditPost from './routes/post/editPost.tsx';
+import PublicProfile from './routes/profile/publicProfile.tsx';
 TimeAgo.addDefaultLocale(en)
 const queryClient = new QueryClient()
 const router = createBrowserRouter([
@@ -77,6 +79,10 @@ const router = createBrowserRouter([
       {
         path:'/post',
         element:<Post/>,
+      },
+      {
+        path:'/editPost/:id',
+        element:<EditPost/>,
       },
       {
         path:'post/success',
@@ -118,7 +124,10 @@ const router = createBrowserRouter([
         path:'/change_password',
         element:<ChangePassword/>
       },
-      
+      {
+        path:'/viewProfile/:userId',
+        element:<PublicProfile/>
+      },
     ],
     
   },

@@ -1,4 +1,4 @@
-import {Box,Stack,IconButton, Typography} from '@mui/material'
+import {Box,Stack,IconButton, Typography, Avatar} from '@mui/material'
 import FavoriteBorderOutlinedIcon from '@mui/icons-material/FavoriteBorderOutlined';
 import Rating from '@mui/material/Rating';
 import useSmallScreen from '../../utils/hooks/useSmallScreen';
@@ -33,7 +33,6 @@ const {mutate:removeFav,isPending:removePending} = useMutation({
        <>
       
            <NavLink
-           
             to={`/products/${data?._id}`}
             style={({isTransitioning }) => {
                 return {
@@ -59,7 +58,7 @@ const {mutate:removeFav,isPending:removePending} = useMutation({
             }}
             >
                {
-                data?.consignee?._id !== loggedInUserId && (
+                data?.consignee?._id !== loggedInUserId && loggedInUserId && (
                     <IconButton
                     onClick={(e)=>{
                         e.preventDefault()
@@ -199,7 +198,11 @@ const {mutate:removeFav,isPending:removePending} = useMutation({
                 }
             </Box>
             <Box sx={{display:'flex',gap:2,}}>
-                <Box sx={{display:'flex',alignItems:'center'}}>
+                <Box sx={{display:'flex',alignItems:'center',gap:.5}}>
+                <Avatar alt="User profile pic" 
+                src={data?.consignee?.proflePic ? `${IMAGE_URL}/${data?.consignee?.proflePic}` : "/images/maleUser.svg"}
+                sx={{ width:24,height:24}}
+                />
                 <Rating readOnly value={data?.reviews?.stars||0} size='small'/>
                 <span>| {<small style={{fontWeight:'lighter'}}>{data?.reviews?.stars||0}</small>}</span>
                 </Box>

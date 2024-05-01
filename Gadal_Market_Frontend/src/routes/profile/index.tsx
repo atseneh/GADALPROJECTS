@@ -6,10 +6,10 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import useSmallScreen from "../../utils/hooks/useSmallScreen";
-import Collapse from '@mui/material/Collapse';
+import Snackbar from '@mui/material/Snackbar';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
 import React, { useEffect, useState } from "react";
-import IconButton from "@mui/material/IconButton";
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import PeopleIcon from '@mui/icons-material/People';
 import CampaignIcon from '@mui/icons-material/Campaign';
@@ -20,7 +20,7 @@ import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
 import Ads from "./ads";
 import Following from "./following";
 import useReactRouterQuery from "../../utils/hooks/useQuery";
-import { useLocation, useNavigate } from "react-router-dom";
+import {useNavigate } from "react-router-dom";
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import Packages from "./packages";
 import { QueryClient, useMutation, useQuery } from "@tanstack/react-query";
@@ -43,6 +43,38 @@ const [subCity,setSubCity] = useState('')
 const [region,setRegion] = useState('')
 const variant = smallScreen?'caption':'body1'
 const theme = useTheme()
+const [openSnackBar, setOpenSnackBar] = React.useState(false);
+const handleSnackBarClose = (event: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setOpenSnackBar(false);
+  };
+  
+  const action = (
+    <React.Fragment>
+      <IconButton
+        size="small"
+        aria-label="close"
+        color="inherit"
+        onClick={handleSnackBarClose}
+      >
+        <CloseIcon fontSize="small" />
+      </IconButton>
+    </React.Fragment>
+  );
+const copyProfileLink = ()=>{
+const userId = localStorage.getItem('userId')
+const text = `gadalmarket.com/viewProfile/${userId}`
+navigator.clipboard.writeText(text)
+      .then(() => {
+            setOpenSnackBar(true)
+        })
+      .catch(err => {
+        console.error('Failed to copy text:', err);
+        // Handle error, show a message to the user, etc.
+      });
+}
 const queryClient = new QueryClient();
 const [selectedImage, setSelectedImage] = useState<any>();
 const openImages = (acceptedImages:any) => {
@@ -106,7 +138,6 @@ if(profileDetail) {
  setCity(profileDetail?.city||'')
 }
 },[profileDetail])
-console.log(selectedImage)
     return (    
     <>
     <Card
@@ -179,15 +210,23 @@ console.log(selectedImage)
              </Box>
              <Box sx={{display:'flex',alignItems:'center',gap:1}}>
              <BusinessCenterIcon fontSize="small" sx={{color:'rgb(232 201 207)'}}/>
-                <Typography variant="body2" fontWeight={'bold'}>
-                    12 Products posted
+               {
+                isLoading ? <Skeleton/> : (
+                    <Typography variant="body2" fontWeight={'bold'}>
+                    {`${profileDetail?.postCount || 0} Products posted`}
                 </Typography>
+                )
+               }
              </Box>
              <Box sx={{display:'flex',alignItems:'center',gap:1}}>
              <PeopleAltIcon fontSize="small" sx={{color:'rgb(232 201 207)'}}/>
-                <Typography variant="body2" fontWeight={'bold'}>
-                    12 Followers
+               {
+                isLoading ? <Skeleton/> : (
+                    <Typography variant="body2" fontWeight={'bold'}>
+                    {`${profileDetail?.followers?.length} Followers`}
                 </Typography>
+                )
+               }
              </Box>
              <Box 
              sx={{
@@ -195,9 +234,22 @@ console.log(selectedImage)
                 gap:2,
                 mt:1
                 }}>
-             <Button sx={{background:'white',fontWeight:'bolder'}} size="small" variant="contained" color="inherit">
-             <img width={15}  src="/images/Icon ionic-ios-share-alt.svg" style={{marginRight:'4px'}}/>
-                Share
+             <Button 
+                sx={{
+                    background:'white',
+                    fontWeight:'bolder'
+                }} 
+                    size="small" 
+                    variant="contained" 
+                    color="inherit"
+                    onClick={copyProfileLink}
+                    >
+                <img 
+                    width={15}  
+                    src="/images/Icon ionic-ios-share-alt.svg" 
+                    style={{marginRight:'4px'}}
+                    />
+                  Share
                 </Button>
              <Button 
                sx={{background:'white',fontWeight:'bolder'}} 
@@ -589,6 +641,13 @@ console.log(selectedImage)
             />
            )
           }
+      <Snackbar
+        open={openSnackBar}
+        autoHideDuration={3000}
+        onClose={handleSnackBarClose}
+        message="Profile link copied to clipboard"
+        action={action}
+      />
     </>
     )
 }

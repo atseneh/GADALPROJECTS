@@ -7,7 +7,7 @@ import TelegramIcon from '@mui/icons-material/Telegram';
 import FacebookOutlinedIcon from '@mui/icons-material/FacebookOutlined';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import YouTubeIcon from '@mui/icons-material/YouTube';
-import TwitterIcon from '@mui/icons-material/Twitter';
+import XIcon from '@mui/icons-material/X';
 import LinkedinIcon from '@mui/icons-material/LinkedIn';
 import { NavLink } from 'react-router-dom';
 export default function Footer(){
@@ -79,14 +79,58 @@ export default function Footer(){
          <Box sx={{display:'flex',flexDirection:'column',gap:1,mr:8,overflowX:'hidden'}}>
             <img width={210} src='/images/footerLogo.svg' alt="footer logo"/>
             <Box sx={{display:'flex',alignItems:'center',gap:.5}}>
+             <NavLink
+             to={'https://t.me/gadalmarket'}
+             target="_blank"
+             rel="noopener noreferrer"
+             >
              <TelegramIcon color='primary'/>
+             </NavLink>
+             <NavLink
+             to={'https://www.facebook.com/gadalmarket?mibextid=ZbWKwL'}
+             target="_blank"
+             rel="noopener noreferrer"
+             >
              <FacebookOutlinedIcon color='primary'/>
+             </NavLink>
+             <NavLink
+             to={'https://www.instagram.com/gadal_market?igsh=MWdyNzU5aGFibmhvYw=='}
+             target="_blank"
+             rel="noopener noreferrer"
+             >
              <InstagramIcon color='primary'/>
-             {/* tiktok icon here */}
-             <InstagramIcon color='primary'/>
+             </NavLink>
+            <NavLink
+            to={'https://www.tiktok.com/@gadaltech?_t=8iS9yON5QO6&_r=1'}
+            target='_blank'
+            rel="noopener noreferrer"
+            >
+            <img 
+             src='/images/icons8_tiktok.svg'
+             width={20}
+             />
+            </NavLink>
+             <NavLink
+             to={'https://youtube.com/@gadaltech?si'}
+             target='_blank'
+             rel="noopener noreferrer" 
+             >
              <YouTubeIcon color='primary'/>
-             <TwitterIcon color='primary'/>
+             </NavLink>
+             <NavLink
+             to={'https://x.com/Samson_Belda?t=aMx0NIngzWYY_41aHTb_3Q&s=09'}
+             target='_blank'
+             rel="noopener noreferrer" 
+             >
+             <XIcon color='primary'/>
+             </NavLink>
+             <NavLink
+             to={'https://www.linkedin.com/company/gadal-market/'}
+             target='_blank'
+             rel="noopener noreferrer" 
+             >
              <LinkedinIcon color='primary'/>
+             </NavLink>
             </Box>
 
          </Box>

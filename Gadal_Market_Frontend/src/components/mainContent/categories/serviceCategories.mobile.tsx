@@ -2,7 +2,7 @@ import {Box,Typography,Stack,Chip} from '@mui/material'
 interface mobileServiceCategoryProps {
     serviceName:string;
     activeTransaction?:'rent'|'sale'|null;
-    activeService?:'property'|'machinery'|'vehicle'|'others';
+    activeService?:'property'|'machinery'|'vehicle'|'others'|null;
     handleTransactionChange?:(t:'rent'|'sale'|null,s:'property'|'machinery'|'vehicle'|'others')=>void
 }
 export default function MobileServiceCategory(props:mobileServiceCategoryProps){

@@ -30,8 +30,8 @@ export default function MainContent(){
       };
     const navigate = useNavigate();
     const [activeService,setActiveService] = useState<
-    'property'|'machinery'|'vehicle'|'others'
-    >('property')
+    'property'|'machinery'|'vehicle'|'others'|null
+    >(null)
     const {transactionTypeEnums,ServiceEnums} = Enums
     const [activeTransactionType,setActiveTransactionType] = useState<'rent'|'sale'|null>(null)
     const handleTransactionChange = (transactionType:typeof activeTransactionType,service:typeof activeService) => {
@@ -42,9 +42,9 @@ export default function MainContent(){
      queryKey:['newProducts',activeTransactionType,activeService],
      queryFn:()=>getProducts({
         transactionType:activeTransactionType?transactionTypeEnums[activeTransactionType]:undefined,
-        productType:ServiceEnums[capitalizeFirstLetter(activeService)],
+        productType:activeService ? ServiceEnums[capitalizeFirstLetter(activeService)] : undefined,
         pageNumber:1,
-        pageSize:4,
+        pageSize:12,
      })
     })
     const handleCallClick = () => {
@@ -97,7 +97,7 @@ export default function MainContent(){
                         />
                          <ServiceCategory
                          isLink
-                        serviceName='Others'
+                        serviceName='Constructions'
                         activeTransaction={activeTransactionType}
                         activeService={activeService}
                         handleTransactionChange={handleTransactionChange}
@@ -141,7 +141,7 @@ export default function MainContent(){
                                 handleTransactionChange={handleTransactionChange}
                                 />
                                 <MobileServiceCategory
-                                serviceName='Others'
+                                serviceName='Constructions'
                                 activeTransaction={activeTransactionType}
                                 activeService={activeService}
                                 handleTransactionChange={handleTransactionChange}
@@ -153,14 +153,32 @@ export default function MainContent(){
                    <Box sx={{background:'rgb(244 243 241)',p:2,display:'flex',flexDirection:smallScreen?'row':'column',gap:1}}>
                        <Box sx={{overflow:'auto'}}>
                        
-                        <RentFeatured serviceName='Promoted Property'/>
+                        <RentFeatured 
+                        serviceName='Property'
+                        serviceType={2}
+                        />
                            
-                        <RentFeatured serviceName='Promoted Vehicle'/>
-                        <RentFeatured serviceName='Promoted Machinery'/>
+                        <RentFeatured 
+                        serviceName='Vehicle'
+                        serviceType={3}
+                        />
+                        <RentFeatured 
+                        serviceName='Machinery'
+                        serviceType={1}
+                        />
                         <Box className="hideScrollBar" sx={{display:'flex',alignItems:'center',gap:3,overflow:'auto',mt:1}}>
-                             <SaleFeatured serviceName='Property'/>
-                             <SaleFeatured serviceName='Vehicle'/>
-                             <SaleFeatured serviceName='Machinery'/>
+                             <SaleFeatured 
+                             serviceName='Property'
+                             serviceType={2}
+                             />
+                             <SaleFeatured 
+                             serviceName='Vehicle'
+                             serviceType={3}
+                             />
+                             <SaleFeatured 
+                             serviceName='Machinery'
+                             serviceType={1}
+                             />
                         </Box>
                        </Box>
                        

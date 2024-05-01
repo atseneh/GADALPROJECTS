@@ -27,7 +27,7 @@ const {
     sortCriteria,
     brand,
 } = queryData
-let url = `products?recordStatus=1&state=1`
+let url = `products?recordStatus=1&state=1&derivedState=1`
 if(category){
 url = `${url}&category=${category}`
 }
@@ -49,7 +49,7 @@ if(attributes&&attributes.length>0){
   })
 }
 if(consignee) {
-    url = `${url}consignee=${consignee}`
+    url = `${url}&consignee=${consignee}`
 }
 if(pageSize && pageNumber) {
     url = `${url}&pageSize=${pageSize}&pageNum=${pageNumber}`

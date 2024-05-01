@@ -52,7 +52,7 @@ export default function AllItems(){
   const [activeService,setActiveService] = useState<
   'property'|'machinery'|'vehicle'|'others'
   >()
-  const {transactionTypeEnums,ServiceEnums} = Enums
+const {transactionTypeEnums,ServiceEnums} = Enums
   const [activeTransactionType,setActiveTransactionType] = useState<'rent'|'sale'|null>(null)
   const handleTransactionChange = (transactionType:typeof activeTransactionType,service:typeof activeService) => {
     setActiveService(service);
@@ -124,7 +124,7 @@ export default function AllItems(){
                         />
                          <ServiceCategory
                          isLink={false}
-                        serviceName='Others'
+                        serviceName='Constructions'
                         activeTransaction={activeTransactionType}
                         activeService={activeService}
                         handleTransactionChange={handleTransactionChange}
@@ -163,7 +163,7 @@ export default function AllItems(){
                         />
                          <ServiceCategory
                         
-                        serviceName='Others'
+                        serviceName='Constructions'
                         localTransactionType={localTransactionType}
                         // activeService={activeService}
                         setLocalTransactionType={setLocalTransactionType}

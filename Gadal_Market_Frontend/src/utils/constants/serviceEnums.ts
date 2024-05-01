@@ -2,7 +2,7 @@
     Property:2,
     Machinery:1,
     Vehicle:3,
-    Others:4,
+    Constructions:4,
 }
 const transactionTypeEnums:{[key:string]:number} = {
     sale:2,
