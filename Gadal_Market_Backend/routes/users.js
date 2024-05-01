@@ -6,8 +6,10 @@ const verifyToken = require('../verifyToken');
 const multer = require('multer');
 const sharp = require('sharp')
 const path = require('path');
+const mongoose = require('mongoose');
+const ObjectId = mongoose.Types.ObjectId;
 const ConverttoWebp = async (inputPath, outputPath) => {
-  let image = sharp(inputPath).webp();  // Convert all images to WEBP format
+  let image = sharp(inputPath).webp();  
   return image.toFile(outputPath);
 };
 
@@ -130,23 +132,69 @@ router.get('/users/followings/:user',async (req,res)=>{
     res.status(500).json({ error: 'Internal server error' });
   }
 })
-  router.get('/userProfileDetail',verifyToken, async (req, res) => {
-    const {_id} = req.user
-    const productsPosted = await Product.find({
-      consignee:_id
-    })
-    try {
+router.get('/userProfileDetail',verifyToken, async (req, res) => {
+   const { _id } = req.user;
+  try {
       let user = await User.findById(_id);
       if (!user) {
-        return res.status(404).json({ error: 'User not found' });
+          return res.status(404).json({ error: 'User not found' });
       }
-      user.noOfAds = 33
-      res.json(user);
-    } catch (error) {
+
+      const productsPostedCount = await Product.aggregate([
+          {
+            $match: { consignee: new ObjectId(_id) }
+          },
+          {
+              $group: {
+                  _id: null,
+                  count: { $sum: 1 } 
+              }
+          }
+      ]);
+      const postCount = productsPostedCount.length > 0 ? productsPostedCount[0].count : 0;
+      const userwithpostcount = { ...user.toObject(), postCount };
+      res.json(userwithpostcount);
+     
+  } catch (error) {
+    console.log(error)
       res.status(500).json({ error: 'Internal server error' });
-    }
-  });
-  
+  }
+});
+router.get('/publicProfileDetail/:userId', async (req, res) => {
+  const { userId:_id } = req.params;
+ try {
+     let user = await User.findById(_id);
+     if (!user) {
+         return res.status(404).json({ error: 'User not found' });
+     }
+
+     const productsPostedCount = await Product.aggregate([
+         {
+           $match: { consignee: new ObjectId(_id) }
+         },
+         {
+             $group: {
+                 _id: null,
+                 count: { $sum: 1 } 
+             }
+         },
+        //  {
+        //   $project:{
+        //     city:1,
+        //     count:1,
+        //     _id:0
+        //   }
+        //  }
+     ]);
+     const postCount = productsPostedCount.length > 0 ? productsPostedCount[0].count : 0;
+     const userwithpostcount = { ...user.toObject(), postCount };
+     res.json(userwithpostcount);
+    
+ } catch (error) {
+   console.log(error)
+     res.status(500).json({ error: 'Internal server error' });
+ }
+}); 
   router.put('/users/:userId?',verifyToken, upload.single('image') ,async (req, res) => {
     // const {_id} = req.user
     const {userId} = req.params

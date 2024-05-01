@@ -1,13 +1,32 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const Assets = require('../models/asset.model'); 
-
-router.post('/assets', async (req, res) => {
+const upload = multer({dest:'/images'})
+const path = require('path');
+const sharp = require('sharp')
+const ConverttoWebp = async (inputPath, outputPath) => {
+  let image = sharp(inputPath).webp();  
+  return image.toFile(outputPath);
+};
+router.post('/assets', upload.single('image'), async (req, res) => {
   try {
-    const newAsset = await Assets.create(req.body);
-    res.status(201).json(newAsset);
+      if (!req.file) {
+          return res.status(400).json({ error: 'No file uploaded' });
+      }
+      const image = req.file;
+      const inputPath = image.path;
+      const outputPath = path.join(__dirname, '..', 'images', `${image.filename}-${Date.now()}.webp`);
+      const filePath = `images/${image.filename}-${Date.now()}.webp`;
+
+      await ConverttoWebp(inputPath, outputPath);
+
+      const filePathData = req.body ? { ...req.body, filePath: [filePath] } : req.body;
+      const newAsset = await Assets.create(filePathData);
+      res.status(201).json(newAsset);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Internal server error' });
   }
 });
 

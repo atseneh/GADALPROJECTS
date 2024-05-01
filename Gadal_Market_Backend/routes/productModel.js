@@ -1,11 +1,27 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const ProductModel = require('../models/productModel.model');
+const upload = multer({dest:'/images'})
+const ConverttoWebp = async (inputPath, outputPath) => {
+  let image = sharp(inputPath).webp();  
+  return image.toFile(outputPath);
+};
 
-router.post('/productModels', async (req, res) => {
+router.post('/productModels',  upload.single('image'),async (req, res) => {
   try {
-    const newProductModel = await ProductModel.create(req.body);
-    res.status(201).json(newProductModel);
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+      const image = req.file;
+      const inputPath = image.path;
+      const outputPath = path.join(__dirname, '..', 'images', `${image.filename}-${Date.now()}.webp`);
+      const iconfilePath = `images/${image.filename}-${Date.now()}.webp`;
+      await ConverttoWebp(inputPath, outputPath);
+      const filePathData = req.body ? { ...req.body, icon: iconfilePath } : req.body;
+    
+      const newProductModel = await ProductModel.create(filePathData);
+      res.status(201).json(newProductModel);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

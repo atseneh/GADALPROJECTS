@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Product = require("../models/product.model");
+const Review = require('../models/review.model');
 const Package = require('../models/package.model');
 const PostTypeDefinition = require('../models/postTypeDefnition.model');
 const multer = require('multer');
@@ -128,7 +129,7 @@ router.post('/products', checkPackage, upload.array('images', 10), async (req, r
       previousPrice: Number(previousPrice), 
       currentPrice: Number(currentPrice), 
       category, 
-      postType: "65c8d2fc3458b4f8df0d9fae", 
+      postType: "661bc0d4b6116f918ab00b58", 
       productImages: uploadedImages, 
       attributes: productAttributes, 
       isFixed: isFixed === 'true' ? true : false, 
@@ -155,7 +156,7 @@ router.post('/products', checkPackage, upload.array('images', 10), async (req, r
     }
     else {
       // console.log("has package")
-        const postTypeDefinition = await PostTypeDefinition.findById("65c8d2fc3458b4f8df0d9fae");
+        const postTypeDefinition = await PostTypeDefinition.findById("661bc0d4b6116f918ab00b58");
         if (!postTypeDefinition) {
           return res.status(400).json({ error: 'Invalid post type id' });
         }
@@ -178,7 +179,6 @@ router.get('/products', async (req, res) => {
   try {
     const filters = req.query;
     const filterQuery = {};
-    
     const numericProperties = ['productType', 'state', 'postType', 'derivedState', 'viewCount','recordStatus'];
     numericProperties.forEach((property) => {
       if (filters[property]) {
@@ -240,16 +240,18 @@ router.get('/products', async (req, res) => {
     // ];
     
     // Count the total number of documents matching the filter criteria
-    const totalProductsQuery = filterQuery && Object.keys(filterQuery).length > 0
-    ? Product.aggregate([
-        { $match: filterQuery },
-        { $group: { _id: null, count: { $sum: 1 } } }
-      ])
-    : Product.aggregate([
-        { $group: { _id: null, count: { $sum: 1 } } }
-      ]);
-      const result = await totalProductsQuery;
-      const totalProducts = result.length > 0 ? result[0].count : 0;
+    // const totalProductsQuery = filterQuery && Object.keys(filterQuery).length > 0
+    // ? Product.aggregate([
+    //     { $match: filterQuery },
+    //     // { $sort: { no_day_onTop_cat: -1,date:-1} },
+    //     { $group: { _id: null, count: { $sum: 1 } } }
+    //   ])
+    // : Product.aggregate([
+    //   // { $sort: { no_day_onTop_cat: -1,date:-1} },
+    //     { $group: { _id: null, count: { $sum: 1 } } },
+    //   ]);
+    //   const result = await totalProductsQuery;
+    //   const totalProducts = result.length > 0 ? result[0].count : 0;
 
     // Pagination
     const page = parseInt(filters.pageNum) || 1; 
@@ -302,12 +304,42 @@ router.get('/products', async (req, res) => {
       // if (filters.isForHomePage && filters.isForHomePage === 'true') {
       //   products = products.filter(product => product.no_day_onTop_home && product.no_day_onTop_home > 0);
       // }
+      const productIds = products.map(product => product._id);
+      // const averageRatings = await Review.aggregate([
+      //   { $match: { product: { $in: productIds } } },
+      //   {
+      //     $group: {
+      //       _id: '$product',
+      //       averageRating: { $avg: '$stars' }
+      //     }
+      //   }
+      // ]);
+      const averageRatings = await Review.aggregate([
+        { $match: { product: { $in: productIds } } },
+        {
+          $group: {
+            _id: '$product',
+            averageRating: { $avg: '$stars' }
+          }
+        },
+        {
+          $project: {
+            averageRating: { $round: ['$averageRating'] }
+          }
+        }
+      ]);
+      const productsWithAverageRating = products.map(product => {
+        const averageRatingObj = averageRatings.find(rating => rating._id.equals(product._id));
+        const averageRating = averageRatingObj ? averageRatingObj.averageRating : 0;
+        return { ...product.toObject(), averageRating };
+      });
+    const totalProducts = products.length;
     const metadata = {
       totalProducts,
       pageNumber: page,
       pageSize: pageSize,
     };
-    res.json({ products, metadata });
+    res.json({ products: productsWithAverageRating, metadata });
   } 
   catch (error) {
     console.log(error);
@@ -404,17 +436,39 @@ router.delete('/products/:productId', async (req, res) => {
 });
 
 router.get('/productsOnHomePage', async (req, res) => {
+  const {serviceType,transactionType} = req.query
   try {
-    const products = await Product.find({ no_day_onTop_home: { $gt: 0 } })
-      .sort({ no_day_onTop_home: -1, date: -1 }); 
+    const products = await Product.aggregate([
+      { 
+        $match: 
+        { 
+          no_day_onTop_home: { $gt: 0 },
+          recordStatus:1,
+          state:1, 
+          productType:parseInt(serviceType),
+          transactionType:parseInt(transactionType)
+         }
+      },
+      { $sort: { no_day_onTop_home: -1, date: -1 } },
+      {
+        $group: {
+          _id: null,
+          products: { $push: '$$ROOT' },
+          count: { $sum: 1 }
+        }
+      },
+      { $project: { _id: 0, products: 1, count: 1 } }
+    ]);
 
-    const count = await Product.countDocuments({ no_day_onTop_home: { $gt: 0 } });
+    // If no matching documents found, return empty array and count 0
+    const result = products.length > 0 ? products[0] : { products: [], count: 0 };
 
-    res.json({ products, count });
+    res.json(result);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
   }
 });
+
 
 module.exports = router;

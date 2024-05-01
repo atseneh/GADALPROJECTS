@@ -2,7 +2,10 @@ const mongoose = require('mongoose')
 const {Schema} = mongoose
 const {RecordStatusEnum} = require('../Utils/enums')
 const subCitySchema = Schema({
-    descripton:String,
+    descripton:{
+      type:String,
+      required:true
+    },
     remark:String,
     location:{
     type:Schema.Types.ObjectId,

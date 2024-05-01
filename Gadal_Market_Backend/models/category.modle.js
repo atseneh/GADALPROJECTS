@@ -8,7 +8,7 @@ name:{
 },
 serviceId:{
   type:Number,
-  
+  required:true
 },
 icon:String,
 remark:String,

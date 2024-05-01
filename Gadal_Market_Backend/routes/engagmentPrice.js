@@ -32,7 +32,7 @@ router.get('/engagmentPrices/:id', async (req, res) => {
   }
 });
 
-router.put('/engagmentPrices/:id', async (req, res) => {
+router.put('/engagmentPricesUpdate/:id', async (req, res) => {
   try {
     const updatedEngagmentPrice = await EngagmentPrice.findByIdAndUpdate(
       req.params.id,
@@ -47,6 +47,7 @@ router.put('/engagmentPrices/:id', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 router.delete('/engagmentPrices/:id', async (req, res) => {
   try {

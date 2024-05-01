@@ -45,19 +45,8 @@ router.post('/postTypeDefinitions', async (req, res) => {
       res.status(500).json({ message: 'Server Error' });
     }
   });
-  router.put('/updatePostPrices', async (req, res) => {
-    const  priceData  = req.body;
-    try {
-      for (const key in priceData){
-      await PostTypeDefinition.findByIdAndUpdate(key, {price:priceData[key]}, { new: true });
-      }
-      res.json({message:'successfully updated'});
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Server Error' });
-    }
-  });
-router.put('/postTypeDefinitions/:id', async (req, res) => {
+  
+router.put('/postPriceUpdate/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const updatedPostTypeDefinition = await PostTypeDefinition.findByIdAndUpdate(id, req.body, { new: true });

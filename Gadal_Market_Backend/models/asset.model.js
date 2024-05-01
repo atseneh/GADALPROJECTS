@@ -3,7 +3,9 @@ const {Schema} = mongoose
 const {RecordStatusEnum,AssetEnums} = require('../Utils/enums')
 const assetSchema = Schema({
  description:String,
- filePath:String,
+ filePath:{
+  type:[String]
+ },
  remark:String,
  recordStatus:{
     type:Number,

@@ -1,11 +1,28 @@
 const express = require('express');
 const router = express.Router();
 const Category = require('../models/category.modle');
-
-router.post('/categories', async (req, res) => {
+const multer = require('multer');
+const upload = multer({dest:'/images'})
+const path = require('path');
+const sharp = require('sharp')
+const ConverttoWebp = async (inputPath, outputPath) => {
+  let image = sharp(inputPath).webp();  
+  return image.toFile(outputPath);
+};
+router.post('/categories', upload.single('image'), async (req, res) => {
   try {
-    const newCategory = await Category.create(req.body);
-    res.status(201).json(newCategory);
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+      const image = req.file;
+      const inputPath = image.path;
+      const outputPath = path.join(__dirname, '..', 'images', `${image.filename}-${Date.now()}.webp`);
+      const iconfilePath = `images/${image.filename}-${Date.now()}.webp`;
+      await ConverttoWebp(inputPath, outputPath);
+      const categoryData = req.body ? { ...req.body, icon: iconfilePath,serviceId:parseInt(req.body.serviceId)} : req.body;
+      const newCategory = await Category.create(categoryData);
+      res.status(201).json(newCategory);
+
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

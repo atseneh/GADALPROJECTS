@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const Product = require('../models/productModel.model');
+const Product = require('../models/product.model');
 
 cron.schedule('0 0 * * *', async () => {
   try {
@@ -20,7 +20,6 @@ cron.schedule('0 0 * * *', async () => {
         }
       }
     );
-
     console.log('Product fields updated successfully at midnight.');
   } catch (error) {
     console.error('Error occurred while updating product fields:', error);
