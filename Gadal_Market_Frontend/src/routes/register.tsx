@@ -1,7 +1,7 @@
 import {useTheme,Typography, Checkbox, Button, Stack, Paper, TextField} from "@mui/material";
 import Box from "@mui/material/Box";
 import { LoginWithButton } from "./login";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import useSmallScreen from "../utils/hooks/useSmallScreen";
 import { useMutation } from "@tanstack/react-query";
 import signUp from "../api/auth/signup";
@@ -250,9 +250,21 @@ useEffect(()=>{
         size="small"
         onChange={(e)=>setAccetpTerms(e.target.checked)}
         />
-       <Typography variant="caption" sx={{fontSize:smallScreen?'0.7rem':''}}>
+        <NavLink
+        to={'/terms_and_conditions'}
+        style={({isTransitioning }) => {
+          return {
+            color:'blue',
+            textDecoration:'none',
+            viewTransitionName: isTransitioning ? "slide" : "",
+          };
+        }}
+        target="_blank"
+        >
+        <Typography variant="caption" sx={{fontSize:smallScreen?'0.7rem':''}}>
             I Accept Terms And Conditions Policy Agreement
          </Typography>
+        </NavLink>
        </Box>
          <Box sx={{alignSelf:'center'}}>
          <Button

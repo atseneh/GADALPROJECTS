@@ -112,16 +112,44 @@ router.get('/users', async (req, res) => {
   }
 });
 
-router.get('/users/favorites',verifyToken,async (req,res)=>{
+router.get('/users/favorites',verifyToken, async (req, res) => {
   try {
     const {_id} = req.user
-    const favorites = await User.findById(_id,{recordStatus:1}).select('favourites').populate('favourites')
-    res.json(favorites)
+    const favorites = await Product.aggregate([
+      { $match: { likedBy:new mongoose.Types.ObjectId(_id), recordStatus: 1 } }, // Match products liked by the user
+      {
+        $sort: getSortQuery(req.query.sortCriteria) // Sort the products
+      }
+    ]);
+
+    res.json(favorites);
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(500).json({ error: 'Internal server error' });
   }
-})
+});
+
+function getSortQuery(sortCriteria) {
+  let sortQuery = {};
+
+  switch (sortCriteria) {
+    case 'highPrice':
+      sortQuery = { currentPrice: -1 };
+      break;
+    case 'lowPrice':
+      sortQuery = { currentPrice: 1 };
+      break;
+    case 'latest':
+      sortQuery = { date: -1 };
+      break;
+    default:
+      sortQuery = { date: -1 };
+      break;
+  }
+
+  return sortQuery;
+}
+
 router.get('/users/followings/:user',async (req,res)=>{
   try {
     const {user} = req.params
@@ -142,7 +170,11 @@ router.get('/userProfileDetail',verifyToken, async (req, res) => {
 
       const productsPostedCount = await Product.aggregate([
           {
-            $match: { consignee: new ObjectId(_id) }
+            $match: { 
+              consignee: new ObjectId(_id),
+              state:1,
+              recordStatus:1,
+             }
           },
           {
               $group: {
@@ -206,8 +238,9 @@ router.get('/publicProfileDetail/:userId', async (req, res) => {
         const image = req.file;
         // const processPromises = images.map((file, index) => {
           const inputPath = image.path;
-          const outputPath = path.join(__dirname, '..', 'images/', `${image.filename}-${Date.now()}.webp`); // Change extension to .webp
-          profilePic = `images/${image.filename}-${Date.now()}.webp`
+          const fileToSaveName = `${image.filename}-${Date.now()}.webp`
+          const outputPath = path.join(__dirname, '..','files', 'images/', fileToSaveName); // Change extension to .webp
+          profilePic = `images/${fileToSaveName}`
           ConverttoWebp(inputPath, outputPath);
           
         // });

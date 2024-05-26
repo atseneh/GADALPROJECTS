@@ -95,8 +95,8 @@ function BottomNav() {
             <AddCircleOutlineOutlinedIcon color="primary"/>
             <small style={{ fontWeight: "bold" }}>Post</small>
           </Button>
-            {
-              loggedIn ? (
+            {/* {
+              loggedIn ? ( */}
                 <>
                 <Button
             sx={{
@@ -107,7 +107,12 @@ function BottomNav() {
               color:pathname==='/yourFavs'?'primary':'inherit'
             }}
             onClick = {()=>{
+              if(loggedIn){
               navigate('/yourFavs')
+              return;
+              }
+              navigate('/login')
+
             }}
           >
             <FavoriteBorderOutlinedIcon  />
@@ -121,23 +126,24 @@ function BottomNav() {
             cursor:'pointer',
             color:pathname==='/messages'?'primary':'inherit'
           }}
-          onClick = {()=>navigate('/messages')}
+          onClick = {()=>{
+            if(loggedIn){
+              navigate('/messages')
+              return;
+            }
+            navigate('/login')
+          }}
         >
           <StyledBadge
            color="primary"
-           badgeContent={unreadCount}
-           
+           badgeContent={loggedIn ? unreadCount : 0}
           >
           <ChatBubbleOutlineOutlinedIcon/>
           </StyledBadge>
           <small style={{ fontWeight: "bold" }}>Messages</small>
         </Button>
                 </>
-              ):
-              (
-                null
-                )
-            }
+          
         </Box>
       </Card>
         )

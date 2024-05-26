@@ -13,6 +13,7 @@ import formatNumbers from "../../utils/helpers/formatNumbers";
 import { useSearchParams,useNavigate} from "react-router-dom";
 export default function PriceRange(props:{range:any}){
   const {range} = props 
+  console.log(range)
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate()
   const params = new URLSearchParams(searchParams.toString());
@@ -23,11 +24,14 @@ export default function PriceRange(props:{range:any}){
     params.set(max.key, max.value);
     setSearchParams(params);
   };
+  console.log(params.get('maxPrice'))
+
     const [expandFilter,setExpandFileter] = useState(true)
     const handleExpand = ()=>{
         setExpandFileter(!expandFilter)
     }
     const handlePriceRangeSelection = (min:string,max:string)=>{
+        console.log(min,max)
         if(params.get('minPrice') === String(min) && params.get('maxPrice')=== String(max)) {
             searchParams.delete('minPrice')
             searchParams.delete('maxPrice')
@@ -56,8 +60,8 @@ export default function PriceRange(props:{range:any}){
                 <Collapse in={expandFilter}>
                 <Stack>
              {
-                range?.map((range:any)=>(
-                 <Box key={range?.min}
+                range?.map((range:any,index:number)=>(
+                 <Box key={index}
                   sx={{display:'flex',alignItems:'center',cursor:'pointer'}}
                   onClick = {()=>{
                     handlePriceRangeSelection(range?.min,range?.max)

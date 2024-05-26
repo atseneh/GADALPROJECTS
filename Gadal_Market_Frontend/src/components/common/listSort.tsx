@@ -5,7 +5,7 @@ import MultipleStopIcon from '@mui/icons-material/MultipleStop';
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import React from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import useReactRouterQuery from '../../utils/hooks/useQuery';
 const sortCriterion = [
   {
@@ -19,11 +19,16 @@ const sortCriterion = [
   {
     label:'Highest Price',
     value:'highPrice'
+  },
+  {
+    label:'Default',
+    value:'default'
   }
 ]
 export default function ListSort(){
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
+    const navigate = useNavigate();
     const [searchParams,setSearchParams] = useSearchParams();
     const params = new URLSearchParams(searchParams.toString());
     let query = useReactRouterQuery()
@@ -38,6 +43,14 @@ export default function ListSort(){
     const handleClose = () => {
       setAnchorEl(null);
     };
+  const handleSort = (criterion:string)=>{
+    if(criterion === 'default'){
+      searchParams.delete('sortCriteria')
+      navigate(`?${searchParams.toString()}`);
+      return;
+    }
+    addSearchParam(criterion)
+  }
  return (
  <div>
       <Button
@@ -79,7 +92,7 @@ export default function ListSort(){
    {
     sortCriterion.map((criteria)=>(
       <MenuItem onClick={()=>{
-        addSearchParam(criteria.value)
+        handleSort(criteria.value)
         handleClose()
        }}>
        <Typography variant='caption'>

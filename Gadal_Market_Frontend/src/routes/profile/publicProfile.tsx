@@ -1,31 +1,60 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom"
 import getPublicProfileDetail from "../../api/user/getPublicProfileDetail";
-import { Avatar, Box, Button, Divider, Grid, Pagination, Skeleton, Stack, Typography } from "@mui/material";
+import { Avatar, Box, Button, Divider, Grid, Pagination, Skeleton, Stack, Typography, useTheme } from "@mui/material";
 import { IMAGE_URL } from "../../api/apiConfig";
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
 import getProducts from "../../api/products/getProducts";
 import ProductCard from "../../components/products/productCard";
 import CardSkeleton from "../../components/products/cardSkeleton";
+import AddIcon from "@mui/icons-material/Add";
 import { useState } from "react";
+import followUser from "../../api/user/follow";
+import useSmallScreen from "../../utils/hooks/useSmallScreen";
 export default function PublicProfile(){
     const {userId} = useParams();
+    const loggedinUser = localStorage.getItem('userId') as string
+    const queryClient = useQueryClient()
+    const [activeTab,setActiveTab] = useState(0)
+    const smallScreen = useSmallScreen();
+    const variant = smallScreen?'caption':'body1'
+    const theme = useTheme()
+    const handleTabSelection = (tab:number)=>{
+    setActiveTab(tab)
+  }
     const {data:profileDetail,isLoading} = useQuery({
         queryKey:['profile_detail',userId],
         queryFn:()=>getPublicProfileDetail(userId as string),
     })
     const [pageNumber, setPageNumber] = useState(1);
     const [pageSize, setPageSize] = useState(6);
+    const {mutate:follow,isPending:followPending} = useMutation({
+      mutationFn:followUser,
+      mutationKey:['follow_user'],
+      onSuccess:()=>{
+      queryClient.invalidateQueries({queryKey:['profile_detail']})
+      }
+  })
+    const handleFollow = (userToFollow:string)=>{
+      if(followPending){
+          return;
+      }
+      follow({
+          user:loggedinUser,
+          userToFollow,
+      })
+  }
     const handlePaginationChange = (event: React.ChangeEvent<unknown>, value: number) => {
         setPageNumber(value);
       };
       const {data:posts,isLoading:postsLoading} = useQuery({
-        queryKey:['user_posts',userId,pageSize,pageNumber],
+        queryKey:['user_posts',userId,pageSize,pageNumber,activeTab],
         queryFn:()=>getProducts({
             consignee:userId as string,
-            pageSize,
-            pageNumber,
+            // pageSize,
+            // pageNumber,
+            productType:activeTab===1 ? 2 : activeTab === 2 ? 1 : activeTab===3 ? 3 : activeTab === 4 ? 4 : undefined
         })
     })
     return (
@@ -103,6 +132,43 @@ export default function PublicProfile(){
                 )
                }
              </Box>
+             {
+              (loggedinUser !== userId) && (
+                <>
+                {
+                  profileDetail?.followers?.includes(loggedinUser) ? (
+                    <Typography
+                    sx={{
+                      mt:2,
+                      color:'green'
+                    }}
+                    >
+                      Following
+                    </Typography>
+                  ):
+                  (
+                    <Button
+                    size="small" 
+                    sx={{
+                      color:'black',
+                      background:'rgb(254 222 161)',
+                      alignSelf:'flex-start',
+                      mt:2,
+                    }}
+                    variant="outlined"
+                    onClick={()=>{
+                        handleFollow(userId as string)
+                    }}
+                    disabled={followPending}
+                      >
+                  <AddIcon sx={{fontSize:'1rem'}} fontSize="small"/>
+                  Follow
+                    </Button>
+                  )
+                }
+                </>
+              )
+             }
             </Stack>
         </Stack>
         </Grid>
@@ -120,6 +186,30 @@ export default function PublicProfile(){
             >
               Ads
             </Typography>
+             <Box
+             sx={{
+              display:'flex',
+              alignItems:'center',
+              gap:1,
+             }}
+             >
+             {
+            ['All','Property','Machinery','Vehicle','Others'].map((item,index)=>(
+                <Box 
+                onClick={(e)=>handleTabSelection(index)}
+                sx={{display:'flex',alignItems:'center',gap:1,
+                borderRadius:'16px',
+                cursor:'pointer',
+                background:activeTab===index?theme.palette.primary.main:'#EFEFEF',color:'black',
+                pt:.7,pb:.7,pl:2,pr:2    
+            }}>
+             <Typography variant={variant}>
+                {item}
+             </Typography>
+            </Box>
+            ))
+            }
+             </Box>
             <Divider/>
             
               <Grid
@@ -161,7 +251,7 @@ export default function PublicProfile(){
               }
              
               </Grid>
-              {
+              {/* {
                   posts?.products?.length>0&&(
                     <Pagination
                     count={Math.ceil(posts?.metadata?.totalProducts/pageSize)}
@@ -170,7 +260,7 @@ export default function PublicProfile(){
                     
                   />
                   )
-                }
+                } */}
         </Stack>
         </Grid>
       </Grid>

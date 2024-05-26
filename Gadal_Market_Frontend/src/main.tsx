@@ -44,6 +44,11 @@ import EnterOtp from './routes/enterOtp.tsx';
 import ResetPassword from './routes/resetPassword.tsx';
 import EditPost from './routes/post/editPost.tsx';
 import PublicProfile from './routes/profile/publicProfile.tsx';
+import PrivacyPolicy from './routes/privacyPolicy.tsx';
+import TermsAndConditions from './routes/termsAndConditions.tsx';
+import SafteyTips from './routes/safteyTips.tsx';
+import PaymentSuccessful from './routes/payment/paymentSuccessfull.tsx';
+import { FormProvider } from './components/common/productPostContext.tsx';
 TimeAgo.addDefaultLocale(en)
 const queryClient = new QueryClient()
 const router = createBrowserRouter([
@@ -128,6 +133,10 @@ const router = createBrowserRouter([
         path:'/viewProfile/:userId',
         element:<PublicProfile/>
       },
+      {
+        path:'/verifyPayment/paymentSuccessfull/:txRef',
+        element:<PaymentSuccessful/>
+      },
     ],
     
   },
@@ -155,12 +164,24 @@ const router = createBrowserRouter([
     path:'/resetPass',
     element:<ResetPassword/>
   },
- 
+  {
+  path:'/pirvacy_policy',
+    element:<PrivacyPolicy/>
+  },
+  {
+    path:'/terms_and_conditions',
+    element:<TermsAndConditions/>
+    },
+    {
+      path:'/saftey_tips',
+      element:<SafteyTips/>
+      },
 ])
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
      <CartContext>
-     <ThemeProvider theme={theme}>
+      <FormProvider>
+      <ThemeProvider theme={theme}>
     <QueryClientProvider client={queryClient}>
     <LocalizationProvider dateAdapter={AdapterDayjs}>
      <SocketContext>
@@ -169,6 +190,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </LocalizationProvider>
     </QueryClientProvider>
   </ThemeProvider>
+      </FormProvider>
      </CartContext>
   </React.StrictMode>,
 )

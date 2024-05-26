@@ -90,7 +90,15 @@ const onDrop = (acceptedFiles:any) => {
     openImages(acceptedFiles);
   };
    //image dropzone initialization
-const { getRootProps, getInputProps} = useDropzone({ onDrop,multiple:false })
+const { getRootProps, getInputProps} = useDropzone({
+    onDrop,
+    multiple:false,
+    accept:{
+        'image/png':['.png'],
+        'image/jpg':['.jpg'],
+        'image/jpeg':['.jpeg'],
+      },
+})
 const [notificationSnackbarOpen,setNotificationSnackbarOpen] = React.useState(false)
 const [notificationSeverity,setNotificationSeverity] = useState<'success'|'error'>()
     const handleNotificationSnackbarClose = ()=>{
@@ -249,7 +257,7 @@ if(profileDetail) {
                     src="/images/Icon ionic-ios-share-alt.svg" 
                     style={{marginRight:'4px'}}
                     />
-                  Share
+                  Copy profile link
                 </Button>
              <Button 
                sx={{background:'white',fontWeight:'bolder'}} 

@@ -1,5 +1,6 @@
 const cron = require('node-cron');
 const Product = require('../models/product.model');
+const Notification = require('../models/notification.model')
 
 cron.schedule('0 0 * * *', async () => {
   try {
@@ -23,5 +24,24 @@ cron.schedule('0 0 * * *', async () => {
     console.log('Product fields updated successfully at midnight.');
   } catch (error) {
     console.error('Error occurred while updating product fields:', error);
+  }
+});
+cron.schedule('0 0 * * *', async () => {
+  try {
+    // Update notifications where seen is true and gr 15 days
+    await Notification.updateMany(
+      { seen: true, createdAt: { $lte: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000) } },
+      { $set: { expired: true } }
+    );
+
+    // Update notifications where isCampaign is true and gr 15 days
+    await Notification.updateMany(
+      { isCampaign: true, createdAt: { $lte: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000) } },
+      { $set: { expired: true } }
+    );
+
+    console.log('Notifications updated successfully at midnight.');
+  } catch (error) {
+    console.error('Notification update failed:', error);
   }
 });

@@ -22,6 +22,10 @@ import PostOptions from "./postOptions";
 import { useNavigate, useParams } from "react-router-dom";
 import getBrandByCategory from "../../api/categories/getBrandbyCategory";
 import { NumericFormat, NumericFormatProps } from 'react-number-format';
+import getProductById from "../../api/products/getProductById";
+import getCurrencies from "../../api/currency/getCurrencies";
+import { IMAGE_URL } from "../../api/apiConfig";
+import updateProduct from "../../api/products/updateProduct";
 const Transition = React.forwardRef(function Transition(
   props: TransitionProps & {
     children: React.ReactElement;
@@ -53,7 +57,7 @@ const NumericFormatCustom = React.forwardRef<NumericFormatProps, CustomProps>(
         }}
         thousandSeparator
         valueIsNumericString
-        prefix="ETB "
+        // prefix="ETB "
       />
     );
   },
@@ -61,6 +65,11 @@ const NumericFormatCustom = React.forwardRef<NumericFormatProps, CustomProps>(
 
 export default function EditPost(){
     const {id} = useParams();
+    const {data:product,isLoading:prodcutLoading} = useQuery({
+      queryKey:['product',id],
+      queryFn:()=>getProductById(id as string),
+      enabled:Boolean(id)
+    })
    const navigate = useNavigate()
    const [selectedPostType,setSelectedPostType] = useState(3)
     const [fixed,setFixed] = useState(true)
@@ -82,6 +91,8 @@ export default function EditPost(){
     const [category,setCategory] = useState<any>(null)
     const [categoryInputValue,setCategoryInputValue] = useState('')
     const [brand,setBrand] = useState<any>(null)
+    const [currency,setCurrency] = useState<any>(null)
+    const [currencyInputValue,setCurrencyInputValue] = useState('')
     const [brandInputValue,setBrandInputVale] = useState('')
     const [location,setLocation] = useState<any>(null)
     const [locationInputValue,setLocationInputValue] = useState('')
@@ -92,9 +103,9 @@ export default function EditPost(){
     const [attributeValues,setAttributeValues] = React.useState<{[key:string]:any}|any>()
     const {ServiceEnums} = Enums
     const services =  Object.entries(ServiceEnums).map(([key, value]) => ({ name: key, value: value }));
-    console.log(services)
     const smallScreen = useSmallScreen()
     const [selectedImages, setSelectedImages] = useState<any>([]);
+  
     const [notificationSnackbarOpen,setNotificationSnackbarOpen] = React.useState(false)
     const [imagesError,setImagesError] = useState(false)
     const [notificationSeverity,setNotficationSeverity] = React.useState<'error'|'success'|undefined>()
@@ -139,7 +150,10 @@ export default function EditPost(){
       queryFn:()=>getCategoryAttributes(category?._id),
       enabled:Boolean(category)
      })
-
+     const {data:currencies,isLoading:curencyLoading} = useQuery({
+      queryKey:['currencies'],
+      queryFn:getCurrencies
+     })
      const {data:brands,isLoading:brandsLoading} = useQuery({
       queryKey:['brand_filters',category],
       queryFn:()=>getBrandByCategory(category?._id),
@@ -161,17 +175,23 @@ export default function EditPost(){
       openImages(acceptedFiles);
     };
      //image dropzone initialization
-     const { getRootProps, getInputProps} = useDropzone({ onDrop })
+     const { getRootProps, getInputProps} = useDropzone({ 
+      onDrop,
+      accept:{
+        'image/png':['.png'],
+        'image/jpg':['.jpg'],
+        'image/jpeg':['.jpeg'],
+      },
+    })
      // api call to post a product
-     const postMutation = useMutation({
+     const editMutation = useMutation({
       mutationKey:['postProduct'],
-      mutationFn:postProduct,
+      mutationFn:updateProduct,
       onSuccess:()=>{
         navigate('/post/success')
       },
       onError:()=>{
         setNotificationSnackbarOpen(true)
-
         setNotficationSeverity('error')
       },
      })
@@ -185,15 +205,14 @@ export default function EditPost(){
       })
     } 
     // function to initialte api call when post button is clicked
-    const handlePost = (postType:number)=>{
-      setSelectedPostType(postType)
+    const handlePost = ()=>{
       if(selectedImages?.length<2){
         setImagesError(true);
         return;
       }
       let formData = new FormData()
       let productAttributes:any = []
-      if(selectedImages?.length>0){
+      if(selectedImages?.filter((image:any)=>image?.file)?.length>0){
         selectedImages?.forEach((image:any)=>{
           formData.append('images',image?.file)
         })
@@ -208,12 +227,14 @@ export default function EditPost(){
       if(brand){
         formData.append('brand',brand?._id)
       }
+      formData.append('id',product?._id)
       formData.append('title',title)
       formData.append('description',description)
-      formData.append('currentPrice',values?.price)
+      formData.append('currentPrice',product?.currentPrice)
       formData.append('previousPrice',values?.price)
       formData.append('category',category?._id)
       formData.append('isFixed',`${fixed}`)
+      formData.append('currency',currency?._id)
       formData.append('consignee',localStorage.getItem('userId') as string)
       formData.append('location',location?._id)
       formData.append('subCity',subCity?._id)
@@ -221,37 +242,70 @@ export default function EditPost(){
       formData.append('transactionType',rent?'1':'2')
       formData.append('youtubeLink',videoLink)
       formData.append('productType',`${selectedService}`)
-      formData.append('postType',`${postType}`)
-      if(postMutation.isPending){
+      if(editMutation.isPending){
         return;
       }
-      postMutation.mutate(formData)
+      editMutation.mutate(formData)
      
     }
+  // React.useEffect(()=>{
+  // if(Array.isArray(categoryAttributes)&&categoryAttributes?.length>0){
+  //   setAttributeValues(
+  //     categoryAttributes?.reduce((acc:any,attr:any)=>({
+  //       ...acc, [attr?.name]:""
+  //     }),{})
+  //   )
+  //   return;
+  // }
+  // setAttributeValues(null)
+  // },[categoryAttributes])
+  // React.useEffect(()=>{
+  //   setCategory(null)
+  // },[selectedService])
+  // React.useEffect(()=>{
+  //   setSubCity(null)
+  // },[location])
+  // React.useEffect(()=>{
+  //   setWereda(null)
+  // },[subCity])
+  // React.useEffect(()=>{
+  //     setBrand(null)
+  //     setBrandInputVale('')
+  // },[category])
   React.useEffect(()=>{
-  if(Array.isArray(categoryAttributes)&&categoryAttributes?.length>0){
-    setAttributeValues(
-      categoryAttributes?.reduce((acc:any,attr:any)=>({
-        ...acc, [attr?.name]:""
-      }),{})
-    )
-    return;
-  }
-  setAttributeValues(null)
-  },[categoryAttributes])
-  React.useEffect(()=>{
-    setCategory(null)
-  },[selectedService])
-  React.useEffect(()=>{
-    setSubCity(null)
-  },[location])
-  React.useEffect(()=>{
-    setWereda(null)
-  },[subCity])
-  React.useEffect(()=>{
-      setBrand(null)
-      setBrandInputVale('')
-  },[category])
+    if(product?._id){
+      setSelectedService(product?.productType)
+      setFixed(product?.isFixed)
+      setRent(product?.transactionType === 1 || product?.transactionType === '1' )
+      setTitle(product?.title)
+      setDescription(product?.description)
+      setValues({
+        price:`${product?.currentPrice}`
+      })
+      setVideoLink(product?.youtubeLink)
+      setCategory(product?.category)
+      setLocation(product?.location)
+      setSubCity(product?.subCity)
+      setWereda(product?.wereda)
+      setCurrency(product?.currency)
+      setBrand(product?.brand)
+      if(Array.isArray(product?.attributes) && product?.attributes?.length>0){
+        setAttributeValues(
+          product?.attributes?.reduce((acc:any,attr:any)=>({
+            ...acc, [attr?.name]:attr?.value
+          }),{})
+        )
+      }
+    }
+    if(Array.isArray(product?.productImages) && product?.productImages?.length > 0){
+      setSelectedImages(product?.productImages?.map((image:string)=>(
+        {
+          file:null,
+          preview:`${IMAGE_URL}/${image}`
+        }
+      )))
+    }
+   },[product])
     return (
         <>
         <Box sx={{display:'flex',flexDirection:'column',}}>
@@ -265,11 +319,16 @@ export default function EditPost(){
                 <Divider/>
             </Stack>
             <CardContent sx={{p:5}}>
-              {/* <Box sx={{display:'flex',gap:3,mb:2,flexDirection:smallScreen?'column':'row'}}> */}
               <Grid container spacing={2} sx={{mb:2}}>
               {
                   services?.map((service)=>(
-                    <Grid item xs={6} sm={6} md={3}>
+                    <Grid 
+                      item 
+                      xs={6} 
+                      sm={6} 
+                      md={3}
+                      key={service?.value}
+                      >
                       <Box 
                     sx={{
                       display:'flex',
@@ -286,7 +345,7 @@ export default function EditPost(){
                     }}
                     onClick={()=>setSelectedService(service?.value)}
                     >
-                      <img width={22} height={20} src={`images/${service?.name.toLowerCase()}.svg`}/>
+                      <img width={22} height={20} src={`/images/${service?.name.toLowerCase()}.svg`}/>
                       <Typography variant="caption" fontWeight={'bold'}>
                         {service.name}
                       </Typography>
@@ -300,7 +359,7 @@ export default function EditPost(){
                 onSubmit={(e)=>{
                   e.preventDefault()
                   // handleClickOpen()
-                  handlePost(3)
+                  handlePost()
                 }}
                 >
                 <Stack spacing={1} sx={{mt:1}}>
@@ -321,7 +380,15 @@ export default function EditPost(){
                    icon={!rent?<CheckCircleOutlineIcon fontSize='small' color='inherit'/>:undefined}/>
                    
                 </Stack>
-                <TextField value={title} onChange={(e)=>setTitle(e.target.value)} required id="title" label="Title" variant="outlined" size="medium" sx={{background:'white'}} />
+                <TextField 
+                  value={title} 
+                  onChange={(e)=>setTitle(e.target.value)} 
+                  required id="title" 
+                  label="Title" 
+                  variant="outlined" 
+                  size="medium" 
+                  sx={{background:'white'}} 
+                  />
                 <TextField
                  id="description"
                  value={description}
@@ -330,13 +397,20 @@ export default function EditPost(){
                  label="Description" variant="outlined"
                  minRows={2}
                  multiline size="medium" sx={{background:'white'}} />
+                   <Autocomplete
+                value={currency}
+                inputValue={currencyInputValue}
+                onChange={(_,newValue:any)=>setCurrency(newValue)}
+                onInputChange={(_,newValue)=>setCurrencyInputValue(newValue)}
+                loading={curencyLoading}
+                options={currencies?currencies:[]}
+                getOptionLabel={(option:any)=>option?.description}
+                renderInput={(params) => <TextField required {...params} label="Currency" size="medium" sx={{background:'white'}}/>}
+                />
                  <TextField 
-                  // value={price} 
-                  // onChange={(e)=>setPrice(e.target.value)} 
                   value={values.price}
                   onChange={handleChange}
                   required 
-                  // type="number" 
                   id="price" 
                   label="Price" 
                   variant="outlined" 
@@ -563,7 +637,7 @@ export default function EditPost(){
          />
          <Button type="submit"
                  fullWidth 
-                 disabled={postMutation.isPending}
+                 disabled={editMutation.isPending}
                  sx={{color:'white',borderRadius:'30px',p:1}}
                  variant="contained"
                  >
@@ -595,18 +669,6 @@ export default function EditPost(){
             errorMessage={'At least 2 images are required'}
             />
            )
-          }
-          {
-            openPostOptions&&(
-              <Dialog
-              fullScreen
-              open={openPostOptions}
-              onClose={handleClose}
-              TransitionComponent={Transition}
-              >
-                <PostOptions selected={selectedPostType} handleProductPost={handlePost} postLoading = {postMutation.isPending} handleClose={handleClose}/>
-              </Dialog>
-            )
           }
         </>
     )

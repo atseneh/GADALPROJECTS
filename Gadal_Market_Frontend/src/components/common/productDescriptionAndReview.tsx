@@ -1,13 +1,14 @@
-import { Button, Rating, Skeleton, Stack, TextField } from "@mui/material";
+import { Avatar, Button, Rating, Skeleton, Stack, TextField } from "@mui/material";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import addReveiw from "../../api/reviews/createReveiw";
-import { useParams } from "react-router-dom";
+import { NavLink, useParams } from "react-router-dom";
 import CustomAlert from "./customAlert";
 import getReviewsOfProduct from "../../api/reviews/getReviewsOfProduct";
 import ReactTimeAgo from "react-time-ago";
+import { IMAGE_URL } from "../../api/apiConfig";
 
 export default function DescriptionAndReview(props:{data:any,loading:boolean}){
     const {data,loading} = props
@@ -74,6 +75,7 @@ export default function DescriptionAndReview(props:{data:any,loading:boolean}){
 
 function Reviews(){
  const loggedIn = localStorage.getItem('token')
+ const loggedinUser = localStorage.getItem('userId') as string
   const [review,setReveiw] = useState('')
   const [stars,setStars] = useState(0)
   const {id:productId} = useParams();
@@ -82,6 +84,8 @@ function Reviews(){
     queryKey:['get_reviews',productId],
     queryFn:()=>getReviewsOfProduct(productId as string)
   })
+  // chekc if the user has alreday reviewd the product
+  const alreadyReviewd = reviews?.map((r:any)=>r?.user?._id)?.includes(loggedinUser)
   const [notificationSnackbarOpen,setNotificationSnackbarOpen] = useState(false)
   const [notificationSeverity,setNotficationSeverity] = useState<'error'|'success'|undefined>()
   const handleNotificationSnackbarClose = ()=>{
@@ -128,7 +132,22 @@ function Reviews(){
        {
         reviews?.map((review:any)=>(
             <Stack spacing={1} sx={{ml:1}} key={review?.id}>
-            <Box sx={{display:'flex',gap:1}}>
+           <NavLink
+           to={`/viewProfile/${review?.user?._id}`}
+           style={({isTransitioning }) => {
+             return {
+               color:'black',
+               textDecoration:'none',
+               viewTransitionName: isTransitioning ? "slide" : "",
+             };
+           }}
+           >
+           <Box sx={{display:'flex',gap:1}}>
+            <Avatar 
+                alt="User profile pic" 
+                src={review?.user?.proflePic ? `${IMAGE_URL}/${review?.user?.proflePic}` : "/images/maleUser.svg"}
+                sx={{ width:24 , height:24}}
+                />
             <Typography
             sx={{
                 textTransform:'capitalize',
@@ -145,6 +164,7 @@ function Reviews(){
                 }
             </Typography>
             </Box>
+           </NavLink>
             <Rating size="small" readOnly value={review?.stars}/>
             <Typography>
             <ReactTimeAgo date={review?.updatedAt}/>
@@ -154,7 +174,7 @@ function Reviews(){
         ))
        }
        {
-        loggedIn&&(
+        loggedIn  && !isLoading && (
             <Stack spacing={1}>
             <Typography fontWeight={'bold'}>
                  Add A Review

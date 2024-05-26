@@ -1,4 +1,4 @@
-import {InputBase, Typography,Button, Stack, Paper } from "@mui/material";
+import {InputBase, Typography,Button, Stack, Paper, Divider } from "@mui/material";
 import Box from "@mui/material/Box";
 import capitalizeFirstLetter from "../utils/helpers/capitalizeFirstLetter";
 import {NavLink, useNavigate } from "react-router-dom";
@@ -225,8 +225,33 @@ export default function Login(){
                 }}
                 >
                     <Typography>Sign in</Typography>
-                </Button>             
+                </Button>     
+                 
         </Box>
+            {
+            smallScreen && <Divider/>
+            }   
+            {
+             smallScreen && (
+                <NavLink
+                to={'/register'}
+                style={({isTransitioning }) => {
+                    return {
+                      color:'blue',
+                      textDecoration:'none',
+                      viewTransitionName: isTransitioning ? "slide" : "",
+                      alignSelf:'center'
+                    };
+                  }}
+                >
+                    <Typography
+                    fontWeight={'bold'}
+                    >
+                        Create New Account 
+                    </Typography>
+                </NavLink>
+             )
+            }
             </Box>
         </Box>
        </Paper>
@@ -270,7 +295,6 @@ export default function Login(){
                 >
                     <Typography fontSize={'1rem'} variant="h6" fontWeight={'bold'}>REGISTER</Typography>
                     </Button>
-                  
          </Box>
         </Box>
             )

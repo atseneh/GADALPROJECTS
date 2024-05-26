@@ -32,7 +32,10 @@ const packageSchema = Schema({
     type: Schema.Types.ObjectId,
     ref: 'PackageDefinition'
   },
+  transactionReference: String,
   remark: String,
+  isValid: Boolean,
+  isPayed: Boolean,
   recordStatus: {
     type: Number,
     default: 1,

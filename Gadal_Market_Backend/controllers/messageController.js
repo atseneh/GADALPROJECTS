@@ -1,6 +1,10 @@
 const Messages = require('../models/message.model');
 const mongoose = require('mongoose')
-const io = require("../app");
+const socketController = require("./socketController");
+const sharp = require('sharp')
+const path = require('path');
+const ffmpeg = require('fluent-ffmpeg');
+const fs = require('fs');
 module.exports.getConversations = async (req,res,next)=> {
   try {
     const {id} = req.params
@@ -21,24 +25,16 @@ module.exports.deleteAll = async (req,res,next)=> {
 module.exports.getUnreadMessagesCount = async (req,res,next)=> {
   try {
     const {userId} = req.params
-      const unreadCount1 = await Messages.find({
-      $or:[
-        {productOwner:userId},
-        {interestedParty:userId}
-      ],
-      'conversations.seen':false,
-      'conversations.receiver':userId
-    })
-    let unreadCount = 0;
-    unreadCount1.forEach((message) => {
-      message.conversations.forEach((conversation) => {
-        if (!conversation.seen) {
-          unreadCount++;
-        }
-      });
-    });
+    const unreadMessages = await Messages.aggregate([
+      { $unwind: "$conversations" }, // Deconstruct the conversations array
+      { $match: { "conversations.receiver": new mongoose.Types.ObjectId(userId), "conversations.seen": false } },
+      { $count: "unreadCount" } // Count the number of matching documents
+  ]);
+
+  const unreadCount = unreadMessages.length > 0 ? unreadMessages[0].unreadCount : 0;
     res.json({unreadCount})
   } catch (error) {
+    console.log(error)
     res.status(500).json({error:'an error occured'})
   }
 }
@@ -66,10 +62,14 @@ module.exports.updateSeen = async (req,res,next)=>{
 module.exports.getMessages = async (req,res,next)=>{
   try {
     const {user} = req.params
+    const searchQuery = req?.query?.searchQuery || ''
     const messages = await Messages.aggregate([
       {
         $match: {
-          $or: [{ productOwner: new mongoose.Types.ObjectId(user)}, { interestedParty: new mongoose.Types.ObjectId(user) }]
+          $or: [
+            { productOwner: new mongoose.Types.ObjectId(user)},
+            { interestedParty: new mongoose.Types.ObjectId(user)}
+            ]
         }
       },
       {
@@ -77,7 +77,7 @@ module.exports.getMessages = async (req,res,next)=>{
           from: 'users',
           localField: 'productOwner',
           foreignField: '_id',
-          as: 'productOwner'
+          as: 'productOwnerData'
         }
       },
       {
@@ -85,7 +85,7 @@ module.exports.getMessages = async (req,res,next)=>{
           from: 'users',
           localField: 'interestedParty',
           foreignField: '_id',
-          as: 'interestedParty'
+          as:'interestedPartyData'
         }
       },
       {
@@ -110,10 +110,20 @@ module.exports.getMessages = async (req,res,next)=>{
       {
         $project: {
           // conversations: 0, // Exclude the original conversation array
-          productOwner: { $arrayElemAt: ["$productOwner", 0] },
-          interestedParty: { $arrayElemAt: ["$interestedParty", 0] },
+          productOwner: { $arrayElemAt: ["$productOwnerData", 0] },
+          interestedParty: { $arrayElemAt: ["$interestedPartyData", 0] },
           lastConversation: 1,
           unreadCount:1,
+        }
+      },
+      {
+        $match: {
+          $or: [
+            { "productOwner.firstName": { $regex: searchQuery, $options: 'i' } },
+            { "productOwner.lastName": { $regex: searchQuery, $options: 'i' } },
+            { "interestedParty.firstName": { $regex: searchQuery, $options: 'i' } },
+            { "interestedParty.lastName": { $regex: searchQuery, $options: 'i' } }
+          ]
         }
       },
       {
@@ -122,11 +132,32 @@ module.exports.getMessages = async (req,res,next)=>{
     ])
     res.json(messages)
   } catch (error) {
+    console.log(error)
     res.status(500).json({error:'an error occured'})
+  }
+}
+// get all messages of a user 
+module.exports.getAllMessages = async(req,res,next)=>{
+  const {user} = req.params
+  try {
+    const allMessages = await Messages.find({
+      $or:[
+        {productOwner:user},
+        {interestedParty:user}
+      ],
+    })
+    if(allMessages){
+      return res.status(200).json({messages:allMessages})
+    }
+    res.status(400).json({error:'No messages found'})
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({message:'an error occured'})
   }
 }
 // create messages for the first time
 module.exports.createMessages = async (req,res,next)=>{
+  const io = socketController.getIo();
   try {
     const {product,owner,buyer,message} = req.body
      // check if there is already a chat for that prodcut between buyer and seller
@@ -142,6 +173,14 @@ module.exports.createMessages = async (req,res,next)=>{
           {$push:{conversations:{message,sender:buyer,receiver:owner,seen:false}}},
           {new:true},
           )
+          if(updatedMessage){
+            io.emit('new_message', {
+              messageId:updatedMessage?._id,
+              sender,
+              receiver,
+              timestamp: updatedMessage.updatedAt ,
+            });
+          }
           return res.status(200).json(updatedMessage)
       } catch (error) {
         next(error)
@@ -161,6 +200,14 @@ module.exports.createMessages = async (req,res,next)=>{
       }
      ]
     })
+    if(data){
+      io.emit('new_message', {
+        messageId:data?._id,
+        sender:buyer,
+        receiver:owner,
+        timestamp: data.updatedAt,
+      });
+    }
     const responseMsg = data ? "Message added successfully." : "Failed to add message to the database";
     res.json({ msg: responseMsg });
   } catch (error) {
@@ -170,10 +217,41 @@ module.exports.createMessages = async (req,res,next)=>{
 // add conversation to an existing chat
 module.exports.addConversation = async(req,res,next)=>{
   try {
+  const io = socketController.getIo();
   const {messageId,message,sender,receiver} = req.body
+  let message2 = JSON.parse(message)
+  if (req.file && message2.messageType === 'image') {
+    const image = req.file;
+      const inputPath = image.path;
+      const fileToSaveName = `${image.filename}-${messageId}.webp`
+      const outputPath = path.join(__dirname, '..','files', 'images/',fileToSaveName); // Change extension to .webp
+      message2['message'] = `images/${fileToSaveName}`
+      let image2 = sharp(inputPath).webp();  
+      image2.toFile(outputPath);
+  }
+  if (req.file && message2.messageType === 'voice') {
+    const voice = req.file;
+      const inputPath = voice.path;
+      const fileToSaveName = `${voice.filename}-${messageId}.wav`
+      const outputPath = path.join(__dirname, '..','files','audios/',fileToSaveName); 
+      message2['message'] = `audios/${fileToSaveName}`
+      ffmpeg(inputPath)
+      .audioBitrate(128)
+      .toFormat('wav')
+      .on('end', () => {
+        console.log('Processing finished!');
+        fs.unlinkSync(inputPath); // Remove the original file
+        res.json({ message: 'File processed successfully', filePath: outputPath });
+      })
+      .on('error', (err) => {
+        console.error('Error:', err.message);
+        res.status(500).json({ error: err.message });
+      })
+      .save(outputPath);
+  }
   const updatedMessage = await Messages.findOneAndUpdate(
     {_id:messageId},
-    {$push:{conversations:{message,sender,receiver,seen:false}}},
+    {$push:{conversations:{message:message2,sender,receiver,seen:false}}},
     {new:true},
     )
     io.emit('new_message', {

@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import getMessagesOfUser from "../../api/messages/getMessagesOfUser";
 import useSmallScreen from "../../utils/hooks/useSmallScreen";
 import { SocketCon } from "../../components/context/socketContext";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import updateSeen from "../../api/messages/updateSeen";
 interface UserListProps {
    selectedChat:any,
@@ -22,10 +22,11 @@ export function getBadgeVariant(buyer:string,owner:string,connectedUsers:string[
 export default function UserList(props:UserListProps){
     const {selectedChat,handleChatSelection} = props
     const {connectedUsers} = useContext(SocketCon)
+    const [searchTerm,setSearchTerm] = useState('')
     const queryClient = useQueryClient();
-    const {data:messages,isLoading} = useQuery({
+    const {data:messages,isLoading,refetch,isRefetching} = useQuery({
       queryKey:['get_messages'],
-      queryFn:()=>getMessagesOfUser(localStorage.getItem('userId') as string)
+      queryFn:()=>getMessagesOfUser(localStorage.getItem('userId') as string,searchTerm)
     })
     const {mutate} = useMutation({
       mutationKey:['update_seen',],
@@ -48,20 +49,13 @@ export default function UserList(props:UserListProps){
           
         }}
         >
-         {
-          isLoading ? (
-            <Typography variant="body2">
-              Loading...
-            </Typography>
-          ):
-          (
-            <>
-            {
-         messages?.length > 0 ?
-         (
-          <>
-            <Box
-        //  component={'form'}
+           <Box
+            component={'form'}
+            onSubmit={(e)=>{
+              e.preventDefault()
+              refetch();
+              // navigate(`/search?searchQuery=${searchTerm}`)
+            }}
             sx={{
               p: '2px 4px', 
               display: 'flex',
@@ -77,10 +71,24 @@ export default function UserList(props:UserListProps){
              <InputBase
             sx={{ ml: 1, flex: 1 }}
             placeholder="Search.."
-            
-      />
+            value={searchTerm}
+            onChange={(e)=>setSearchTerm(e.target.value)}     
+            />
       
          </Box>
+         {
+          isLoading || isRefetching ? (
+            <Typography variant="body2">
+              Loading...
+            </Typography>
+          ):
+          (
+            <>
+            {
+         messages?.length > 0 ?
+         (
+          <>
+           
          {
         messages?.map((message:any)=>(
         <Stack
@@ -132,11 +140,22 @@ export default function UserList(props:UserListProps){
                   `${message?.interestedParty?.firstName} ${message?.interestedParty?.lastName}`
                 }
               </Typography>
-              <Typography variant="body2">
                 {
-                message?.lastConversation?.message?.length>22 ? `${message?.lastConversation?.message?.slice(0,22)}...`:message?.lastConversation?.message
+                  message?.lastConversation?.message?.messageType === 'image' && (
+                    <Typography variant="body2">
+                      Photo
+                    </Typography>
+                  )
+                }
+                {
+                  message?.lastConversation?.message?.messageType === 'text' && (
+                    <Typography variant="body2">
+                {
+                message?.lastConversation?.message?.messae?.length>22 ? `${message?.lastConversation?.message?.message?.slice(0,22)}...`:message?.lastConversation?.message?.message
                 }
               </Typography>
+                  )
+                }
             </Stack>
           </Box>
             <Stack

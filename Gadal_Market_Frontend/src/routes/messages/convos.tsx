@@ -1,4 +1,4 @@
-import { Avatar, Badge, Box, Divider, Stack, Typography,Paper,IconButton, InputBase, Button } from "@mui/material";
+import { Avatar, Badge, Box, Divider, Stack, Typography,Paper,IconButton, InputBase, Button, Popover } from "@mui/material";
 import EmojiPicker from "emoji-picker-react";
 import EmojiEmotionsOutlinedIcon from '@mui/icons-material/EmojiEmotionsOutlined';
 import KeyboardVoiceOutlinedIcon from '@mui/icons-material/KeyboardVoiceOutlined';
@@ -16,10 +16,19 @@ import { SocketCon } from "../../components/context/socketContext";
 import { getBadgeVariant } from "./userList";
 import updateSeen from "../../api/messages/updateSeen";
 import { NavLink } from "react-router-dom";
+import data from '@emoji-mart/data'
+import Picker from '@emoji-mart/react'
+import { useDropzone } from "react-dropzone";
+import Modal from '@mui/material/Modal';
+import { CloseOutlined, DeleteOutline, PauseCircleOutlineOutlined, PlayCircleOutline, StopCircleOutlined } from "@mui/icons-material";
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
+import Lightbox from "yet-another-react-lightbox";
 interface ConvosProps {
   messageDetail:any,
   onGoBack:()=>void
 }
+
 export default function Convos(props:ConvosProps){
   const {messageDetail,onGoBack} = props
   const {unreadCount} = useContext(SocketCon)
@@ -27,6 +36,78 @@ export default function Convos(props:ConvosProps){
   const [message,setMessage] = useState('')
   const newMessageRef = useRef<HTMLDivElement|null>(null)
   const smallScreen = useSmallScreen();
+  const theme = useTheme();
+  const onMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const [selectedImage, setSelectedImage] = useState<any>();
+  const [openLightBox,setOpenLightBox] = useState(false)
+  const [openImagePreview,setOpenImagePreview] = useState(false)
+  const [activeImage,seActiveImage] = useState('0')
+  const openImages = (acceptedImages:any) => {
+    const newFile =   {
+        file:acceptedImages?.at(0),
+        preview: URL.createObjectURL(acceptedImages?.at(0)),
+      }
+    console.log(newFile)
+    setSelectedImage(newFile)
+  };
+const onDrop = (acceptedFiles:any) => {
+    openImages(acceptedFiles);
+  };
+   //image dropzone initialization
+const { getRootProps, getInputProps} = useDropzone({
+    onDrop,
+    multiple:false,
+    accept:{
+        'image/png':['.png'],
+        'image/jpg':['.jpg'],
+        'image/jpeg':['.jpeg'],
+      },
+})
+const [recordedVoice,setRecordedVoice] = useState<Blob | null>(null)
+console.log(recordedVoice)
+const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+const [recording, setRecording] = useState<boolean>(false);
+const audioChunksRef = useRef<Blob[]>([]);
+const startRecording = async () => {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const mediaRecorder = new MediaRecorder(stream);
+  mediaRecorderRef.current = mediaRecorder;
+  mediaRecorder.ondataavailable = (event) => {
+    audioChunksRef.current.push(event.data); 
+  };
+  mediaRecorder.onstop = () => {
+    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+    audioChunksRef.current = [];
+    setRecordedVoice(audioBlob);
+  };
+
+  mediaRecorder.start();
+  setRecording(true);
+};
+const stopRecording = () => {
+  if (mediaRecorderRef.current) {
+    mediaRecorderRef.current.stop();
+    setRecording(false);
+  }
+};
+const abortRecording = ()=>{
+  if(mediaRecorderRef?.current){
+    mediaRecorderRef.current = null
+    setRecording(false)
+    setRecordedVoice(null)
+  }
+}
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      setAnchorEl(event.currentTarget);
+    };
+  
+    const handleClose = () => {
+      setAnchorEl(null);
+    };
+  
+    const open = Boolean(anchorEl);
+    const id = open ? 'emoji-popover' : undefined
   const {data:conversations,isLoading:convosLoading} = useQuery({
     queryKey:['get_conversations',messageDetail],
     queryFn:()=>getConversation(messageDetail?._id)
@@ -35,6 +116,10 @@ export default function Convos(props:ConvosProps){
   const { isPending, submittedAt, variables, mutate, isError } = useMutation({
     mutationFn:addMessage,
     mutationKey:['add_message'],
+    onSuccess:()=>{
+      setMessage('');
+      setSelectedImage(null)  
+    },
     onSettled:async ()=>{
       queryClient.invalidateQueries(({queryKey:['get_messages']}))
       if(newMessageRef.current){
@@ -51,15 +136,44 @@ export default function Convos(props:ConvosProps){
       queryClient.invalidateQueries({queryKey:['get_unread_Messages_count']})
     }
   })
-  const handleMessageSent = (message:string)=>{
-    const messaePayload = {
-      messageId:messageDetail?._id,
-      message,
-      sender:localStorage.getItem('userId') as string,
-      receiver:localStorage.getItem('userId') === conversations?.product?.consignee ? conversations?.interestedParty : conversations?.product?.consignee
+  const handleMessageSent = (message?:string)=>{
+    if(recording){
+      stopRecording();
     }
-    mutate(messaePayload)
-    setMessage('');
+    const formData = new FormData()
+    formData.append('sender',localStorage.getItem('userId') as string,)
+    formData.append('receiver',localStorage.getItem('userId') === conversations?.product?.consignee ? conversations?.interestedParty : conversations?.product?.consignee)
+    if(selectedImage){
+      formData.append('file',selectedImage?.file)
+      formData.append('message',JSON.stringify({
+        message:'',
+        messageType:'image'
+      }))
+    }
+    if(recordedVoice){
+      formData.append('file',recordedVoice)
+      formData.append('message',JSON.stringify({
+        message:'',
+        messageType:'voice'
+      }))
+    }
+   if(message && !selectedImage && !recordedVoice){
+    formData.append('message',JSON.stringify({
+      message:message,
+      messageType:'text'
+    }))
+   }
+    formData.append('messageId',messageDetail?._id,)
+    // const messaePayload = {
+    //   messageId:messageDetail?._id,
+    //   message:{
+    //     message,
+    //     messageType:'text'
+    //   },
+    //   sender:localStorage.getItem('userId') as string,
+    //   receiver:localStorage.getItem('userId') === conversations?.product?.consignee ? conversations?.interestedParty : conversations?.product?.consignee
+    // }
+    mutate(formData)
   }
  useEffect(()=>{
   mutateSeen({
@@ -70,6 +184,13 @@ export default function Convos(props:ConvosProps){
     newMessageRef.current.scrollIntoView({behavior:'smooth'})
   }
  },[unreadCount,newMessageRef])
+ useEffect(()=>{
+  if(selectedImage){
+    setOpenImagePreview(true)
+    return;
+  }
+  setOpenImagePreview(false)
+ },[selectedImage])
     return (
         <>
         {
@@ -251,31 +372,110 @@ export default function Convos(props:ConvosProps){
                   borderRadius:'8px',
                 }}
                >
-               <Typography>
-                  {
-                    convo.message
-                  }
-                 </Typography>
+                {
+                  convo?.message?.messageType === 'text' && (
+                    <Typography>
+                    {
+                      convo.message?.message
+                    }
+                   </Typography>
+                  )
+                }
+                {
+                  convo?.message?.messageType === 'image' && (
+                    <Paper
+                    sx={{
+                    p:1,
+                    cursor:'pointer',
+                    }}
+                    onClick = {()=>{
+                      setOpenLightBox(true)
+                    }}
+                    >
+                      <img
+                      src={
+                        `${IMAGE_URL}/${convo?.message?.message}`
+                      }
+                      style={{
+                        width:200,
+                        objectFit:'contain'
+                      }}
+                      />
+                    </Paper>
+                  )
+                }
                </Box>
             ))
           }
+         
           {
             isPending && (
               <Box 
                sx={{
-                alignSelf:variables?.sender === localStorage.getItem('userId') ? 'flex-end' : 'flex-start',
-                background:variables?.sender === localStorage.getItem('userId') ? '#DAFDFC' : '#FDE6C4',
-
+                alignSelf:variables?.get('sender') === localStorage.getItem('userId') ? 'flex-end' : 'flex-start',
+                background:variables?.get('sender') === localStorage.getItem('userId') ? '#DAFDFC' : '#FDE6C4',
                  p:1,
                  borderRadius:'8px',
                  opacity:.5,
                }}
               >
-              <Typography>
-                 {
-                   variables.message
-                 }
-                </Typography>
+              {
+                JSON.parse(variables.get('message') as string)?.messageType ==='text' && (
+                  <Typography>
+                  {
+                   JSON.parse(variables?.get('message') as string)?.message
+                   }
+                 </Typography>
+                )
+              }
+                {
+                JSON.parse(variables.get('message') as string)?.messageType ==='image' && (
+                  <Paper
+              sx={{
+                p:1,
+                // alignSelf:'flex-end'
+              }}
+              >
+                <img
+                src={
+                  selectedImage?.preview
+                }
+                style={{
+                  width:200,
+                  objectFit:'contain'
+                }}
+                />
+              </Paper>
+                )
+              }
+               {
+            JSON.parse(variables.get('message') as string)?.messageType ==='voice' && (
+              <Stack
+              direction={'row'}
+              alignItems={'center'}
+              justifyContent={'space-between'}
+              sx={{
+                p:.5,
+                border:'1px solid black',
+                alignSelf:'flex-end',
+                width:250
+              }}
+              >
+              <IconButton
+              size="small"
+              >
+                {/* <PlayCircleOutline 
+                fontSize="large"
+                color="primary"
+                /> */}
+                 <PauseCircleOutlineOutlined 
+                fontSize="large"
+                color="primary"
+                />
+              </IconButton>
+              </Stack>
+            )
+          }
               </Box>
             )
           }
@@ -285,6 +485,7 @@ export default function Convos(props:ConvosProps){
           >
 
           </div>
+        
          </Box>
           </Box>
               )
@@ -301,7 +502,7 @@ export default function Convos(props:ConvosProps){
            component={'form'}
            onSubmit={(e)=>{
              e.preventDefault();
-             if(!message){
+             if(!message && !recordedVoice){
                return;
              }
              handleMessageSent(message);
@@ -317,19 +518,75 @@ export default function Convos(props:ConvosProps){
               >
               
                <Stack direction={'row'} alignItems={'center'}>
-               
-                 <IconButton>
-                   <KeyboardVoiceOutlinedIcon 
+               <IconButton
+               onClick={handleClick}
+               sx={{
+                visibility: recording ? 'hidden' : 'vissible'
+               }}
+               >
+                   <EmojiEmotionsOutlinedIcon 
                    fontSize={smallScreen ? 'medium' : "large"} 
                    color="primary"
                    />
                  </IconButton>
+                 <Popover
+                             id={id}
+                             open={open}
+                             anchorEl={anchorEl}
+                             onClose={handleClose}
+                             anchorOrigin={{
+                               vertical: 'top',
+                               horizontal: 'right',
+                             }}
+                             transformOrigin={{
+                               vertical: 'bottom',
+                               horizontal: 'left',
+                             }}
+                             slotProps={{
+                               paper:{
+                                 sx:{
+                                   mb:8,
+                                   // boxShadow:'none',
+                                   borderRadius:'8px',
+                                   height:300,
+                                   width:320,  
+                                   // maxHeight:500
+                                 }
+                               }
+                             }}
+                 >
+                 <Picker 
+              data={data}
+              onEmojiSelect={(emoji:any)=>{
+                setMessage(`${message}${emoji?.native}`)
+              }}
+            />
+                 </Popover>
+                 <IconButton
+                 onClick={startRecording}
+                 sx={{
+                  visibility:recording ? 'hidden' : 'vissible'
+                 }}
+                 >
+                   <KeyboardVoiceOutlinedIcon 
+                   fontSize={smallScreen ? 'medium' : "large"} 
+                   color="primary"
+                   />
+                 </IconButton>  
+                 <div
+                   {...getRootProps({className: 'dropzone'})}
+                   style={{
+                    visibility:recording ? 'hidden' : 'visible'
+                   }}
+                 >
+                  <input {...getInputProps()} /> 
                  <IconButton size="small">
                    <AttachFileOutlinedIcon 
                      fontSize={smallScreen ? 'medium' : "large"} 
                      color="primary"
                      />
                  </IconButton>
+                 </div>
                </Stack>
                <Box
                 sx={{
@@ -343,23 +600,36 @@ export default function Convos(props:ConvosProps){
                   onChange={(e)=>setMessage(e.target.value)}
                   autoFocus
                  sx={{ ml:1}}
-                 placeholder="Type Message.."
-                 
-           />
+                 placeholder= {recording ? 'Recording...' : "Type Message.."}
+                 readOnly={recording}
+                />
            
               </Box>
                {
                  smallScreen ? (
                    <>
                     {
-                     message ? (
-                       <IconButton
+                     message || recording ? (
+                      <Stack
+                      direction={'row'}
+                      alignItems={'center'}
+                      gap={1}
+                      >
+                        <IconButton
+                        onClick={abortRecording}
+                        >
+                          <DeleteOutline
+                          color="error"
+                          />
+                        </IconButton>
+                         <IconButton
                        type="submit"
                        >
                        <SendIcon 
                        color="primary"            
                        />
                          </IconButton>
+                      </Stack>
                      ):
                      null
                     }
@@ -367,7 +637,22 @@ export default function Convos(props:ConvosProps){
                  
                  ):
                  (
-                   <Button
+                  <Stack
+                  direction={'row'}
+                  alignItems={'center'}
+                  gap={1}
+                  >
+                    <IconButton
+                    sx={{
+                      visibility:recording?'':'hidden'
+                    }}
+                    onClick={abortRecording}
+                    >
+                      <DeleteOutline
+                      color="error"
+                      />
+                    </IconButton>
+                     <Button
               variant="contained"
               type="submit"
               sx={{
@@ -383,6 +668,7 @@ export default function Convos(props:ConvosProps){
                </Typography>
                <SendIcon fontSize="small"/>
               </Button>
+                  </Stack>
                  )
                }
               </Box>
@@ -392,6 +678,87 @@ export default function Convos(props:ConvosProps){
         </Box>
           )
         }
+        <Modal
+  open={openImagePreview}
+  onClose={()=>setOpenImagePreview(false)}
+  aria-labelledby="modal-modal-title"
+  aria-describedby="modal-modal-description"
+>
+  <Box sx={{
+     position: 'absolute' as 'absolute',
+     top:onMobile? '40%':'50%',
+     left: '50%',
+    //  bottom:2,
+     transform: 'translate(-50%, -50%)',
+     width: onMobile ? '100%':400,
+     bgcolor: 'background.paper',
+     border: '2px solid #000',
+    //  boxShadow: 24,
+     p: 2,
+    //  m:2,
+  }}>
+    <Stack
+    spacing={1}
+    >
+      <Stack
+      direction={'row'}
+      justifyContent={'space-between'}
+      alignItems={'center'}
+      >
+        <Typography
+        variant="h6"
+        >
+          Send Photo
+        </Typography>
+        <IconButton
+        onClick={()=>{
+          setSelectedImage(null)
+          setOpenImagePreview(false)
+        }}
+        >
+          <CloseOutlined/>
+        </IconButton>
+      </Stack>
+      <Divider/>
+      <img
+      alt="selected image"
+      src={selectedImage?.preview}
+      height={400}
+      style={{
+        objectFit:'contain'
+      }}
+      />
+    
+     <Button
+      variant="contained"
+      sx={{
+        color:'white',
+        alignSelf:'flex-end',
+        textTransform:'capitalize'
+      }}
+      onClick={()=>{
+        handleMessageSent();
+        setOpenImagePreview(false)
+      }}
+      >
+        Send
+      </Button>
+     </Stack>
+  </Box>
+</Modal>
+<Lightbox
+        index={Number(activeImage)}
+        open={openLightBox}
+        close={()=>setOpenLightBox(false)}
+        slides={
+          conversations?.conversations?.filter((convo:any)=>convo?.message?.messageType === 'image')?.map((i:any)=>(
+              {
+                  src: `${IMAGE_URL}/${i?.message?.message}`,
+                  
+              }
+          ))
+         }
+        />
         </>
     )
 }

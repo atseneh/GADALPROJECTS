@@ -17,7 +17,7 @@ import CardSkeleton from "../components/products/cardSkeleton";
 
 export default function Search(){
 const smallScreen = useSmallScreen()
-const [rent,setRent] = useState(true)
+const [transactionType,setTransactionType] = useState<'rent' | 'sale' | null>(null)
 const [searchParams, setSearchParams] = useSearchParams();
 const params = new URLSearchParams(searchParams.toString());
 const addSearchParam = (cat:string) => {
@@ -27,28 +27,40 @@ const addSearchParam = (cat:string) => {
 let query = useReactRouterQuery()
 const cat = query.get('cat')
 const searchTerm = query.get('searchQuery')
+const minPrice = query.get('minPrice')
+const maxPrice = query.get('maxPrice')
+let selcetedAttributes:any = []
+searchParams.forEach((value,key)=>{
+  if(key.startsWith('attr')){
+    const attributeName=key.split('_')[1]
+    selcetedAttributes.push(
+      {
+        attributes:attributeName,
+        attributeValues:value
+      }
+    )
+  }
+})
 const theme = useTheme()
 const [selectedService,setSelectedService] = useState(0)
 const {ServiceEnums} = Enums
 const services =  Object.entries(ServiceEnums).map(([key, value]) => ({ name: key, value: value }));
-const {data:priceRange} = useQuery({
-    queryKey:['priceRange',cat],
-    queryFn:()=>getPriceRangeByCategory(cat as string),
-    enabled:Boolean(cat)
-  })
-  const {data:attributesForFilter,isLoading:attributesLoading} = useQuery({
-    queryKey:['attributesForFilter',cat],
-    queryFn:()=>getAttributesForFilter(cat as string),
-    enabled:Boolean(cat)
-  })
+
   const {data:categories,isLoading} = useQuery({
     queryKey:['categoriesByService',selectedService],
     queryFn:()=>getCategoriesByService(selectedService),
     enabled:Boolean(selectedService)
    })
   const {data:searchedProducts,isLoading:searching} = useQuery({
-    queryKey:['search',searchTerm],
-    queryFn:()=>search(searchTerm!)
+    queryKey:['search',searchTerm,transactionType,cat,minPrice,maxPrice,selcetedAttributes],
+    queryFn:()=>search({
+      searchTerm:searchTerm!,
+      transactionType:transactionType === 'rent' ? 1 : transactionType === 'sale' ? 2 : undefined,
+      category:cat ? cat : undefined,
+      minPrice,
+      maxPrice,
+      attributes:selcetedAttributes,
+    })
   })
     return (
         <Box sx={{display:'flex',flexDirection:'column',gap:1,}}>
@@ -75,12 +87,14 @@ const {data:priceRange} = useQuery({
         </Box>
         <Grid container spacing={2} sx={{ml:1}} justifyContent={'center'}>
             {
-              cat&&((Array.isArray(priceRange)&&priceRange?.length>0) || (Array.isArray(attributesForFilter)&&attributesForFilter?.length>0))&&(
+              
+              ((Array.isArray(searchedProducts?.priceRanges)&&searchedProducts?.priceRanges?.length>0) || (Array.isArray(searchedProducts?.attributesList)&&searchedProducts?.attributesList?.length>0)) && searchedProducts?.products?.length>1 && 
+              (
                 <Grid item xs={12} sm={2.5} >
             <Stack spacing={1} sx={{mt:3}}>
-        <Box>
+            <Box>
           {
-            ((Array.isArray(priceRange)&&priceRange?.length>0) || (Array.isArray(attributesForFilter)&&attributesForFilter?.length>0))&&(
+            ((Array.isArray(searchedProducts?.priceRanges) && searchedProducts?.priceRanges?.length>0) || (Array.isArray(searchedProducts?.attributesList) && searchedProducts?.attributesList?.length>0))&&(
               <Box sx={{display:'flex',alignItems:'center',justifyContent:'space-between',pl:.5}} >
             <Typography variant="body2">
                 Filter:
@@ -93,11 +107,11 @@ const {data:priceRange} = useQuery({
           }
             <Divider/>
         </Box>
-        <PriceRange range={priceRange}/>
+        <PriceRange range={searchedProducts?.priceRanges}/>
         {
-          attributesLoading?
+          searching?
           (<p>loading...</p>):(
-            attributesForFilter?.map((attribute:any)=>(
+            searchedProducts?.attributesList?.map((attribute:any)=>(
               <AttributeFilter key={attribute?.name} attribute = {attribute}/>
             ))
           )
@@ -109,19 +123,43 @@ const {data:priceRange} = useQuery({
             <Grid item xs={12} sm={9.5}>
             <Stack className='hideScrollBar' direction={'row'} spacing={1} sx={{overflowX:'auto',mr:4}}>
         <Chip
-                   sx={{p:1,color:rent?'white':'',fontWeight:'bold'}}
-                   color={rent?'primary':'default'} label="Rent" 
-                   onClick={()=>{
-                   setRent(true)
+                   sx={{
+                    p:1,
+                    color:transactionType === 'rent' ?'white':'',
+                    fontWeight:'bold',
                   }}
-                   icon={rent?<CheckCircleOutlineIcon fontSize='small' color='inherit'/>:undefined}/>
-                  <Chip 
-                   sx={{p:1,color:!rent?'white':'',fontWeight:'bold'}}
-                   color={!rent?'primary':'default'} label="Sale"
+                   color={
+                    transactionType === 'rent' ?'primary':'default'
+                  } 
+                    label="Rent" 
                    onClick={()=>{
-                    setRent(false)
+                   if(transactionType === 'rent'){
+                    setTransactionType(null)
+                    return;
+                   }
+                   setTransactionType('rent')
+                  }}
+                   icon={
+                    transactionType === 'rent' ? <CheckCircleOutlineIcon fontSize='small' color='inherit'/>:undefined}
+                    />
+                  <Chip 
+                   sx={{
+                    p:1,
+                    color:transactionType === 'sale' ?'white':'',
+                    fontWeight:'bold'
+                  }}
+                   color={
+                    transactionType === 'sale' ? 'primary':'default'
+                  } 
+                    label="Sale"
+                   onClick={()=>{
+                    if(transactionType==='sale'){
+                      setTransactionType(null)
+                      return;
+                    }
+                    setTransactionType('sale')
                     }}
-                   icon={!rent?<CheckCircleOutlineIcon fontSize='small' color='inherit'/>:undefined}/>
+                   icon={transactionType === 'sale' ?<CheckCircleOutlineIcon fontSize='small' color='inherit'/>:undefined}/>
                   
             {
             services.map((service)=>(
@@ -189,10 +227,10 @@ const {data:priceRange} = useQuery({
               (
                 <>
                   {
-                  Array.isArray(searchedProducts)&&searchedProducts?.length>0?(
+                  Array.isArray(searchedProducts?.products) && searchedProducts?.products?.length > 0 ? (
                     <>
                     {
-                       searchedProducts?.map((data:any)=>(
+                       searchedProducts?.products?.map((data:any)=>(
                         <ProductCard2 key={data?._id} data={data}/>
                     ))
                     }

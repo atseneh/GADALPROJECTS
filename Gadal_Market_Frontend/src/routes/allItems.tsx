@@ -13,25 +13,16 @@ import Pagination from "@mui/material/Pagination"
 import PaginationItem from "@mui/material/PaginationItem"
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
-import EstimationButton from "../components/common/estimationButotn"
 import ListSort from "../components/common/listSort"
-import BreadCrums from "../components/common/breadCrums"
 import IconButton from '@mui/material/IconButton'
 import TuneIcon from '@mui/icons-material/Tune';
 import Drawer from '@mui/material/Drawer';
 import useReactRouterQuery from '../utils/hooks/useQuery'
 import { useQuery } from "@tanstack/react-query"
-import getPriceRangeByCategory from "../api/categories/getPriceRangeByCategory"
-import PriceRange from "../components/filters/priceRange"
-import Divider from '@mui/material/Divider'
-import Button from '@mui/material/Button'
 import getProducts from "../api/products/getProducts"
 import Enums from '../utils/constants/serviceEnums'
 import capitalizeFirstLetter from "../utils/helpers/capitalizeFirstLetter"
 import CardSkeleton from "../components/products/cardSkeleton"
-import getAttributesForFilter from "../api/products/getAttributesForFilter"
-import AttributeFilter from "../components/filters/attributeFilter"
-import BrandFilters from "../components/common/brandFilters"
 function PaginationNav(props:{direction:'prev'|'next'}){
     const {direction} = props
     return(
@@ -62,7 +53,7 @@ const {transactionTypeEnums,ServiceEnums} = Enums
   let query = useReactRouterQuery()
   const navigate = useNavigate()
   const transaction = query.get('transaction')
-  const sortCriteria =  query.get('sortCriteria')
+  const sortCriteria =  query.get('sortCriteria') as string
   const smallScreen = useSmallScreen()
   const [searchParams] = useSearchParams();
   const [pageNumber, setPageNumber] = useState(1);
@@ -88,6 +79,7 @@ const {transactionTypeEnums,ServiceEnums} = Enums
     queryFn:()=>getProducts({
         transactionType:activeTransactionType?transactionTypeEnums[activeTransactionType]:undefined,
         productType:activeService ? ServiceEnums[capitalizeFirstLetter(activeService)] : undefined,
+        sortCriteria:sortCriteria
     })
    })
     return (
@@ -124,7 +116,7 @@ const {transactionTypeEnums,ServiceEnums} = Enums
                         />
                          <ServiceCategory
                          isLink={false}
-                        serviceName='Constructions'
+                        serviceName='Others'
                         activeTransaction={activeTransactionType}
                         activeService={activeService}
                         handleTransactionChange={handleTransactionChange}
@@ -163,7 +155,7 @@ const {transactionTypeEnums,ServiceEnums} = Enums
                         />
                          <ServiceCategory
                         
-                        serviceName='Constructions'
+                        serviceName='Others'
                         localTransactionType={localTransactionType}
                         // activeService={activeService}
                         setLocalTransactionType={setLocalTransactionType}

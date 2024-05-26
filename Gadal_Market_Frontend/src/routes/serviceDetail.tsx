@@ -158,7 +158,7 @@ export default function ServiceDetail(){
           )
         }
     </Stack>
-              <Box sx={{ml:4}}>
+              <Box sx={{ml:4,mt:4}}>
                 <EstimationButton/>
                 </Box>
                 </Box>
@@ -200,7 +200,7 @@ export default function ServiceDetail(){
           )
         }
     </Stack>
-                <Box sx={{ml:2}}>
+                <Box sx={{ml:2,mt:4}}>
                 <EstimationButton/>
                 </Box>
             </Grid>

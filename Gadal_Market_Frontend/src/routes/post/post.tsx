@@ -22,6 +22,9 @@ import PostOptions from "./postOptions";
 import { useNavigate } from "react-router-dom";
 import getBrandByCategory from "../../api/categories/getBrandbyCategory";
 import { NumericFormat, NumericFormatProps } from 'react-number-format';
+import getCurrencies from "../../api/currency/getCurrencies";
+import serializeFormData from "../../utils/helpers/serializeFormdata";
+import { useFormData } from "../../components/common/productPostContext";
 const Transition = React.forwardRef(function Transition(
   props: TransitionProps & {
     children: React.ReactElement;
@@ -38,7 +41,6 @@ interface CustomProps {
 const NumericFormatCustom = React.forwardRef<NumericFormatProps, CustomProps>(
   function NumericFormatCustom(props, ref) {
     const { onChange, ...other } = props;
-
     return (
       <NumericFormat
         {...other}
@@ -53,7 +55,7 @@ const NumericFormatCustom = React.forwardRef<NumericFormatProps, CustomProps>(
         }}
         thousandSeparator
         valueIsNumericString
-        prefix="ETB "
+        // prefix={'ETB'}
       />
     );
   },
@@ -61,12 +63,13 @@ const NumericFormatCustom = React.forwardRef<NumericFormatProps, CustomProps>(
 
 export default function Post(){
    const navigate = useNavigate()
-   const [selectedPostType,setSelectedPostType] = useState(3)
+   const [selectedPostType,setSelectedPostType] = useState('')
     const [fixed,setFixed] = useState(true)
     const [rent,setRent] = useState(true)
     const [title,setTitle] = useState('')
     const [description,setDescription] = useState('')
-    const [price,setPrice] = useState('')
+    const {setFormData} = useFormData()
+    // const [price,setPrice] = useState('')
     const [values, setValues] = React.useState({
       price: '',
     });
@@ -82,6 +85,8 @@ export default function Post(){
     const [categoryInputValue,setCategoryInputValue] = useState('')
     const [brand,setBrand] = useState<any>(null)
     const [brandInputValue,setBrandInputVale] = useState('')
+    const [currency,setCurrency] = useState<any>(null)
+    const [currencyInputValue,setCurrencyInputValue] = useState('')
     const [location,setLocation] = useState<any>(null)
     const [locationInputValue,setLocationInputValue] = useState('')
     const [subCity,setSubCity] = useState<any>(null)
@@ -89,7 +94,7 @@ export default function Post(){
     const [wereda,setWereda] = useState<any>(null)
     const [weredaInputValue,setWeredaInputValue] = useState('')
     const [attributeValues,setAttributeValues] = React.useState<{[key:string]:any}|any>()
-    console.log(attributeValues)
+    // console.log(attributeValues)
     const {ServiceEnums} = Enums
     const services =  Object.entries(ServiceEnums).map(([key, value]) => ({ name: key, value: value }));
     const smallScreen = useSmallScreen()
@@ -133,6 +138,10 @@ export default function Post(){
       queryKey:['locations'],
       queryFn:getLocations
      })
+     const {data:currencies,isLoading:curencyLoading} = useQuery({
+      queryKey:['currencies'],
+      queryFn:getCurrencies
+     })
      const {data:categoryAttributes,isLoading:attributesLading} = useQuery({
       queryKey:['categoryAttributes',category],
       queryFn:()=>getCategoryAttributes(category?._id),
@@ -160,7 +169,14 @@ export default function Post(){
       openImages(acceptedFiles);
     };
      //image dropzone initialization
-     const { getRootProps, getInputProps} = useDropzone({ onDrop })
+     const { getRootProps, getInputProps} = useDropzone({ 
+      onDrop,
+      accept:{
+        'image/png':['.png'],
+        'image/jpg':['.jpg'],
+        'image/jpeg':['.jpeg'],
+      },
+    })
      // api call to post a product
      const postMutation = useMutation({
       mutationKey:['postProduct'],
@@ -184,12 +200,8 @@ export default function Post(){
       })
     } 
     // function to initialte api call when post button is clicked
-    const handlePost = (postType:number)=>{
+    const handlePost = (postType:string,hasPackage:boolean)=>{
       setSelectedPostType(postType)
-      if(selectedImages?.length<2){
-        setImagesError(true);
-        return;
-      }
       let formData = new FormData()
       let productAttributes:any = []
       if(selectedImages?.length>0){
@@ -211,6 +223,7 @@ export default function Post(){
       formData.append('description',description)
       formData.append('currentPrice',values?.price)
       formData.append('previousPrice',values?.price)
+      formData.append('currency',currency?._id)
       formData.append('category',category?._id)
       formData.append('isFixed',`${fixed}`)
       formData.append('consignee',localStorage.getItem('userId') as string)
@@ -221,11 +234,32 @@ export default function Post(){
       formData.append('youtubeLink',videoLink)
       formData.append('productType',`${selectedService}`)
       formData.append('postType',`${postType}`)
+      formData.append('paymentAmount','0')
+      // const object = Object.fromEntries(formData.entries())
+  // formData.forEach((value, key) => {
+  //   // Check if the key already exists in the object
+  //   if (Object.prototype.hasOwnProperty.call(object, key)) {
+  //     // If it exists, convert the value to an array
+  //     // This is necessary to handle cases where there are multiple values for the same key
+  //     if (!Array.isArray(object[key])) {
+  //       object[key] = [object[key]];
+  //     }
+  //     object[key].push(value);
+  //   } else {
+  //     // If the key does not exist, simply set the value
+
+  //      object[key] = value
+  //   }
+  // });
+      if(!hasPackage) {
+        setFormData(formData)
+        navigate(`/payment?paymentType=post&typeId=${postType}`)
+        return;
+      }
       if(postMutation.isPending){
         return;
       }
       postMutation.mutate(formData)
-     
     }
   React.useEffect(()=>{
   if(Array.isArray(categoryAttributes)&&categoryAttributes?.length>0){
@@ -298,8 +332,12 @@ export default function Post(){
                 <form
                 onSubmit={(e)=>{
                   e.preventDefault()
-                  // handleClickOpen()
-                  handlePost(3)
+                  if(selectedImages?.length<2){
+                    setImagesError(true);
+                    return;
+                  }
+                  handleClickOpen()
+                  // handlePost(3)
                 }}
                 >
                 <Stack spacing={1} sx={{mt:1}}>
@@ -328,10 +366,19 @@ export default function Post(){
                  required
                  label="Description" variant="outlined"
                  minRows={2}
-                 multiline size="medium" sx={{background:'white'}} />
+                 multiline size="medium" sx={{background:'white'}} 
+                 />
+                 <Autocomplete
+                value={currency}
+                inputValue={currencyInputValue}
+                onChange={(_,newValue:any)=>setCurrency(newValue)}
+                onInputChange={(_,newValue)=>setCurrencyInputValue(newValue)}
+                loading={curencyLoading}
+                options={currencies?currencies:[]}
+                getOptionLabel={(option:any)=>option?.description}
+                renderInput={(params) => <TextField required {...params} label="Currency" size="medium" sx={{background:'white'}}/>}
+                />
                  <TextField 
-                  // value={price} 
-                  // onChange={(e)=>setPrice(e.target.value)} 
                   value={values.price}
                   onChange={handleChange}
                   required 
@@ -346,6 +393,7 @@ export default function Post(){
                   }}
                   name="price"
                   />
+                
                  <Stack direction={'row'} spacing={1} sx={{mb:1}}>
                   <Chip
                    sx={{p:1,color:fixed?'white':'',fontWeight:'bold'}}
@@ -603,7 +651,12 @@ export default function Post(){
               onClose={handleClose}
               TransitionComponent={Transition}
               >
-                <PostOptions selected={selectedPostType} handleProductPost={handlePost} postLoading = {postMutation.isPending} handleClose={handleClose}/>
+                <PostOptions 
+                  selected={selectedPostType} 
+                  handleProductPost={handlePost} 
+                  postLoading = {postMutation.isPending} 
+                  handleClose={handleClose}
+                  />
               </Dialog>
             )
           }

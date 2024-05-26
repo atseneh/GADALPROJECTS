@@ -5,18 +5,22 @@ userId:string,
 soldOut?:boolean,
 disabled?:boolean,
 deleted?:boolean,
+serviceType?:number
 }
 async function getUsersAds(args:UserAdsArgs){
-const {userId,soldOut,disabled,deleted}  = args
+const {userId,soldOut,disabled,deleted,serviceType}  = args
 let url = `${BASE_URL}products?consignee=${userId}`
 if(soldOut){
-    url = `${url}&derivedState=5`
+    url = `${url}&recordStatus=1`
 }
 if(disabled){
     url = `${url}&recordStatus=2`
 }
 if(deleted){
     url = `${url}&recordStatus=3`
+}
+if(serviceType){
+    url = `${url}&productType=${serviceType}`
 }
 try {
     const {data} = await axios.get(

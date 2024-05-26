@@ -1,7 +1,13 @@
 const mongoose = require('mongoose')
 const {Schema} = mongoose
+const messageTypeSchema = new Schema({
+message:String,
+messageType:String
+})
 const conversationSchema = new Schema({
-  message:String, // could be text voice or image 
+  message:{
+    type:messageTypeSchema,
+  }, // could be text voice or image 
   // isFromInterestedParty:Boolean,
   seen:Boolean,
   sender:{

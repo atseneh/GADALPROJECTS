@@ -5,7 +5,10 @@ async function createMessage(messageDetail:{
     product:string;
     owner:string;
     buyer:string;
-    message:string;
+    message:{
+        message:string,
+        messageType:string,
+    };
 }){
 try {
     const {data} = await axios.post(

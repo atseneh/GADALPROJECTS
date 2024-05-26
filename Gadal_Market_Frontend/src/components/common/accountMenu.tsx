@@ -10,6 +10,7 @@ import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import { socket } from '../../api/socket';
 export default function AccountMenu(){
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+    const loggedIn = localStorage.getItem('token')
     const open = Boolean(anchorEl);
     const navigate = useNavigate()
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -26,7 +27,13 @@ export default function AccountMenu(){
     return(
         <>
         <IconButton
-                    onClick={handleClick}
+                    onClick={(e)=>{
+                      if(loggedIn){
+                        handleClick(e)
+                        return;
+                      }
+                      navigate('/login')
+                    }}
                     >
                         <AccountCircleIcon fontSize='large'/>
                     </IconButton>

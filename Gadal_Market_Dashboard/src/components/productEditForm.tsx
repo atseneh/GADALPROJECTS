@@ -19,6 +19,7 @@ import getWeredas from "../api/getWereda";
 import getLocations from "../api/getLocations";
 import { IMAGE_URL } from "../api/apiConfig";
 import getBrandByCategory from "../api/getBrandCategory";
+import activateProduct from "../api/activateProduct";
 interface ProductFormProps {
     goBack:()=>void,
     productId:string
@@ -133,6 +134,27 @@ export default function ProductEditForm(props:ProductFormProps){
       }
 
     })
+    const {mutate:activate,isPending:activationPending} = useMutation({
+      mutationKey:['product-activate'],
+      mutationFn:activateProduct,
+      onSuccess:()=>{
+        setNotficationSeverity('success')
+        queryClient.invalidateQueries({queryKey:['products']})
+        queryClient.invalidateQueries({queryKey:['product',productId]})
+      },
+      onError:()=>{
+        setNotficationSeverity('error')
+      },
+      onSettled:()=>{
+        setNotificationSnackbarOpen(true)
+      }
+    })
+    const handleProdcutActivation = (data:any)=>{
+      if(activationPending){
+        return;
+      }
+      activate(data)
+    }
     const handleProductUpdate = (data:any)=>{
       if(productUpdateMutation.isPending) {
         return;
@@ -221,10 +243,18 @@ export default function ProductEditForm(props:ProductFormProps){
                 </Typography>
                 <Stack direction={'row'} spacing={1}>
                 <Button
-              disabled={productUpdateMutation.isPending}
+               disabled={activationPending || Number(product?.state) === 1 || prodcutLoading}
                size="small"
                variant="contained"
-               onClick={()=>handleProductUpdate({productId,state:1})}
+               onClick={()=>{
+                handleProdcutActivation(
+                  {
+                    productId,
+                    consignee:product?.consignee?._id,
+                    category:product?.category?.name,
+                    date:new Date(product?.date).toLocaleDateString(),
+                  })
+               }}
                sx={{
                    color:'green',
                    background:'#F7F7F7',

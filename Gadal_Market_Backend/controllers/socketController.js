@@ -3,7 +3,8 @@ let io;
 const initSocket = (server) => {
   io = socketIO(server, {
     cors: {
-      origin: "http://localhost:3002",
+      // origin: "http://localhost:3002",
+      origin:'https://gadalmarket.com',
       credentials: true,
     },
   });

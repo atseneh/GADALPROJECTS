@@ -1,4 +1,5 @@
 const express = require('express')
+const bodyParser = require('body-parser');
 const scheduler = require('./Utils/scheduler');
 const mongoose = require('mongoose')
 const routes = require('./routes')
@@ -12,7 +13,8 @@ app.use(cors({
 }))
 app.use(express.json())
 app.use('/api',routes)
-
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 // Routes
 const productRoutes = require('./routes/products'); 
 const userRouter = require('./routes/users');
@@ -41,13 +43,16 @@ const packageDefinitionRouter = require('./routes/packageDefinition');
 const otpRouter = require('./routes/otp');
 const postTypeDefintionRouter = require('./routes/postTypeDefinition');
 const authRouter = require('./routes/auth')
+const notificationRouter = require('./routes/notification')
+const teleBirrRouter = require('./routes/Telebirr')
+const chapaRouter = require('./routes/Chapa')
 mongoose.connect(
     process.env.DATABASE_URL,
-    {useNewUrlParser:true,dbName:'Gadal_Market'},
+    {useNewUrlParser:true,dbName:'Gadal_Market2'},
     console.log('conneted to db')
 )
 // serve images 
-app.use('/images',express.static('images'))
+app.use('/files',express.static('files'))
 app.use('/api',testRoute)
 app.use('/api', productRoutes);
 app.use('/api', userRouter);
@@ -76,6 +81,9 @@ app.use('/api', packageDefinitionRouter);
 app.use('/api', otpRouter);
 app.use('/api', postTypeDefintionRouter);
 app.use('/api',authRouter)
+app.use('/api',notificationRouter)
+app.use('/api',teleBirrRouter)
+app.use('/api',chapaRouter)
 var server = app.listen(process.env.PORT,async()=>{
     console.log(`Server started on port ${process.env.PORT}`)
 })

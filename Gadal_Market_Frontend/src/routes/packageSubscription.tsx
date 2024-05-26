@@ -144,9 +144,7 @@ function PostCard(props:PostCardProps){
             </Typography>
            </Stack>
             <Divider/>
-            <Stack spacing={1} sx={{mt:1}}>
-            
-             
+            <Stack spacing={1} sx={{mt:1}}> 
                 <Box sx={{display:'flex',gap:1}} >
                 <Typography fontWeight={'bold'}>
                     <CheckIcon fontSize='inherit'/>
@@ -187,9 +185,6 @@ function PostCard(props:PostCardProps){
                             {packageInfo?.offPercent}% Off
                         </Typography>
                             </Box>
-
-            
-            
             </Stack>
              <Button type="submit"
                  onClick={

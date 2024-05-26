@@ -2,7 +2,7 @@ import {Box,Stack,IconButton, Typography, Avatar} from '@mui/material'
 import FavoriteBorderOutlinedIcon from '@mui/icons-material/FavoriteBorderOutlined';
 import Rating from '@mui/material/Rating';
 import useSmallScreen from '../../utils/hooks/useSmallScreen';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import getPercentOff from '../../utils/helpers/getPercentOff';
 import { IMAGE_URL } from '../../api/apiConfig';
 import { useMutation,useQueryClient } from '@tanstack/react-query';
@@ -12,6 +12,7 @@ export default function ProductCard(props:{data:any}){
 const {data} = props 
 const smallScreen = useSmallScreen()
 const queryClient = useQueryClient()
+const navigate = useNavigate();
 const loggedInUserId = localStorage.getItem('userId')
 const {mutate:addFav,isPending:addPending,variables} = useMutation({
     mutationFn:addProductToFav,
@@ -27,6 +28,7 @@ const {mutate:removeFav,isPending:removePending} = useMutation({
     onSuccess:()=>{
         queryClient.invalidateQueries({queryKey:['newProducts']})
         queryClient.invalidateQueries({queryKey:['products']})
+        queryClient.invalidateQueries({queryKey:['favouritesProducts']})
     }
 })
     return(
@@ -202,9 +204,13 @@ const {mutate:removeFav,isPending:removePending} = useMutation({
                 <Avatar alt="User profile pic" 
                 src={data?.consignee?.proflePic ? `${IMAGE_URL}/${data?.consignee?.proflePic}` : "/images/maleUser.svg"}
                 sx={{ width:24,height:24}}
+                onClick={(e)=>{
+                    e.preventDefault();
+                    navigate(`/viewProfile/${data?.consignee?._id}`)
+                }}
                 />
-                <Rating readOnly value={data?.reviews?.stars||0} size='small'/>
-                <span>| {<small style={{fontWeight:'lighter'}}>{data?.reviews?.stars||0}</small>}</span>
+                <Rating readOnly value={data?.averageRating||0} size='small'/>
+                <span>| {<small style={{fontWeight:'lighter'}}>{data?.totalReviews}</small>}</span>
                 </Box>
                 <div style={{color:"rgb(5 184 21)",background:'rgb(244 243 241)',padding:'1px',fontWeight:'bold'}}>
                     {

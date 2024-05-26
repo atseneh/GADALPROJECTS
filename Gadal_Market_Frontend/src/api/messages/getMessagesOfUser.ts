@@ -1,9 +1,13 @@
 import axios from 'axios'
 import BASE_URL from '../apiConfig'
-async function getMessagesOfUser(userId:string){
+async function getMessagesOfUser(userId:string,searchString?:string){
+let url = `${BASE_URL}getMessages/${userId}`
+if(searchString){
+    url = `${url}?searchQuery=${searchString}`
+}
 try {
     const {data} = await axios.get(
-        `${BASE_URL}getMessages/${userId}`
+        url
     )
     return data
 } catch (error:any) {

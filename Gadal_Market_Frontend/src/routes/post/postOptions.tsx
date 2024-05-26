@@ -6,19 +6,51 @@ import { useTheme } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import getPostTypeDefinitions from '../../api/postTypes/getPostTypeDefinitions';
-
+import getUsersPackage from '../../api/user/getUsersPackage';
+import { useEffect, useState } from 'react';
+import dayjs from 'dayjs';
 interface PostOptionProps {
  handleClose:()=>void,
- handleProductPost:(postType:number)=>void,
+ handleProductPost:(postType:string,hasPackage:boolean)=>void,
  postLoading:boolean,
- selected:number
+ selected:string,
 }
 export default function PostOptions(props:PostOptionProps){
     const {handleClose,handleProductPost,postLoading,selected} = props
+    const [availablePostTypes,setAvailablePostTypes] = useState<string[]>([])
     const {data:postTypeDefinitions,isLoading} = useQuery({
         queryKey:['postTypeDefinition'],
         queryFn:getPostTypeDefinitions
     })
+    const {data:userPackages} = useQuery({
+        queryKey:['users_package'],
+        queryFn:()=>getUsersPackage()
+    })
+const data = availablePostTypes?.length > 0 ? postTypeDefinitions?.filter((pd:any)=>availablePostTypes?.includes(pd?.name)) : postTypeDefinitions
+useEffect(()=>{
+    if(Array.isArray(userPackages)&&userPackages.length>0){
+        const validPackages = userPackages.filter((pkg:any)=>pkg?.isValid)
+        const p = validPackages.reduce((acc,cv)=>{
+            return {
+                ...acc,
+                 'Gold':cv?.remainingGoldPosts,
+                 'Basic':cv?.remainingBasicPosts,
+                 'Premium':cv?.remainingPremiumPosts,
+            }
+        },{})
+        
+        setAvailablePostTypes((prev)=>{
+            const copy = [...prev]
+            Object.keys(p)?.map((k)=>{
+                if(p[k]>0){
+                    copy.push(k)
+                }
+            })
+        return copy
+        })
+        // console.log(userPackages)
+    }
+},[userPackages])
     return (
         <>
         <Box sx={{mt:2,ml:4}}>
@@ -70,7 +102,9 @@ export default function PostOptions(props:PostOptionProps){
                 </>
               ):
               (
-                postTypeDefinitions?.map((postTypeDef:any)=>(
+               <>
+               {
+                 data?.map((postTypeDef:any)=>(
                     <Grid
                      item 
                      xs={12}
@@ -80,9 +114,15 @@ export default function PostOptions(props:PostOptionProps){
                      >
                         <PostCard
                         postType = {postTypeDef}
+                        hasPackage={availablePostTypes?.length > 0}
+                        postProdcut={handleProductPost}
+                        postPending={postLoading}
+                        selectedPostType={selected}
                         />
                     </Grid>
                 ))
+               }
+               </>
               )
             }
            
@@ -92,11 +132,14 @@ export default function PostOptions(props:PostOptionProps){
     )
 }
 interface PostCardProps {
- postType:any
+ postType:any,
+ hasPackage:boolean,
+ postProdcut:(postType:string,hasPackage:boolean)=>void,
+ postPending:boolean,
+ selectedPostType:string,
 }
 function PostCard(props:PostCardProps){
-    const {postType} = props
-    const theme = useTheme()
+    const {postType,hasPackage,postProdcut,postPending,selectedPostType} = props
     const navigate = useNavigate()
  return (
     <Card
@@ -135,15 +178,18 @@ function PostCard(props:PostCardProps){
                     postType?.name
                 }
             </Typography>
-            
-            <Typography 
-            sx={{
-            fontWeight:'bold'
-            }}
-            variant='h6'
-            >
-                   ETB {postType?.price}
-            </Typography>
+                {
+                    !hasPackage && (
+                        <Typography 
+                        sx={{
+                        fontWeight:'bold'
+                        }}
+                        variant='h6'
+                        >
+                               ETB {postType?.price}
+                        </Typography>
+                    )
+                }
              </Stack>
             <Divider/>
             <Stack spacing={1} sx={{mt:1}}>
@@ -186,7 +232,8 @@ function PostCard(props:PostCardProps){
                  onClick={
                     // ()=>handlePost(enumCode)
                     ()=>{
-                        navigate(`/payment?paymentType=post&typeId=${postType?._id}`)
+                        postProdcut(postType?._id,hasPackage)
+                        return;
                     }
                 }
                  fullWidth 
@@ -202,10 +249,10 @@ function PostCard(props:PostCardProps){
                  variant="contained"
                  >
                     <Typography variant='body2' fontWeight={'bold'}>
-                        {/* {
-                         (postLoading&&selected===enumCode)?'Posting...':'Continue'   
-                        } */}
-                        Continue
+                        {
+                         (postPending && selectedPostType === postType?._id)?'Posting...':'Continue'   
+                        }
+                        
                     </Typography>
                         </Button>
             </Box>

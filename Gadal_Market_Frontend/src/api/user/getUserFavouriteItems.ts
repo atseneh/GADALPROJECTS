@@ -1,10 +1,14 @@
 import axios from 'axios'
 import BASE_URL from '../apiConfig'
-async function getFavourites(){
+async function getFavourites(sortCriteria?:string){
 const token = localStorage.getItem('token')
+let url = `${BASE_URL}users/favorites`
+if(sortCriteria){
+    url = `${url}?sortCriteria=${sortCriteria}`
+}
 try {
     const {data} = await axios.get(
-        `${BASE_URL}users/favorites`,
+        url,
          {
             headers:{
                 Authorization:`Bearer ${token}`

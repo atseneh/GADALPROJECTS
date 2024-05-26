@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import getFollowings from "../../api/user/getFollowings";
 import { IMAGE_URL } from "../../api/apiConfig";
 import unfollowUser from "../../api/user/unfollow";
+import { NavLink } from "react-router-dom";
 export default function Following(){
     const loggedInUserId = localStorage.getItem('userId') as string
     const queryClient = useQueryClient();
@@ -50,52 +51,63 @@ export default function Following(){
                 {
                     followings?.following?.map((following:any)=>(
                         <Grid xs={12} sm={6} md={3} key={following?._id} sx={{mt:1}}>
-          <Box 
-                sx={{
-                    display:'flex',flexDirection:'column',ml:2,position:'relative',alignSelf:'flex-start',
-                    boxShadow: `1px 1px 8px #ABABAB`,
-                    p:1,
-                    }}>
-                <Tooltip title="Unfollow">
-                <IconButton 
-                    sx={{
-                        position:'absolute',
-                        right:0,
-                        top:0,
-                    }}
-                    onClick={()=>{
-                        handleUnfollow(following?._id)
-                    }}
-                    >
-                        <PersonRemoveIcon fontSize="small"/>
-                    </IconButton>
-                </Tooltip>
-                <Box sx={{alignSelf:'center'}}>
-                <Stack sx={{ml:2}}>
-                <img  
-                width={100} 
-                src={following?.proflePic ? `${IMAGE_URL}/${following?.proflePic}` : "/images/maleUser.svg"}
-                />
-                <Typography variant="body2">
-                    {
-                        `${following?.firstName} ${following?.lastName}`
-                    }
-                </Typography>
-                <Typography variant="body2">
-                    {following?.phoneNumber} 
-                </Typography>
-            </Stack>
-               {
-                following?.email && (
-                    <Typography variant="caption">
-                    {
-                        following?.email
-                    }
-                </Typography>
-                )
-               }
-                </Box>
-    </Box>    
+                         <NavLink
+                         to={`/viewProfile/${following?._id}`}
+                         style={({isTransitioning }) => {
+                            return {
+                              color:'black',
+                              textDecoration:'none',
+                              viewTransitionName: isTransitioning ? "slide" : "",
+                            };
+                          }}
+                         >
+                         <Box 
+                            sx={{
+                                display:'flex',flexDirection:'column',ml:2,position:'relative',alignSelf:'flex-start',
+                                boxShadow: `1px 1px 8px #ABABAB`,
+                                p:1,
+                                }}>
+                            <Tooltip title="Unfollow">
+                            <IconButton 
+                                sx={{
+                                    position:'absolute',
+                                    right:0,
+                                    top:0,
+                                }}
+                                onClick={()=>{
+                                    handleUnfollow(following?._id)
+                                }}
+                                >
+                                    <PersonRemoveIcon fontSize="small"/>
+                                </IconButton>
+                            </Tooltip>
+                            <Box sx={{alignSelf:'center'}}>
+                            <Stack sx={{ml:2}}>
+                            <img  
+                            width={100} 
+                            src={following?.proflePic ? `${IMAGE_URL}/${following?.proflePic}` : "/images/maleUser.svg"}
+                            />
+                            <Typography variant="body2">
+                                {
+                                    `${following?.firstName} ${following?.lastName}`
+                                }
+                            </Typography>
+                            <Typography variant="body2">
+                                {following?.phoneNumber} 
+                            </Typography>
+                        </Stack>
+                            {
+                            following?.email && (
+                                <Typography variant="caption">
+                                {
+                                    following?.email
+                                }
+                            </Typography>
+                            )
+                            }
+                            </Box>
+                        </Box>     
+                        </NavLink>   
                         </Grid>
                     ))
                 }

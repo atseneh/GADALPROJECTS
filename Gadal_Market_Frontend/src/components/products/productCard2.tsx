@@ -201,14 +201,14 @@ export default function ProductCard2(props:{data:any}){
         <small></small>
         <Box sx={{display:'flex',gap:2,}}>
               {
-                data?.previousPrice
+                data?.previousPrice && data?.previousPrice < data?.currentPrice
                 &&(
                     <Box sx={{display:'flex',gap:1}}>
                 <Typography
                 sx={{textDecoration:'line-through',color:'#AFAFAF'}}
                 fontWeight={'bolder'}>
                 {
-                new Intl.NumberFormat().format(4000000000)
+                new Intl.NumberFormat('en-Us',{maximumFractionDigits:3}).format(data?.previousPrice)
                 }
                 </Typography>
                 <small>
@@ -225,10 +225,14 @@ export default function ProductCard2(props:{data:any}){
                         <Box sx={{display:'flex',gap:.5}}>
                 <Typography fontWeight={'bold'} >
                 {
-                new Intl.NumberFormat().format(400000000)
+                new Intl.NumberFormat('en-Us',{maximumFractionDigits:3}).format(data?.currentPrice)
                 }
                 </Typography>
-                <small>Bir</small>
+                <small>
+                {
+                    data?.currency?.sign
+                  }
+                </small>
                 </Box>
                     )
                 }

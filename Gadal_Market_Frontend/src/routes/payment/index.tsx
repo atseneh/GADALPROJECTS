@@ -1,4 +1,4 @@
-import { Button, FormControl, Grid, InputLabel, MenuItem, Select, Stack, Typography,IconButton, Tooltip } from "@mui/material";
+import { Button, FormControl, Grid, InputLabel, MenuItem, Select, Stack, Typography,IconButton, Tooltip, useTheme } from "@mui/material";
 import Box from "@mui/material/Box";
 import PrintIcon from '@mui/icons-material/Print';
 import { useContext, useRef, useState } from "react";
@@ -13,6 +13,39 @@ import createPackage from "../../api/package/createPackageForUser";
 import getPackageDefinitionById from "../../api/package/getPackageDefinitionById";
 import { useReactToPrint } from "react-to-print";
 import PaymentAttachment from "./paymentAttachment";
+import { useLocation, useNavigate } from "react-router-dom";
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import postProduct from "../../api/products/postProduct";
+import deserializeFormData from "../../utils/helpers/deserializeFormData";
+import { useFormData } from "../../components/common/productPostContext";
+const paymentOptions = [
+    {
+        id:1,
+        description:'Chapa',
+        logoUrl:'/chapa1.jpg'
+    },
+    {
+        id:2,
+        description:'Telebirr',
+        logoUrl:'/telebirr1.png'
+    }
+]
+function objectToFormData(data: Record<string, any>): FormData {
+    const formData = new FormData();
+    Object.keys(data)?.forEach((key)=>{
+      const value = data[key]
+      if(key==='images'){
+        formData.append('images',value)
+        return;
+      }
+      if(Array.isArray(value)){
+        formData.append(key,JSON.stringify(value))
+        return
+      }
+      formData.append(key,value)
+    })
+    return formData;
+}
 function addDaysToNow(daysToAdd:number) {
     const currentDate = new Date(); // Get the current date
     const newDate = new Date(currentDate); // Create a new date object to avoid mutating the original date
@@ -28,24 +61,30 @@ export default function Payment(){
  const handleTotalAmountChange = (total:number)=>{
     setTotalAmount(total)
  }
+ const navigate = useNavigate();
+ const theme = useTheme()
  const printRef = useRef(null)
  const handlePrint = useReactToPrint({
     content:() => printRef.current,
  })
+ const [selectedPaymentMethod,setSelectedPaymentMethod] = useState(1)
+ const {formData,setFormData} = useFormData();  // don't forget to add postType when the product is posted
  const query = useReactRouterQuery()
  const paymentType = query.get('paymentType')
  const packageId = query.get('packageId')
+ const postTypeId = query.get('typeId')
  const {data:selectedPackage} = useQuery({
     queryKey:['packageDef'],
-    queryFn:()=>getPackageDefinitionById(packageId!)
+    queryFn:()=>getPackageDefinitionById(packageId!),
+    enabled:Boolean(packageId)
  })
  const packageMutation = useMutation({
     mutationKey:['create_package'],
     mutationFn:createPackage,
-    onSuccess:()=>{
-        console.log(
-          'successfully created'  
-        )
+    onSuccess:(data)=>{
+        
+       const checkoutUrl = data?.transaction?.checkout_url;
+       window.location.href = checkoutUrl
     },
     onError:()=>{
 
@@ -54,9 +93,19 @@ export default function Payment(){
 
     }
  })
+ const {mutate:post,isPending:postPending} = useMutation({
+    mutationFn:postProduct,
+    mutationKey:['post_product'],
+    onSuccess:(data)=>{
+        setFormData(null)
+        const checkoutUrl = data?.transaction?.checkout_url;
+        window.location.href = checkoutUrl
+     },
+ })
  // process payment 
- const handlePayment = ()=>{
+ const handlePackagePayment = ()=>{
    const packagePayload = {
+        amount:"1", // replace with total
         description:selectedPackage?.name,
         startDate:new Date().toISOString(),
         endDate:addDaysToNow(20).toISOString(),
@@ -75,6 +124,30 @@ export default function Payment(){
     return;
    }
  }
+ const handleProductPostPayment = ()=>{
+     if(!(postTypeId && paymentType==='post')){
+        return;
+     }
+    const payload = formData as FormData
+    payload.delete('postType')
+    payload.delete('paymentAmount')
+    payload.append('postType',postTypeId)
+    payload.append('paymentAmount','1')
+    if(postPending){
+        return;
+    }
+    post(payload)
+ }
+ const processPayment = ()=>{
+    if(paymentType === 'package'){
+        handlePackagePayment();
+        return;
+    }
+    if(paymentType==='post'){
+        handleProductPostPayment();
+        return;
+    }
+ }
  const renderPriceInfo = ()=>{
     if(paymentType==='engagement'){
         return <EnagementPriceInfo setTotal={handleTotalAmountChange}/>
@@ -90,10 +163,10 @@ export default function Payment(){
        <>
         <Grid container spacing={2} sx={{m:2,}}>
         <Grid xs={12} sm={4}>
-        <Stack spacing={3} sx={{pr:4}}>
-                  <Box sx={{display:'flex',flexDirection:'column',gap:1}}>
+        <Stack spacing={3} sx={{mt:4}}>
+                  {/* <Box sx={{display:'flex',flexDirection:'column',gap:1}}>
                  <Typography fontWeight={'bold'} variant="h6">
-                         Bank Payment Options
+                         Payment Options
                  </Typography>
                  <FormControl fullWidth>
                   <InputLabel id="category">Category</InputLabel>
@@ -126,8 +199,57 @@ export default function Payment(){
                         <MenuItem value={30}>Thirty</MenuItem>
                     </Select>
                 </FormControl>
-                   </Box>
-                </Stack>
+                   </Box> */}
+                <Typography fontWeight={'bold'} variant="h6">
+                         Payment Options
+                 </Typography>
+            <Stack
+            direction={'row'}
+            alignItems={'center'}
+            spacing={4}
+            >
+             {
+                paymentOptions?.map((option)=>(
+                    <Box
+                    key={option.id}
+                    sx={{
+                       background:'white',
+                       border:selectedPaymentMethod === option.id ? `2px solid ${theme.palette.primary.main}`:'1px solid black',
+                       p:1,
+                       borderRadius:'8px',
+                       cursor:'pointer',
+                       position:'relative'
+                    }}
+                    onClick = {()=>{
+                        setSelectedPaymentMethod(option.id)
+                    }}
+                    >
+                    {
+                        selectedPaymentMethod === option.id && (
+                            <CheckCircleOutlineIcon
+                            color={selectedPaymentMethod === option.id ? 'primary':'inherit'}
+                            sx={{
+                                position:'absolute',
+                                top:1,
+                                left:1,
+                            }}
+                            />
+                        )
+                    }
+                   <img
+                   alt={option.description}
+                   src={option.logoUrl}
+                   style={{
+                       width:90,
+                       height:90,
+                       objectFit:'contain'
+                   }}
+                   />
+                    </Box>
+                ))
+             }
+            </Stack>
+            </Stack>
         </Grid>
         <Grid xs={12} sm={4}>
 
@@ -229,7 +351,7 @@ export default function Payment(){
                     alignSelf:'flex-end'
                 }}
                  variant="contained"
-                 onClick={handlePayment}
+                 onClick={processPayment}
                  >
                     <Typography>
                         Pay Now

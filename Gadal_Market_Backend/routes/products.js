@@ -4,27 +4,90 @@ const Product = require("../models/product.model");
 const Review = require('../models/review.model');
 const Package = require('../models/package.model');
 const PostTypeDefinition = require('../models/postTypeDefnition.model');
+const Notification = require('../models/notification.model')
 const multer = require('multer');
 const sharp = require('sharp')
 const path = require('path');
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'images/'); 
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname); 
-  },
-});
+const User = require("../models/user.model");
+const socketController = require('../controllers/socketController')
+const mongoose = require('mongoose')
+const upload = multer({dest:'/images'})
+const request = require('request')
+// Middleware for initializing transaction
+async function initializeTransaction(req, res, next) {
+  console.log("body at middleware")
+  console.log(req.body)
+  let { paymentAmount,consignee } = req.body;
 
-const checkPackage = async (req, res, next) => {
-  try {
-      //if validation add here
-    next();
-  } catch (error) {
-    // If any error occurs, return an error response
-    res.status(500).json({ error: 'Internal server error' });
+  if (paymentAmount == "0") {
+    req.isPayed = false; 
+    req.txRef = null;
+    next(); 
+    return; 
   }
-};
+  const currentuser = await User.findById(new mongoose.Types.ObjectId(consignee));
+  if (!currentuser) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+  // Extract required user details
+  const { email, firstName, lastName, phoneNumber } = currentuser;
+  // Generate unique tx_ref
+  const txRef = `gadaltechuniquekey-${Date.now()}-6669`;
+  req.txRef = txRef; // Attach txRef to the request object
+
+  // Convert amount to string
+  paymentAmount = paymentAmount.toString();
+
+  const callbackUrl = `${process.env.CALLBACK_BASE_URL}/transaction/verify/${txRef}`;
+  console.log(`Callback URL: ${callbackUrl}`);
+
+  const options = {
+    method: 'POST',
+    url: `${process.env.CHAPA_API_URL}/transaction/initialize`,
+    headers: {
+      'Authorization': `Bearer ${process.env.CHAPA_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      "amount": paymentAmount,
+      "currency": "ETB",
+      // "email": email,
+      "first_name": firstName,
+      "last_name": lastName,
+      "phone_number": phoneNumber,
+      "tx_ref": txRef,
+      // "callback_url": callbackUrl,
+      "return_url": `${process.env.CALLBACK_BASE_URL}/verifyPayment/paymentSuccessfull/${txRef}?serviceType=product`,
+      "customization[title]": "Payment for my favourite merchant",
+      "customization[description]": "I love online payments"
+    })
+  };
+
+  console.log('Request options:', options);
+
+  request(options, function (error, response, body) {
+    if (error) {
+      console.error('Request error:', error);
+      return res.status(500).send({ error: error.message });
+    }
+
+    console.log('Response:', body);
+
+    try {
+      const jsonResponse = JSON.parse(body);
+      if (jsonResponse.status === "success" && jsonResponse.data && jsonResponse.data.checkout_url) {
+        // Attach the transaction details to the request object
+        req.transaction = jsonResponse.data;
+        next();
+      } else {
+        res.status(400).send({ error: 'Failed to initialize transaction', details: jsonResponse });
+      }
+    } catch (parseError) {
+      console.error('Parse error:', parseError);
+      res.status(500).send({ error: 'Failed to parse response from Chapa', details: parseError.message });
+    }
+  });
+}
 const applyWatermarkAndConvert = async (inputPath, outputPath, watermarkPath, applyWatermark) => {
   let image = sharp(inputPath).webp();  // Convert all images to WEBP format
   if (applyWatermark) {
@@ -48,17 +111,24 @@ const applyWatermarkAndConvert = async (inputPath, outputPath, watermarkPath, ap
   }
   return image.toFile(outputPath);
 };
-const upload = multer({dest:'/images'})
-router.post('/products', checkPackage, upload.array('images', 10), async (req, res) => {
+router.post('/products', upload.array('images', 10), (req, res, next) => {
+  if (req.body.paymentAmount && req.body.paymentAmount != "0") {
+    initializeTransaction(req, res, next);
+  } else {
+    next();
+  }
+}, async (req, res) => {
+  console.log("body at main route");
+  console.log(req.body);
   try {
-    const watermarkPath = path.join(__dirname,'..','images', 'watermark.svg');
-    // '/images/watermark.svg'
-    const { title, description, productType, previousPrice, currentPrice, category, postType, isFixed, consignee, currency, brand, model, location, subCity, wereda, transactionType, youtubeLink,isPayed } = req.body;
+    const watermarkPath = path.join(__dirname, '..', 'images', 'watermark.svg');
+    const { title, description, productType, previousPrice, currentPrice, category, postType, isFixed, consignee, currency, brand, model, location, subCity, wereda, transactionType, youtubeLink, paymentAmount } = req.body;
     let uploadedImages = [];
-    let productAttributes = []
-    const postTypeDefinition = await PostTypeDefinition.findById("65c8d2fc3458b4f8df0d9fae");
-    // console.log(postTypeDefinition)
+    let productAttributes = [];
+
+    const postTypeDefinition = await PostTypeDefinition.findById(postType);
     const { name, no_day_onTop_cat, no_day_onTop_home, no_day_on_Gadal } = postTypeDefinition;
+
     let remainingPostsField;
     switch (name) {
       case "Basic":
@@ -68,11 +138,12 @@ router.post('/products', checkPackage, upload.array('images', 10), async (req, r
         remainingPostsField = 'remainingGoldPosts';
         break;
       case "Premium":
-        remainingPostsField = 'remainingPremiumPosts'; 
+        remainingPostsField = 'remainingPremiumPosts';
         break;
       default:
         return res.status(400).json({ error: 'Invalid product post type' });
     }
+
     const activePackage = await Package.findOne({
       user: consignee,
       [remainingPostsField]: { $gt: 0 },
@@ -82,98 +153,79 @@ router.post('/products', checkPackage, upload.array('images', 10), async (req, r
     if (!activePackage) {
       req.body.isPayed = false;
     }
+
     req.body.no_day_onTop_cat = no_day_onTop_cat;
     req.body.no_day_onTop_home = no_day_onTop_home;
     req.body.no_day_on_Gadal = no_day_on_Gadal;
- 
+
     if (req.files) {
-      // console.log('running')
-     const images = req.files
-      // for (const file of req.files) {
-      //   const webpBuffer = await sharp(file.path).webp().toBuffer();
-      //   // Save the converted image to disk
-      //   const imagePath = `images/${file.filename}-${Date.now()}.webp`;
-      //   try {
-      //     await sharp(webpBuffer)
-      //     .composite([{
-      //        input: watermarkPath, 
-      //        gravity: 'southeast', 
-      //        blend: 'over',
-      //       }])
-      //     .toFile(imagePath);
-      //   } catch (error) {
-          
-      //   }
-      //   uploadedImages.push(imagePath);
-      // }
+      const images = req.files;
       const processPromises = images.map((file, index) => {
         const inputPath = file.path;
-        const outputPath = path.join(__dirname,'..', 'images/', `${file.filename}-${Date.now()}.webp`); // Change extension to .webp
-        uploadedImages.push(`images/${file.filename}-${Date.now()}.webp`)
-        
-          // Apply watermark and convert to WEBP for images other than the first
-          return applyWatermarkAndConvert(inputPath, outputPath, watermarkPath, index!==0);
+        const outputPath = path.join(__dirname, '..', 'files', 'images', `${file.filename}-${Date.now()}.webp`);
+        uploadedImages.push(`images/${file.filename}-${Date.now()}.webp`);
+        return applyWatermarkAndConvert(inputPath, outputPath, watermarkPath, false);
       });
       await Promise.all(processPromises);
     } else {
-      const defaultImage = "images/1eedaa36ff2986a8031be9544a8af4e6-1711896958928.webp";
-      uploadedImages.push(defaultImage);
+      return res.status(400).json({ message: 'Images are required' });
     }
-    // console.log(req.body.attributes)
+
     productAttributes = req.body.attributes ? JSON.parse(req.body.attributes) : [];
-    // console.log(productAttributes)
-    const newProduct = new Product({ 
-      title, 
-      description, 
-      productType: parseInt(productType), 
-      previousPrice: Number(previousPrice), 
-      currentPrice: Number(currentPrice), 
-      category, 
-      postType: "661bc0d4b6116f918ab00b58", 
-      productImages: uploadedImages, 
-      attributes: productAttributes, 
-      isFixed: isFixed === 'true' ? true : false, 
-      consignee, 
-      currency, 
-      brand, 
-      model, 
-      location, 
-      subCity, 
-      wereda, 
-      transactionType: parseInt(transactionType), 
-      youtubeLink, 
-      viewCount: 0 ,
+    const newProduct = new Product({
+      title,
+      description,
+      productType: parseInt(productType),
+      previousPrice: Number(previousPrice),
+      currentPrice: Number(currentPrice),
+      category,
+      postType,
+      productImages: uploadedImages,
+      attributes: productAttributes,
+      isFixed: isFixed === 'true',
+      consignee,
+      currency,
+      brand,
+      model,
+      location,
+      subCity,
+      wereda,
+      transactionType: parseInt(transactionType),
+      youtubeLink,
+      viewCount: 0,
       no_day_onTop_cat,
       no_day_onTop_home,
       no_day_on_Gadal,
-      isPayed:req.body.isPayed
+      isPayed: req.body.isPayed
     });
 
+    newProduct.isPayed = false;
+    newProduct.transactionReference = req.txRef;
+console.log("newproduct")
+console.log(newProduct)
     const savedProduct = await newProduct.save();
-      // Update remaining posts count in the package
-    if (!savedProduct.isPayed) {
-      return res.status(200).json({ productId: savedProduct._id });
+
+    if (req.txRef) {
+      return res.status(201).json({ savedProduct, transaction: req.transaction, txRef: req.txRef });
     }
-    else {
-      // console.log("has package")
-        const postTypeDefinition = await PostTypeDefinition.findById("661bc0d4b6116f918ab00b58");
-        if (!postTypeDefinition) {
-          return res.status(400).json({ error: 'Invalid post type id' });
-        }
-        // Update remaining posts count in the package
-        await Package.updateOne(
-          { user: consignee },
-          { $inc: { [remainingPostsField]: -1 } }
-        );
-        // Return success message
-        console.log("savedandpayed")
-        return res.status(201).json({ message: "savedandpayed" });
-    }    
+
+    const postTypeDefinitions = await PostTypeDefinition.findById(postType);
+    if (!postTypeDefinitions) {
+      return res.status(400).json({ error: 'Invalid post type id' });
+    }
+
+    await Package.updateOne(
+      { user: consignee },
+      { $inc: { [remainingPostsField]: -1 } }
+    );
+
+    return res.status(201).json({ savedProduct, message: "savedandpayed" });
   } catch (error) {
+    console.log(error)
     res.status(400).json({ error: error.message });
   }
-
 });
+
 
 router.get('/products', async (req, res) => {
   try {
@@ -272,11 +324,11 @@ router.get('/products', async (req, res) => {
         sortQuery = { [sortCriteria]: 1 };
         break;
       case 'latest':
-        sortCriteria = 'createdDate';
+        sortCriteria = 'date';
         sortQuery = { [sortCriteria]: -1 };
         break;
       default:
-        sortCriteria = 'createdDate'; 
+        sortCriteria = 'date'; 
         sortQuery = { [sortCriteria]: -1 };
         break;
     }
@@ -319,19 +371,22 @@ router.get('/products', async (req, res) => {
         {
           $group: {
             _id: '$product',
-            averageRating: { $avg: '$stars' }
+            averageRating: { $avg: '$stars' },
+            totalReviews: { $sum: 1 },
           }
         },
         {
           $project: {
-            averageRating: { $round: ['$averageRating'] }
+            averageRating: { $round: ['$averageRating'] },
+            totalReviews:1,
           }
         }
       ]);
       const productsWithAverageRating = products.map(product => {
         const averageRatingObj = averageRatings.find(rating => rating._id.equals(product._id));
         const averageRating = averageRatingObj ? averageRatingObj.averageRating : 0;
-        return { ...product.toObject(), averageRating };
+        const totalReviews = averageRatingObj ? averageRatingObj.totalReviews : 0;
+        return { ...product.toObject(), averageRating,totalReviews };
       });
     const totalProducts = products.length;
     const metadata = {
@@ -366,9 +421,34 @@ router.get('/products/:productId', async (req, res) => {
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    res.status(200).json(product);
+    const averageRatings = await Review.aggregate([
+      { $match: { product: new mongoose.Types.ObjectId(productId)}},
+      {
+        $group: {
+          _id: '$product',
+          averageRating: { $avg: '$stars' },
+          totalReviews: { $sum: 1 },
+        }
+      },
+      {
+        $project: {
+          averageRating: { $round: ['$averageRating'] },
+          totalReviews:1,
+        }
+      }
+    ]);
+    // const productsWithAverageRating = products.map(product => {
+    //   const averageRatingObj = averageRatings.find(rating => rating._id.equals(product._id));
+    //   const averageRating = averageRatingObj ? averageRatingObj.averageRating : 0;
+    //   const totalReviews = averageRatingObj ? averageRatingObj.totalReviews : 0;
+    //   return { ...product.toObject(), averageRating,totalReviews };
+    // });
+    const averageRating = averageRatings ? averageRatings[0]?.averageRating : 0;
+    const totalReviews = averageRatings ? averageRatings[0]?.totalReviews : 0;
+    res.status(200).json({...product.toObject(),averageRating,totalReviews});
   } catch (error) {
     res.status(500).json({ error: 'Internal Server Error' });
+    console.log(error)
   }
 });
 router.get('/searchProducts',async (req,res)=>{
@@ -404,24 +484,99 @@ router.get('/products/:userId', async (req, res) => {
   }
 });
 
-router.put('/products/:productId', async (req, res) => {
+router.put('/products/:productId', upload.array('images', 10), async (req, res) => {
   const { productId } = req.params;
-  // console.log(productId)
+  const watermarkPath = path.join(__dirname,'..','images', 'watermark.svg');
+  const {title, description, productType, previousPrice, currentPrice, category, isFixed, consignee, currency, brand, model, location, subCity, wereda, transactionType, youtubeLink,} = req.body;
+  const product = await Product.findById(productId);
+  if(!product) {
+    return res.status(400).json({message:'Product not found'})
+  }
+  let uploadedImages = product?.productImages || [];
+  if (req.files) {
+    const images = req.files
+    const processPromises = images.map((file, index) => {
+      const inputPath = file.path;
+      const outputPath = path.join(__dirname,'..','files', 'images/', `${file.filename}-${Date.now()}.webp`); // Change extension to .webp
+      uploadedImages.push(`images/${file.filename}-${Date.now()}.webp`)
+      
+        // Apply watermark and convert to WEBP for images other than the first
+        return applyWatermarkAndConvert(inputPath, outputPath, watermarkPath, false);
+    });
+    await Promise.all(processPromises);
+  } else {
+    return res.status(400).json({message:'Images are required'})
+  }
+  productAttributes = req.body.attributes ? JSON.parse(req.body.attributes) : [];
+const updateData = {
+  title, 
+  description, 
+  productType: parseInt(productType), 
+  previousPrice: Number(previousPrice), 
+  currentPrice: Number(currentPrice), 
+  category, 
+  productImages: uploadedImages, 
+  attributes: productAttributes, 
+  isFixed: isFixed === 'true' ? true : false, 
+  consignee, 
+  currency, 
+  brand, 
+  model, 
+  location, 
+  subCity, 
+  wereda, 
+  transactionType: parseInt(transactionType), 
+  youtubeLink, 
+  state:3,
+}
   try {
     // console.log(req.body)
-    const updatedProduct = await Product.findByIdAndUpdate(productId, req.body, {
+    const updatedProduct = await Product.findByIdAndUpdate(productId, updateData, {
+      new: true,
+    });
+    // console.log(updatedProduct)
+    res.status(200).json(updatedProduct);
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+router.put('/products/activateProduct/:productId', async (req, res) => {
+  const { productId } = req.params;
+  const {consignee,category,date} = req.body
+  const notificationMessage = `Congratulations The ${category} Item you posted on ${date} is activated`
+  if(!consignee) { 
+    return res.status(400).json({message:'Invalid product'})
+  }
+  try {
+    const io = socketController.getIo()
+    const updatedProduct = await Product.findByIdAndUpdate(productId, {state:1}, {
       new: true,
     });
     // console.log(updatedProduct)
     if (!updatedProduct) {
-      return res.status(404).json({ error: 'Product not found' });
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    // save notification to db
+    const notification = await Notification.create({
+      product:productId,
+      user:consignee,
+      notification:notificationMessage
+    })
+    // if notification is successfuly saved emit an event
+    if(notification){
+      io.emit('notification',{
+        productId:productId,
+        user:consignee,
+        notification:notificationMessage,
+        isCampaign:false
+      })
     }
     res.status(200).json(updatedProduct);
   } catch (error) {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
 router.delete('/products/:productId', async (req, res) => {
   const { productId } = req.params;
   try {
@@ -469,6 +624,267 @@ router.get('/productsOnHomePage', async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 });
+router.get('/searchProductsAndFilter', async (req, res) => {
+  const { searchTerm, ...filters } = req.query; 
+  try {
+    const filterQuery = {
+      $text: { $search: searchTerm },
+      recordStatus: 1,
+      state: 1,
+    };
+
+    // Add numeric properties filters
+    const numericProperties = ['productType', 'postType', 'derivedState', 'viewCount', 'recordStatus'];
+    numericProperties.forEach((property) => {
+      if (filters[property]) {
+        filterQuery[property] = parseInt(filters[property]);
+      }
+    });
+
+    // Handle isFixed filter
+    if (filters.isFixed) {
+      filterQuery.isFixed = filters.isFixed === 'true';
+    }
+
+    // Add objectID properties filters
+    const objectIDProperties = ['category', 'consignee', 'currency', 'brand', 'model', 'location', 'subCity', 'wereda', 'switch'];
+    objectIDProperties.forEach((property) => {
+      if (filters[property]) {
+        filterQuery[property] = filters[property];
+      }
+    });
+
+    // Handle transactionType filter
+    if (filters.transactionType) {
+      filterQuery.transactionType = parseInt(filters.transactionType);
+    }
+
+    // Handle price range filter
+    if (filters.minPrice || filters.maxPrice) {
+      filterQuery.currentPrice = {};
+
+      if (filters.minPrice) {
+        filterQuery.currentPrice.$gte = parseFloat(filters.minPrice);
+      }
+
+      if (filters.maxPrice) {
+        filterQuery.currentPrice.$lte = parseFloat(filters.maxPrice);
+      }
+    }
+
+    // Handle attributes filter
+    if (filters.attributes) {
+      const attributes = Array.isArray(filters.attributes) ? filters.attributes : [filters.attributes];
+      const attributeValues = Array.isArray(filters.attributeValues) ? filters.attributeValues : [filters.attributeValues];
+
+      if (attributes.length === attributeValues.length) {
+        const attributeFilters = attributes.map((attribute, index) => ({
+          'attributes.name': attribute,
+          'attributes.value': attributeValues[index]
+        }));
+
+        if (attributeFilters.length > 0) {
+          filterQuery.$and = attributeFilters;
+        }
+      }
+    }
+
+    const products = await Product.find(filterQuery)
+      .sort({ score: { $meta: 'textScore' } })
+      .populate('category consignee currency brand model location subCity wereda switch');
+
+    // Calculate price range for filtered products
+    let minPrice = Infinity;
+    let maxPrice = -Infinity;
+
+    products.forEach((product) => {
+      const currentPrice = parseFloat(product.currentPrice);
+      
+      if (!isNaN(currentPrice)) {
+        if (currentPrice < minPrice) {
+          minPrice = currentPrice;
+        }
+
+        if (currentPrice > maxPrice) {
+          maxPrice = currentPrice;
+        }
+      }
+    });
+
+    let priceRanges = [];
+    if (products.length > 5) {
+      const priceRangeStep = (maxPrice - minPrice) / 5;
+      for (let i = 0; i < 5; i++) {
+        const rangeMin = minPrice + i * priceRangeStep;
+        const rangeMax = minPrice + (i + 1) * priceRangeStep;
+        priceRanges.push({
+          min: rangeMin,
+          max: rangeMax,
+        });
+      }
+    } else {
+      if (products.length === 1) {
+        priceRanges.push({ min: 0, max: maxPrice });
+      } else {
+        const rangeStep = (maxPrice - minPrice) / products.length;
+        for (let i = 0; i < products.length; i++) {
+          const rangeMin = minPrice + i * rangeStep;
+          const rangeMax = i === products.length - 1 ? maxPrice : minPrice + (i + 1) * rangeStep;
+          priceRanges.push({
+            min: rangeMin,
+            max: rangeMax,
+          });
+        }
+      }
+    }
+    
+    // Generate attribute list
+    const attributesList = [];
+    products.forEach((product) => {
+      product.attributes.forEach((attribute) => {
+        const existingAttribute = attributesList.find((attr) => attr.name === attribute.name);
+
+        if (existingAttribute) {
+          if (!existingAttribute.values.includes(attribute.value)) {
+            existingAttribute.values.push(attribute.value);
+          }
+        } else {
+          attributesList.push({
+            name: attribute.name,
+            values: [attribute.value],
+          });
+        }
+      });
+    });
+    res.status(200).json({ products, priceRanges, attributesList });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// router.get('/searchProductsAndFilter', async (req, res) => {
+//   const { searchTerm, ...filters } = req.query; 
+//   try {
+//     const filterQuery = {
+//       $text: { $search: searchTerm },
+//       recordStatus: 1,
+//       state: 1,
+//     };
+
+//     // Add numeric properties filters
+//     const numericProperties = ['productType', 'postType', 'derivedState', 'viewCount', 'recordStatus'];
+//     numericProperties.forEach((property) => {
+//       if (filters[property]) {
+//         filterQuery[property] = parseInt(filters[property]);
+//       }
+//     });
+
+//     // Handle isFixed filter
+//     if (filters.isFixed) {
+//       filterQuery.isFixed = filters.isFixed === 'true';
+//     }
+
+//     // Add objectID properties filters
+//     const objectIDProperties = ['category', 'consignee', 'currency', 'brand', 'model', 'location', 'subCity', 'wereda', 'switch'];
+//     objectIDProperties.forEach((property) => {
+//       if (filters[property]) {
+//         filterQuery[property] = filters[property];
+//       }
+//     });
+
+//     // Handle transactionType filter
+//     if (filters.transactionType) {
+//       filterQuery.transactionType = parseInt(filters.transactionType);
+//     }
+
+//     // Handle price range filter
+//     if (filters.minPrice || filters.maxPrice) {
+//       filterQuery.currentPrice = {};
+
+//       if (filters.minPrice) {
+//         filterQuery.currentPrice.$gte = parseFloat(filters.minPrice);
+//       }
+
+//       if (filters.maxPrice) {
+//         filterQuery.currentPrice.$lte = parseFloat(filters.maxPrice);
+//       }
+//     }
+
+//     // Handle attributes filter
+//     if (filters.attributes) {
+//       const attributes = Array.isArray(filters.attributes) ? filters.attributes : [filters.attributes];
+//       const attributeValues = Array.isArray(filters.attributeValues) ? filters.attributeValues : [filters.attributeValues];
+
+//       if (attributes.length === attributeValues.length) {
+//         const attributeFilters = attributes.map((attribute, index) => ({
+//           'attributes.name': attribute,
+//           'attributes.value': attributeValues[index]
+//         }));
+
+//         if (attributeFilters.length > 0) {
+//           filterQuery.$and = attributeFilters;
+//         }
+//       }
+//     }
+
+//     const products = await Product.find(filterQuery)
+//       .sort({ score: { $meta: 'textScore' } })
+//       .populate('category consignee currency brand model location subCity wereda switch');
+
+//     // Calculate price range for filtered products
+//     let minPrice = Infinity;
+//     let maxPrice = -Infinity;
+
+//     products.forEach((product) => {
+//       const currentPrice = parseFloat(product.currentPrice);
+      
+//       if (!isNaN(currentPrice)) {
+//         if (currentPrice < minPrice) {
+//           minPrice = currentPrice;
+//         }
+
+//         if (currentPrice > maxPrice) {
+//           maxPrice = currentPrice;
+//         }
+//       }
+//     });
+
+//     const priceRangeStep = (maxPrice - minPrice) / 5;
+//     const priceRanges = [];
+
+//     for (let i = 0; i < 5; i++) {
+//       const rangeMin = minPrice + i * priceRangeStep;
+//       const rangeMax = minPrice + (i + 1) * priceRangeStep;
+//       priceRanges.push({
+//         min: rangeMin,
+//         max: rangeMax,
+//       });
+//     }
+//     // Generate attribute list
+//     const attributesList = [];
+//     products.forEach((product) => {
+//       product.attributes.forEach((attribute) => {
+//         const existingAttribute = attributesList.find((attr) => attr.name === attribute.name);
+
+//         if (existingAttribute) {
+//           if (!existingAttribute.values.includes(attribute.value)) {
+//             existingAttribute.values.push(attribute.value);
+//           }
+//         } else {
+//           attributesList.push({
+//             name: attribute.name,
+//             values: [attribute.value],
+//           });
+//         }
+//       });
+//     });
+//     res.status(200).json({ products, priceRanges, attributesList });
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ error: 'Internal Server Error' });
+//   }
+// });
 
 
 module.exports = router;

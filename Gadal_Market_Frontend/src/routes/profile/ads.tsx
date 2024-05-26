@@ -2,7 +2,7 @@ import Box from '@mui/material/Box'
 import Divider from '@mui/material/Divider'
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import { Button, Stack, Typography,IconButton,useTheme, Pagination, Popover} from '@mui/material'
+import { Button, Stack, Typography,IconButton,useTheme, Pagination, Popover, Grid} from '@mui/material'
 import useSmallScreen from '../../utils/hooks/useSmallScreen';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useState } from 'react';
@@ -28,7 +28,7 @@ const {data:yourAds,isLoading} = useQuery({
         userId:localStorage.getItem('userId') as string,
         soldOut:activeTab === 1,
         disabled:activeTab === 2,
-        deleted:activeTab === 3
+        serviceType:activeTab===3 ? 2 : activeTab === 4 ? 1 : activeTab===5 ? 3 : activeTab === 6 ? 4 : undefined
     })
    })
 
@@ -48,9 +48,19 @@ const handlePaginationChange = (event: React.ChangeEvent<unknown>, value: number
        
         <Divider sx={{fontWeight:'bold'}}/>
         </Box>
-          <Box sx={{display:'flex',alignItems:"center",gap:smallScreen?1:4,mt:2}}>
+          <Box 
+          sx={{
+            display:'flex',
+            alignItems:"center",
+            gap:smallScreen?1:4,
+            mt:2,
+            mb:1,
+            overflowX:'auto',
+          }}
+          className="hideScrollBar"
+            >
             {
-            ['All','Sold Out','Disabled','Deleted'].map((item,index)=>(
+            ['All','Available','Unavailable','Property','Machinery','Vehicle','Others'].map((item,index)=>(
                 <Box 
                 onClick={(e)=>handleTabSelection(index)}
                 sx={{display:'flex',alignItems:'center',gap:1,
@@ -79,16 +89,30 @@ const handlePaginationChange = (event: React.ChangeEvent<unknown>, value: number
                     ):
                     (
                         <>
-                          {
+                  <Grid
+                  container
+                  spacing = {2}
+                  >
+                 
+                     {
             yourAds?.products?.map((product:any)=>(
-                <AdCard 
+              <Grid
+              item
+              xs={12}
+              sm={6}
+              >
+                   <AdCard 
                  ad={product}
                  key={product?._id}
                 />
+
+                </Grid>
             ))
           }
+                  
+                  </Grid>
                  
-                {
+                {/* {
                   yourAds?.products?.length>0&&(
                     <Pagination
                     count={Math.ceil(yourAds?.metadata?.totalProducts/pageSize)}
@@ -97,7 +121,7 @@ const handlePaginationChange = (event: React.ChangeEvent<unknown>, value: number
                     sx={{mt:4,}}
                   />
                   )
-                }
+                } */}
                         </>
                     )
                 }
@@ -210,7 +234,7 @@ const productUpdateMutation = useMutation({
             {
               ad?.recordStatus !== 3 && (
                 <Box sx={{display:'flex',gap:1,alignItems:'center'}}>
-                <Button
+                {/* <Button
                 size={smallScreen?'small':'medium'} 
                 variant='contained' 
                 sx={{color:'white'}}
@@ -220,7 +244,7 @@ const productUpdateMutation = useMutation({
                 disabled = {productUpdateMutation.isPending || ad?.derivedState === 5}
                 >
                     Sold out
-                </Button>
+                </Button> */}
                 <Button 
                   size={smallScreen?'small':'medium'} 
                   variant='contained' 
@@ -240,7 +264,7 @@ const productUpdateMutation = useMutation({
                   }}
                   >
                     {
-                        ad.recordStatus === 1 ? 'Disable ad' : 'Enable ad'
+                        ad.recordStatus === 1 ? 'Not Available' : 'Available'
                     }
                 </Button>
                

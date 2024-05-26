@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import getFetauredProducts from '../../../api/products/getfeaturedProducts';
 import { IMAGE_URL } from '../../../api/apiConfig';
 import { NavLink } from 'react-router-dom';
+import useSmallScreen from '../../../utils/hooks/useSmallScreen';
 interface featuredRentProps {
     serviceName:string,
     serviceType:number
@@ -17,6 +18,7 @@ export default function RentFeatured(props:featuredRentProps){
       queryKey:['get_featured_products',serviceType],
       queryFn:()=>getFetauredProducts(serviceType,1)
     })
+    const smallScreen = useSmallScreen();
     const theme = useTheme()
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -87,15 +89,17 @@ useEffect(()=>{
                     alignItems:'center'
                   }}
                   >
-                <IconButton
-                // size='large'
-                 disabled={!canScrollLeft}
-                 onClick={handleScrollLeft}
-                 >
-                   <ChevronLeftIcon
-                   fontSize='large'
-                   />
-                    </IconButton>
+                 {
+                  !smallScreen && (
+                    <IconButton
+                    onClick={handleScrollLeft}
+                    >
+                      <ChevronLeftIcon
+                      fontSize='large'
+                      />
+                       </IconButton>
+                  )
+                 }
                   <Box 
                  className="hideScrollBar"
                  ref={containerRef}
@@ -110,7 +114,9 @@ useEffect(()=>{
                     ))
                  }
                  </Box>
-                 <IconButton
+                  {
+                    !smallScreen && (
+                      <IconButton
                  disabled={!canScrollRight}
                  onClick={handleScrollRight}
                  >
@@ -118,6 +124,8 @@ useEffect(()=>{
                     fontSize='large'
                     />
                     </IconButton>
+                    )
+                  }
                   </Box>
                 </Box>
               )

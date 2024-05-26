@@ -6,10 +6,17 @@ import { useContext} from 'react';
 import { context } from '../common/cartContext';
 export default function CartMenu(){
 const navigate = useNavigate()
+const loggedIn = localStorage.getItem('token')
 const {products} = useContext(context)
     return (
         <IconButton
-        onClick={()=>navigate('/cart')}
+        onClick={()=>{
+            if(loggedIn){
+                navigate('/cart')
+                return;
+            }
+            navigate('/login')
+        }}
         >
             <Badge color='primary' badgeContent={products?.length}>
             <ShoppingCartOutlinedIcon fontSize='large'/>

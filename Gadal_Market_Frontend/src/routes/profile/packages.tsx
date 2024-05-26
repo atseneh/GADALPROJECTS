@@ -1,7 +1,9 @@
-import { CardContent, Typography,Card, Divider, Stack, IconButton, Tooltip, Grid, Box, Link,useTheme,Chip } from "@mui/material";
+import { CardContent, Typography,Card, Divider, Stack, IconButton, Tooltip, Grid, Box, Link,useTheme,Chip, Button } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import getUsersPackage from "../../api/user/getUsersPackage";
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import AddIcon from '@mui/icons-material/Add';
+import { useNavigate } from "react-router-dom";
 function packageIsExpired(endDateString: string): boolean {
     const date = new Date(endDateString);
     const today = new Date();
@@ -12,17 +14,48 @@ function packageIsExpired(endDateString: string): boolean {
 }
 export default function Packages(){
     const theme = useTheme()
+    const navigate = useNavigate()
     const {data:userPackages,isLoading} = useQuery({
         queryKey:['users_package'],
         queryFn:()=>getUsersPackage()
     })
+    const allPackagesAreExpired = userPackages?.every((p:any)=> !p?.isValid)
     return(
       <Card>
         <CardContent>
         <Box sx={{display:'flex',flexDirection:'column',gap:1}}>
-        <Typography variant='h6' fontWeight={'bold'}>
+          <Stack
+          direction={'row'}
+          alignItems={'center'}
+          justifyContent={'space-between'}
+          >
+          <Typography variant='h6' fontWeight={'bold'}>
                     Your Packages
-                </Typography>
+         </Typography>
+          {
+            allPackagesAreExpired && (
+              <Button
+              variant="contained"
+              size="small"
+              sx={{
+               color:'white',
+               display:'flex',
+               alignItems:'center'
+              }}
+              onClick={()=>{
+                navigate('/get_packages')
+              }}
+              >
+               <AddIcon fontSize="small"/>
+               <Typography
+               variant="body2"
+               >
+               New Package
+               </Typography>
+              </Button>
+            )
+          }
+          </Stack>
         <Divider sx={{fontWeight:'bold',mb:1}}/>
          {
             isLoading ? 
@@ -67,7 +100,7 @@ export default function Packages(){
                                             {packageDetail?.description}
                                         </Typography>
                                         {
-                                        packageIsExpired(packageDetail?.endDate) ?
+                                        !packageDetail?.isValid ?
                                        <Chip
                                         label="Expired" 
                                         color="error"

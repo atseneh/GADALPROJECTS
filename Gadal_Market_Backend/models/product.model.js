@@ -63,13 +63,13 @@ state:{
   },
   productImages:{
     type:[String],
-    required:[true,'Image Must be Provided'],
-    validate:{
-        validator:function(arr){
-            return arr.length >= 1 && arr.length <= 10;
-        },
-        message: 'You have to provide at least one image and not more than 10 images'
-    }
+    required:[false,'Image Must be Provided'],
+    // validate:{
+    //     validator:function(arr){
+    //         return arr.length >= 1 && arr.length <= 10;
+    //     },
+    //     message: 'You have to provide at least one image and not more than 10 images'
+    // }
   },
   isFixed:Boolean,
   isPayed:Boolean,
@@ -132,6 +132,8 @@ state:{
     default: Date.now  
   },
   youtubeLink:String,
+  transactionReference: String,
+  paymentAmount: String,
   remark:String,
   recordStatus:{
     default:1,

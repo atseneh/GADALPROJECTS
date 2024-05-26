@@ -7,16 +7,18 @@ import { Grid, Typography } from '@mui/material'
 import ProductCard from '../../components/products/productCard';
 import { useQuery } from '@tanstack/react-query';
 import getFavourites from '../../api/user/getUserFavouriteItems';
+import useReactRouterQuery from '../../utils/hooks/useQuery'
 interface Props {
     hideTitle:boolean
 }
 export default function Favourites(props:Props){
     const {hideTitle} = props
+    let query = useReactRouterQuery()
+    const sortCriteria =  query.get('sortCriteria') as string
     const {data:favourites,isLoading} = useQuery({
-        queryKey:['favouritesProducts'],
-        queryFn:()=>getFavourites()
+        queryKey:['favouritesProducts',sortCriteria],
+        queryFn:()=>getFavourites(sortCriteria)
        })
-    console.log(favourites)
     return (
         <Card
         sx={{borderRadius:'20px',mt:2}}
@@ -40,7 +42,7 @@ export default function Favourites(props:Props){
             (
                 <Grid container spacing={2} sx={{mt:2}}>
          {
-            favourites?.favourites.map((fav:any)=>(
+            favourites?.map((fav:any)=>(
                 <Grid item xs={12} sm={3} key={fav?._id}>
                 <ProductCard data={fav}/>
                 </Grid>

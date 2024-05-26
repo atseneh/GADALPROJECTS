@@ -1,4 +1,4 @@
-import {Grid,Box,Button, Typography} from '@mui/material'
+import {Grid,Box,Button, Typography, Stack} from '@mui/material'
 import useSmallScreen from '../../utils/hooks/useSmallScreen'
 import MainBanner from '../siteBanners/mainBanner'
 import RentFeatured from './featuredProducts/rentFeatured'
@@ -97,12 +97,18 @@ export default function MainContent(){
                         />
                          <ServiceCategory
                          isLink
-                        serviceName='Constructions'
+                        serviceName='Others'
                         activeTransaction={activeTransactionType}
                         activeService={activeService}
                         handleTransactionChange={handleTransactionChange}
                         />
-                            <EstimationButton/>
+                        <Box
+                        sx={{
+                            mt:7
+                        }}
+                        >
+                        <EstimationButton/>
+                        </Box>
                         </>
                     
                  
@@ -114,6 +120,9 @@ export default function MainContent(){
                    <MainBanner/>
                    {
                     smallScreen&&(
+                        <Stack
+                        // spacing={1}
+                        >
                         <div 
                         className='hideScrollBar'
                         style={{
@@ -141,12 +150,21 @@ export default function MainContent(){
                                 handleTransactionChange={handleTransactionChange}
                                 />
                                 <MobileServiceCategory
-                                serviceName='Constructions'
+                                serviceName='Others'
                                 activeTransaction={activeTransactionType}
                                 activeService={activeService}
                                 handleTransactionChange={handleTransactionChange}
                                 />
-                            </div>
+                         </div>
+                         <Box
+                         sx={{
+                            alignSelf:'center',
+                            mb:1,
+                         }}
+                         >
+                         <EstimationButton/>
+                         </Box>
+                        </Stack>
                     )
                    }
                    <Box sx={{ml:smallScreen?0:2,mr:smallScreen?0:2,display:'flex',flexDirection:'column',gap:1}}>

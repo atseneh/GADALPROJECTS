@@ -37,9 +37,17 @@ export default function MobileServiceCategory(props:mobileServiceCategoryProps){
             
                 <Stack direction={'row'} spacing={1}>
                 <Chip
-                   sx={{p:1,color:isRentActive?'white':'',fontWeight:'bold'}}
+                   sx={{
+                    p:1,
+                    color:isRentActive?'white':'',
+                    fontWeight:'bold',
+                }}
                    color={isRentActive?'primary':'default'} label="Rent" 
                    onClick={()=>{
+                    if(isRentActive) {
+                        handleTransactionChange!(null,serviceName.toLowerCase() as 'property'|'machinery'|'vehicle'|'others' )
+                        return;
+                    }
                     handleTransactionChange!('rent',serviceName.toLowerCase() as 'property'|'machinery'|'vehicle'|'others' )
                    }}
                    />
@@ -47,6 +55,10 @@ export default function MobileServiceCategory(props:mobileServiceCategoryProps){
                    sx={{p:1,color:isSaleActive?'white':'',fontWeight:'bold'}}
                    color={isSaleActive?'primary':'default'} label="Sale"
                    onClick={()=>{
+                    if(isSaleActive) {
+                        handleTransactionChange!(null,serviceName.toLowerCase() as 'property'|'machinery'|'vehicle'|'others')
+                        return;
+                    }
                     handleTransactionChange!('sale',serviceName.toLowerCase() as 'property'|'machinery'|'vehicle'|'others')
                 }}
                    />

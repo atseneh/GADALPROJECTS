@@ -1,4 +1,4 @@
-import { Avatar, Button, Divider, Grid, Rating, Skeleton, Stack, TextField, Typography } from "@mui/material";
+import { Avatar, Button, Divider, Grid, IconButton, Rating, Skeleton, Snackbar, Stack, TextField, Typography } from "@mui/material";
 import  Box  from "@mui/material/Box";
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import theme from "../../theme";
@@ -15,7 +15,7 @@ import formatNumbers from "../../utils/helpers/formatNumbers";
 import ReactTimeAgo from "react-time-ago";
 import getServiceTypeDescription from "../../utils/helpers/getServiceTypeDescription";
 import ProductInfoSkeleton from "./productInfoSkeleton";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useParams } from "react-router-dom";
 import React, { useContext, useEffect, useState } from "react";
 import { useMutation,QueryClient, useQueryClient} from "@tanstack/react-query";
 import addProductToFav from "../../api/products/addProductToFav";
@@ -25,13 +25,17 @@ import getTransactionTypeDescription from "../../utils/helpers/getTransactionTyp
 import createMessage from "../../api/messages/startChat";
 import { IMAGE_URL } from "../../api/apiConfig";
 import followUser from "../../api/user/follow";
+import RemoveIcon from "@mui/icons-material/Remove";
+import unfollowUser from "../../api/user/unfollow";
+import CloseIcon from '@mui/icons-material/Close'
 export default function ProductInfo(props:{data:any,loading:boolean}){
     const smallScreen = useSmallScreen()
     const {data,loading} = props
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const {id} = useParams()
     const isMyProduct = localStorage.getItem('userId') === data?.consignee?._id
-    const loggedInUserId = localStorage.getItem('userId')
+    const loggedInUserId = localStorage.getItem('userId') as string
     const loggedIn = localStorage.getItem('token')
     const [showPhone,setShowPhone] = React.useState(false)
     const [startChat,setStartChat] = useState(false)
@@ -40,6 +44,7 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
     const [priceToOffer,setPriceToOffer] = useState('')
     const token = localStorage.getItem('token')
     const [messageNotification,setMessageNotification] = React.useState(false)
+    const [favNotification,setFavNotification] = React.useState(false)
     const {mutate:follow,isPending:followPending} = useMutation({
         mutationFn:followUser,
         mutationKey:['follow_user'],
@@ -78,7 +83,10 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
             product:data?._id,
             owner:data?.consignee?._id,
             buyer:localStorage.getItem('userId') as string,
-            message:mes
+            message:{
+                message:mes,
+                messageType:'text'
+            }
         }
         messageMuation.mutate(payload)
         setMessage('')
@@ -89,13 +97,33 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
         mutationFn:addProductToFav,
         mutationKey:['addToFav2'],
         onSuccess:()=>{
-        // queryClient.invalidateQueries(['getSingleProduct'])
+        setFavNotification(true)
+        queryClient.invalidateQueries({queryKey:['getSingleProduct']})
         }
     })
     const [notificationSnackbarOpen,setNotificationSnackbarOpen] = React.useState(false)
     const handleNotificationSnackbarClose = ()=>{
         setNotificationSnackbarOpen(false)
     }
+    const [openSnackBar, setOpenSnackBar] = React.useState(false);
+const handleSnackBarClose = (event: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setOpenSnackBar(false);
+  };
+  const action = (
+    <React.Fragment>
+      <IconButton
+        size="small"
+        aria-label="close"
+        color="inherit"
+        onClick={handleSnackBarClose}
+      >
+        <CloseIcon fontSize="small" />
+      </IconButton>
+    </React.Fragment>
+  );
     const handleFollow = (userToFollow:string)=>{
         if(followPending){
             return;
@@ -105,6 +133,33 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
             userToFollow,
         })
     }
+    const {mutate:unFollow,isPending: unfollowPending} = useMutation({
+        mutationFn:unfollowUser,
+        mutationKey:['unfollow_user'],
+        onSuccess:()=>{
+        queryClient.invalidateQueries({queryKey:['getSingleProduct']})
+        }
+    })
+    const handleUnfollow = (userToUnfollow:string)=>{
+        if(unfollowPending){
+            return;
+        }
+        unFollow({
+            user:loggedInUserId,
+            userToUnfollow,
+        })
+    }
+    const copyProductLink = ()=>{
+        const text = `gadalmarket.com/products/${id}`
+        navigator.clipboard.writeText(text)
+              .then(() => {
+                    setOpenSnackBar(true)
+                })
+              .catch(err => {
+                console.error('Failed to copy text:', err);
+                // Handle error, show a message to the user, etc.
+              });
+        }
     return (
        <>
        {
@@ -163,8 +218,8 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                 </Box>
              </Box>
              <Box sx={{display:'flex',alignItems:'center'}}>
-                    <Rating readOnly value={data?.reviews?.stars||0} />
-                    <Typography  sx={{ml:.5,color:'rgb(143 143 143)'}}> | {`${data?.reviews?.stars||0} Reviews`}</Typography>
+                    <Rating readOnly value={data?.averageRating||0} />
+                    <Typography  sx={{ml:.5,color:'rgb(143 143 143)'}}> | {`${data?.totalReviews||0} Reviews`}</Typography>
                     </Box>
                     {
                         data?.attributes && Array.isArray(data?.attributes)&&data?.attributes?.length>0 && (
@@ -172,7 +227,7 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                      {
                         data?.attributes?.map((attr:any)=>(
                             <Grid key={attr?._id} item xs={12} sm={6}>
-                                 <Box sx={{
+                                 <Box sx={{ 
                     display:'flex',alignItems:'center',
                     justifyContent:'space-between',
                     p:.5,
@@ -196,7 +251,7 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                      <Box sx={{display:'flex',gap:.5,color:theme.palette.primary.main,}}>
                         <Typography variant={smallScreen?'h6':"h4"} fontWeight={'bold'}>
                         {
-                        `ETB ${new Intl.NumberFormat().format(data?.currentPrice)}`
+                        `${new Intl.NumberFormat().format(data?.currentPrice)}`
                         }
                         </Typography>
                         <Typography fontWeight={'bold'}>
@@ -309,9 +364,20 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
               
                 <Divider/>
                 <Box sx={{display:'flex',alignItems:'center',gap:2,justifyContent:smallScreen?'space-between':""}}>
-                <Box sx={{display:'flex',alignItems:'center',gap:1,}}>
-                {/* <AccountCircleIcon sx={{fontSize:smallScreen?'2rem':'3rem'}} fontSize={smallScreen?'small':"large"}/> */}
-                <Avatar alt="User profile pic" 
+                  <NavLink
+                  to={`/viewProfile/${data?.consignee?._id}`}
+                  style={({isTransitioning }) => {
+                    return {
+                      color:'black',
+                      textDecoration:'none',
+                      viewTransitionName: isTransitioning ? "slide" : "",
+                      alignSelf:'center'
+                    };
+                  }}
+                  >
+                  <Box sx={{display:'flex',alignItems:'center',gap:1,}}>
+                <Avatar 
+                alt="User profile pic" 
                 src={data?.consignee?.proflePic ? `${IMAGE_URL}/${data?.consignee?.proflePic}` : "/images/maleUser.svg"}
                 sx={{ width:smallScreen ? 24 :46, height: smallScreen?24: 46 }}
                 />
@@ -321,20 +387,33 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                     }
                 </Typography>
                  </Box>
+                  </NavLink>
                     {
                     !isMyProduct && loggedIn && (
                         <>
                          {
                             data?.consignee?.followers?.includes(loggedInUserId) ?
                             (
-                            <Typography
-                            sx={{
-                                color:'green',
-                                // fontWeight:'bold'
+                            // <Typography
+                            // sx={{
+                            //     color:'green',
+                                
+                            // }}
+                            // >
+                            //     following
+                            // </Typography>
+                            <Button
+                            size="small" 
+                            sx={{color:'black',background:'rgb(254 222 161)'}}
+                            variant="outlined"
+                            onClick={()=>{
+                                handleUnfollow(data?.consignee?._id)
                             }}
+                            disabled={unfollowPending}
                             >
-                                following
-                            </Typography>
+                           <RemoveIcon sx={{fontSize:'1rem'}} fontSize="small"/>
+                           Unfollow
+                           </Button>
                             ):
                             <Button
                             size="small" 
@@ -373,9 +452,10 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                         Add to Cart</Button>
                         <Button
                         color="inherit"  
+                        disabled={data?.likedBy?.includes(localStorage.getItem('userId'))}
                         onClick={(e)=>{
                             e.preventDefault()
-                            if(favMutation.isPending || data?.likedBy?.includes('653f2561c250b545217d192b')){
+                            if(favMutation.isPending || data?.likedBy?.includes(localStorage.getItem('userId'))){
                                 return;
                             }
         
@@ -395,7 +475,7 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                          >
                         <FavoriteBorderOutlinedIcon  sx={{
                             fontSize:'1rem',mr:.5,
-                            color:data?.likedBy?.includes('653f2561c250b545217d192b')?'green':'black',
+                            color:data?.likedBy?.includes(data?.likedBy?.includes(localStorage.getItem('userId')))?'green':'black',
                             
                             // background:data?.likedBy?.includes('653f2561c250b545217d192b')?'white':'black'
                             }} fontSize="small"/>
@@ -507,10 +587,23 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
                    </Box>
                     <Button
                   size="small"
-                  sx={{color:'black',fontSize:'0.75rem',background:'white',border:'1px solid #EFEFEF'}}
+                  sx={{
+                    color:'black',
+                    fontSize:'0.75rem',
+                    background:'white',
+                    border:'1px solid #EFEFEF'
+                }}
+                onClick={copyProductLink}
                  >
-                <ShareIcon sx={{fontSize:'1rem',mr:.5,}} fontSize="small"/>
-                Share</Button>
+                <ShareIcon 
+                sx={{
+                    fontSize:'1rem',
+                    mr:.5,
+                    }} 
+                fontSize="small"
+                    />
+                Copy Link
+                </Button>
                 </Box>
                 {
                     data?.youtubeLink&&(
@@ -545,6 +638,23 @@ export default function ProductInfo(props:{data:any,loading:boolean}){
             />
            )
           }
+           {
+           favNotification&&(
+            <CustomAlert
+            open={favNotification}
+            handleSnackBarClose = {()=>setFavNotification(false)}
+            severity={'success'}
+            successMessage="Successfuly Added to favourites"
+            />
+           )
+          }
+           <Snackbar
+        open={openSnackBar}
+        autoHideDuration={3000}
+        onClose={handleSnackBarClose}
+        message="Product link copied to clipboard"
+        action={action}
+      />
        </>
     )
 }
